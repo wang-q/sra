@@ -14,8 +14,8 @@ use File::Basename;
 # GetOpt section
 #----------------------------------------------------------#
 my $yml_file;
-my $platform_rx = "Illumina";
-my $layout_rx   = "pair";
+my $platform_rx;
+my $layout_rx;
 
 my $man  = 0;
 my $help = 0;
@@ -34,8 +34,10 @@ pod2usage( -exitstatus => 0, -verbose => 2 ) if $man;
 #----------------------------------------------------------#
 # start
 #----------------------------------------------------------#
-my $yml      = LoadFile($yml_file);
-my $basename = basename($yml_file) . ".$platform_rx" . ".$layout_rx";
+my $yml = LoadFile($yml_file);
+my $basename = basename( $yml_file, ".yml", ".yaml" );
+$basename .= ".$platform_rx" if $platform_rx;
+$basename .= ".$layout_rx"   if $layout_rx;
 
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
@@ -52,13 +54,15 @@ for my $name ( sort keys %{$yml} ) {
         print " " x 4, "$srx\n";
 
         my $platform = $info->{platform};
-        print " " x 8, $info->{platform}, "\n";
+        my $layout   = $info->{layout};
+        print " " x 8, $platform, " " x 8, $layout, "\n";
 
-        my $layout = $info->{layout};
-        print " " x 8, $layout, "\n";
-
-        next unless $platform =~ qr/$platform_rx/i;
-        next unless $layout   =~ qr/$layout_rx/i;
+        if ($platform_rx) {
+            next unless $platform =~ qr/$platform_rx/i;
+        }
+        if ($layout_rx) {
+            next unless $layout =~ qr/$layout_rx/i;
+        }
 
         for my $i ( 0 .. scalar @{ $info->{srr} } - 1 ) {
             my $srr = $info->{srr}[$i];
