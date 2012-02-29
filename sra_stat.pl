@@ -106,3 +106,5 @@ __END__
         -y, --yml           yaml file of sra info
         -p, --platform      illumina or 454
         -l, --layout        pair or single
+
+    You can edit the generated csv file for custom filters
