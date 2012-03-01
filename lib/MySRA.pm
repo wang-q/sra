@@ -12,8 +12,32 @@ use YAML qw(Dump Load DumpFile LoadFile);
 
 sub BUILD {
     my $self = shift;
-    
+
     return;
+}
+
+sub srp_worker {
+    my $self = shift;
+    my $term = shift;
+
+    my $mech = WWW::Mechanize->new;
+    $mech->stack_depth(0);    # no history to save memory
+
+    my $url_part1 = "http://www.ncbi.nlm.nih.gov/sra?term=";
+    my $url_part2 = "&from=begin&to=end&dispmax=200";
+    my $url       = $url_part1 . $term . $url_part2;
+    print $url, "\n";
+
+    my @srx;
+
+    $mech->get($url);
+
+    my @links = $mech->find_all_links( url_regex => => qr{sra\/[ES]RX\d+}, );
+
+    printf "OK, get %d SRX\n", scalar @links;
+    @srx = map { /sra\/([ES]RX\d+)/; $1} map { $_->url } @links;
+
+    return \@srx;
 }
 
 sub srs_worker {
@@ -99,7 +123,7 @@ sub srx_worker {
 
     {
         my ( @srr, @downloads );
-        my @links = $mech->find_all_links( text_regex => qr{SRR}, );
+        my @links = $mech->find_all_links( text_regex => qr{[ES]RR}, );
         printf "OK, get %d SRR\n", scalar @links;
 
         @srr       = map { $_->text } @links;
@@ -119,7 +143,7 @@ sub srx_worker {
 
     {
         my @links = $mech->find_all_links(
-            text_regex => qr{SRS},
+            text_regex => qr{[ES]RS},
             url_regex  => => qr{sample},
         );
         $info->{srs} = $links[0]->text;
