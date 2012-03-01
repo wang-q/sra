@@ -43,9 +43,10 @@ my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
 $csv->eol("\n");
 
-open my $out_fh, ">", "$basename.csv";
+open my $csv_fh, ">", "$basename.csv";
 open my $ftp_fh, ">", "$basename.ftp.txt";
 
+$csv->print( $csv_fh, [qw{ name srx platform layout srr spot base rg_str }] );
 for my $name ( sort keys %{$yml} ) {
     print "$name\n";
 
@@ -78,7 +79,7 @@ for my $name ( sort keys %{$yml} ) {
                 . "\tPL:$platform"
                 . "\tSM:$name";
             $csv->print(
-                $out_fh,
+                $csv_fh,
                 [   $name, $srx, $platform, $layout, $srr, $spot, $base, $rg_str
                 ]
             );
@@ -88,16 +89,16 @@ for my $name ( sort keys %{$yml} ) {
 }
 
 close $ftp_fh;
-close $out_fh;
+close $csv_fh;
 
 __END__
 
 =head1 NAME
 
-    sra_stat.pl - stats for sra
+    sra_prep.pl - prepare for sra
 
 =head1 SYNOPSIS
-    perl sra_stat.pl -y DGRP.yml -p illumina -l pair
+    perl sra_prep.pl -y DGRP.yml -p illumina -l pair
 
     sra_stat.pl [options]
       Options:
@@ -106,5 +107,8 @@ __END__
         -y, --yml           yaml file of sra info
         -p, --platform      illumina or 454
         -l, --layout        pair or single
+        
+    perl sra_prep.pl -y dpgp.yml
 
-    You can edit the generated csv file for custom filters
+    You can edit the generated csv file for custom filters.
+    And don't forget to rename modified csv.
