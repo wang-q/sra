@@ -17,7 +17,7 @@ has parallel => ( is => 'rw', isa => 'Int', default => 4, );
 has memory   => ( is => 'rw', isa => 'Int', default => 1, );
 
 has bash => ( is => 'ro', isa => 'Str' );
-has imr => ( is => 'ro', isa => 'Str' );
+has imr  => ( is => 'ro', isa => 'Str' );
 
 sub BUILD {
     my $self = shift;
@@ -29,7 +29,8 @@ sub write {
     my $self = shift;
     my $item = shift;
     my $bash = shift || 'bash';
-    my $file = shift || $self->data_dir->{bash} . "/" . $item->{name} . "_sra.sh";
+    my $file = shift
+        || $self->data_dir->{bash} . "/" . $item->{name} . "_sra.sh";
 
     open my $fh, ">", $file;
     print {$fh} $self->{$bash};
@@ -140,11 +141,15 @@ bwa sampe -r "[% lane.rg_str %]" \
     | gzip > [% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz
 [ $? -ne 0 ] && echo `date` [% item.name %] [bwa sampe] failed >> [% base_dir %]/fail.log && exit 255
 
+find [% item.dir %]/[% lane.srr %] -type f -name "*.fastq.gz" -o -name "*.sai" | xargs rm
+
 # convert sam to bam
 samtools view -uS [% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz \
     | samtools sort - [% item.dir %]/[% lane.srr %]/[% lane.srr %].tmp1
+rm [% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz
 samtools fixmate [% item.dir %]/[% lane.srr %]/[% lane.srr %].tmp1.bam - \
     | samtools sort - [% item.dir %]/[% lane.srr %]/[% lane.srr %]
+rm [% item.dir %]/[% lane.srr %]/[% lane.srr %].tmp1.bam
 
 # clean
 mv [% item.dir %]/[% lane.srr %]/[% lane.srr %].bam [% item.dir %]/[% lane.srr %].srr.bam
@@ -237,6 +242,7 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -targetIntervals [% item.dir %]/[% item.name %].intervals \
     --out [% item.dir %]/[% item.name %].realign.bam
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk realign] failed >> [% base_dir %]/fail.log && exit 255
+rm [% item.dir %]/[% item.name %].sort.bam
 
 # dup marking
 java -Xmx[% memory %]g -jar [% bin_dir.pcd %]/MarkDuplicates.jar \
@@ -247,6 +253,7 @@ java -Xmx[% memory %]g -jar [% bin_dir.pcd %]/MarkDuplicates.jar \
     REMOVE_DUPLICATES=true \
     VALIDATION_STRINGENCY=LENIENT
 [ $? -ne 0 ] && echo `date` [% item.name %] [picard dedup] failed >> [% base_dir %]/fail.log && exit 255
+rm [% item.dir %]/[% item.name %].realign.bam
 
 # reindex the realigned dedup BAM
 samtools index [% item.dir %]/[% item.name %].dedup.bam
@@ -299,6 +306,140 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -baq RECALCULATE \
     -recalFile [% item.dir %]/recal_data.csv
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk recal] failed >> [% base_dir %]/fail.log && exit 255
+rm [% item.dir %]/[% item.name %].dedup.bam
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub calmd_baq {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# BAQ
+if [ -e [% item.dir %]/[% item.name %].recal.bam ];
+then
+    samtools calmd -Abr [% item.dir %]/[% item.name %].recal.bam [% ref_file.seq %] > [% item.dir %]/[% item.name %].baq.bam;
+else
+    samtools calmd -Abr [% item.dir %]/[% item.name %].dedup.bam [% ref_file.seq %] > [% item.dir %]/[% item.name %].baq.bam;
+fi;
+[ $? -ne 0 ] && echo `date` [% item.name %] [samtools BAQ] failed >> [% base_dir %]/fail.log && exit 255
+
+if [ -e [% item.dir %]/[% item.name %].recal.bam ];
+then
+    rm [% item.dir %]/[% item.name %].recal.bam;
+else
+    rm [% item.dir %]/[% item.name %].dedup.bam;
+fi;
+
+samtools index [% item.dir %]/[% item.name %].baq.bam
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub call_snp_indel {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+## call snp and skip indel calling by -I
+#samtools  mpileup -I -ugf [% ref_file.seq %] [% item.dir %]/[% item.name %].baq.bam \
+#    | bcftools view -vc - > [% item.dir %]/[% item.name %].snp.vcf
+
+# snp calling
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+    -T UnifiedGenotyper \
+    -R [% ref_file.seq %] \
+    -glm SNP \
+    -I [% item.dir %]/[% item.name %].baq.bam \
+    -o [% item.dir %]/[% item.name %].snp.raw.vcf \
+    -A AlleleBalance \
+    -A DepthOfCoverage \
+    -A FisherStrand
+[ $? -ne 0 ] && echo `date` [% item.name %] [gatk snp calling] failed >> [% base_dir %]/fail.log && exit 255
+
+# snp recal
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+    -T VariantRecalibrator \
+    -R [% ref_file.seq %] \
+    -input [% item.dir %]/[% item.name %].snp.raw.vcf \
+    -resource:ensembl,known=true,training=true,truth=true,prior=6.0 [% ref_file.vcf %] \
+    -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an MQ \
+    -recalFile [% item.dir %]/[% item.name %].snp.recal \
+    -tranchesFile [% item.dir %]/[% item.name %].snp.tranches \
+    -rscriptFile [% item.dir %]/[% item.name %].snp.plots.R
+
+# apply snp recal
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+    -T ApplyRecalibration \
+    -R [% ref_file.seq %] \
+    -input [% item.dir %]/[% item.name %].snp.raw.vcf \
+    --ts_filter_level 99.0 \
+    -tranchesFile [% item.dir %]/[% item.name %].snp.tranches \
+    -recalFile [% item.dir %]/[% item.name %].snp.recal \
+    -o [% item.dir %]/[% item.name %].snp.vcf
+
+# indel calling
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+    -T UnifiedGenotyper \
+    -R [% ref_file.seq %] \
+    -glm INDEL \
+    -I [% item.dir %]/[% item.name %].baq.bam \
+    -o [% item.dir %]/[% item.name %].indel.raw.vcf
+[ $? -ne 0 ] && echo `date` [% item.name %] [gatk indel calling] failed >> [% base_dir %]/fail.log && exit 255
+
+# indel hard filter
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+    -T VariantFiltration \
+    -R [% ref_file.seq %] \
+    --variant [% item.dir %]/[% item.name %].indel.raw.vcf \
+    -o [% item.dir %]/[% item.name %].indel.vcf \
+    --filterExpression "QUAL<30.0" \
+    --filterName "LowQual" \
+    --filterExpression "SB>=-1.0" \
+    --filterName "StrandBias" \
+    --filterExpression "QD<1.0" \
+    --filterName "QualByDepth" \
+    --filterExpression "(MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1))" \
+    --filterName "HARD_TO_VALIDATE" \
+    --filterExpression "HRun>=15" \
+    --filterName "HomopolymerRun"
 
 EOF
     my $output;
@@ -354,6 +495,41 @@ EOF
     return;
 }
 
+sub vcf_to_fasta {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# vcf to new fasta
+java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+    -T FastaAlternateReferenceMaker \
+    -R [% ref_file.seq %] \
+    --variant [% item.dir %]/[% item.name %].indel.vcf \
+    --variant [% item.dir %]/[% item.name %].snp.vcf \
+    -o [% item.dir %]/[% item.name %].vcf.fasta
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+
+    return;
+}
+
 sub clean {
     my $self = shift;
     my $item = shift;
@@ -362,13 +538,17 @@ sub clean {
 
     my $text = <<'EOF';
 # let's clean up
-#find [% item.dir %] -type f \
-#    -name "*.sort.*" -o -name "*.dedup.*" \
-#    -o -name "*.realign.*" \
-#    -o -name "*.csv" -o -name "*.intervals" \
-#    | xargs rm
+find [% item.dir %] -type f \
+    -name "*.sort.*" -o -name "*.dedup.*" \
+    -o -name "*.realign.*" -o -name "*.recal.*" \
+    -o -name "*.raw.*"  -o -name "*.recal" \
+    -o -name "*.tranches" -o -name "*.metrics" \
+    -o -name "*.csv" -o -name "*.intervals" \
+    | xargs rm
 
 echo run time is $(expr `date +%s` - $start_time) s
+echo `date` [% item.name %] [all steps success] >> [% base_dir %]/fail.log
+
 EOF
     my $output;
     $tt->process(
