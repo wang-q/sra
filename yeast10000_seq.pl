@@ -29,17 +29,7 @@ my $ref_file = {
     vcf => File::Spec->catfile( $base_dir, "ref", "S288C.vcf" ),
 };
 my $parallel = 8;
-my $memory = 4;
-
-my $mybam = MyBAM->new(
-    base_dir => $base_dir,
-    bin_dir  => $bin_dir,
-    data_dir => $data_dir,
-    ref_file => $ref_file,
-
-    parallel => $parallel,
-    memory   => $memory,
-);
+my $memory   = 4;
 
 my @rows;
 my $csv = Text::CSV_XS->new( { binary => 1 } )
@@ -62,8 +52,8 @@ ITEM: for my $name (@names) {
     for (@lines) {
         my $srx      = $_->[1];
         my $platform = $_->[2];
+        my $layout   = $_->[3];
         my $srr      = $_->[4];
-        my $rg_str   = $_->[7];
 
         my $file = File::Spec->catfile( $data_dir->{sra}, "$srr.sra" );
         if ( !-e $file ) {
@@ -71,10 +61,18 @@ ITEM: for my $name (@names) {
             $item = undef;
             next ITEM;
         }
+
+        my $rg_str
+            = '@RG'
+            . "\\tID:$srr"
+            . "\\tLB:$srx"
+            . "\\tPL:$platform"
+            . "\\tSM:$name";
         my $lane = {
             file     => $file,
             srx      => $srx,
             platform => $platform,
+            layout   => $layout,
             srr      => $srr,
             rg_str   => $rg_str,
         };
@@ -85,13 +83,24 @@ ITEM: for my $name (@names) {
 }
 
 for my $item (@data) {
+    my $mybam = MyBAM->new(
+        base_dir => $base_dir,
+        bin_dir  => $bin_dir,
+        data_dir => $data_dir,
+        ref_file => $ref_file,
+        parallel => $parallel,
+        memory   => $memory,
+    );
+
     $mybam->head($item);
     $mybam->srr_dump_pe($item);
     $mybam->bwa_aln_pe($item);
     $mybam->merge_bam($item);
     $mybam->realign_dedup($item);
     $mybam->recal($item);
-    $mybam->fastq_fasta($item);
+    $mybam->calmd_baq($item);
+    $mybam->call_snp_indel($item);
+    $mybam->vcf_to_fasta($item);
     $mybam->clean($item);
 
     $mybam->write($item);
