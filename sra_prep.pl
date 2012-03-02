@@ -46,7 +46,7 @@ $csv->eol("\n");
 open my $csv_fh, ">", "$basename.csv";
 open my $ftp_fh, ">", "$basename.ftp.txt";
 
-$csv->print( $csv_fh, [qw{ name srx platform layout srr spot base rg_str }] );
+$csv->print( $csv_fh, [qw{ name srx platform layout srr spot base }] );
 for my $name ( sort keys %{$yml} ) {
     print "$name\n";
 
@@ -72,17 +72,8 @@ for my $name ( sort keys %{$yml} ) {
             my $spot = $info->{srr_info}{$srr}{spot};
             my $base = $info->{srr_info}{$srr}{base};
 
-            my $rg_str
-                = '@RG'
-                . "\tID:$srr"
-                . "\tLB:$srx"
-                . "\tPL:$platform"
-                . "\tSM:$name";
-            $csv->print(
-                $csv_fh,
-                [   $name, $srx, $platform, $layout, $srr, $spot, $base, $rg_str
-                ]
-            );
+            $csv->print( $csv_fh,
+                [ $name, $srx, $platform, $layout, $srr, $spot, $base, ] );
             print {$ftp_fh} $url, "\n";
         }
     }
