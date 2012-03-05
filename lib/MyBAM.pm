@@ -468,12 +468,12 @@ sub fastq_fasta {
 
     my $text = <<'EOF';
 # generate fastq from bam
-samtools mpileup -uf [% ref_file.seq %] [% item.dir %]/[% item.name %].recal.bam \
+samtools mpileup -uf [% ref_file.seq %] [% item.dir %]/[% item.name %].baq.bam \
     | bcftools view -cg - \
     | vcfutils.pl vcf2fq > [% item.dir %]/[% item.name %].fq
 
 # convert fastq to fasta 
-# mask bases with quality lower than 20 to lowercases
+# mask bases with quality lower than 20
 seqtk fq2fa [% item.dir %]/[% item.name %].fq 20 > [% item.dir %]/[% item.name %].fa
 
 EOF
@@ -502,13 +502,34 @@ sub vcf_to_fasta {
     my $tt = Template->new;
 
     my $text = <<'EOF';
+# bam to bed
+genomeCoverageBed -split -ibam [% item.dir %]/[% item.name %].baq.bam \
+    -g [% ref_file.sizes %] -bg > [% item.dir %]/[% item.name %].bg.bed
+[ $? -ne 0 ] && echo `date` [% item.name %] [bedtools bam to bed] failed >> [% base_dir %]/fail.log && exit 255
+
+# uncovered region
+cat [% item.dir %]/[% item.name %].bg.bed \
+    | awk '($4>1)'  \
+    | slopBed -i stdin -g [% ref_file.sizes %] -b 50 \
+    | mergeBed \
+    | complementBed  -i stdin -g [% ref_file.sizes %] \
+    > [% item.dir %]/[% item.name %].1x.bed
+
+# mask ref
+maskFastaFromBed -fi  [% ref_file.seq %] \
+    -bed [% item.dir %]/[% item.name %].1x.bed \
+    -fo [% item.dir %]/ref.masked.fa
+
 # vcf to new fasta
 java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T FastaAlternateReferenceMaker \
-    -R [% ref_file.seq %] \
+    -R [% item.dir %]/ref.masked.fa \
     --variant [% item.dir %]/[% item.name %].indel.vcf \
     --variant [% item.dir %]/[% item.name %].snp.vcf \
     -o [% item.dir %]/[% item.name %].vcf.fasta
+[ $? -ne 0 ] && echo `date` [% item.name %] [gatk alter fasta] failed >> [% base_dir %]/fail.log && exit 255
+
+rm [% item.dir %]/[% item.name %].bg.bed [% item.dir %]/ref.masked.*
 
 EOF
     my $output;
