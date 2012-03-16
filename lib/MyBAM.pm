@@ -15,6 +15,7 @@ has ref_file => ( is => 'rw', isa => 'HashRef', default => sub { {} }, );
 
 has parallel => ( is => 'rw', isa => 'Int', default => 4, );
 has memory   => ( is => 'rw', isa => 'Int', default => 1, );
+has tmpdir => ( is => 'rw', isa => 'Str', default => "/tmp", );
 
 has bash => ( is => 'ro', isa => 'Str' );
 has imr  => ( is => 'ro', isa => 'Str' );
@@ -105,6 +106,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -168,6 +170,70 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub bwa_aln_pe_picard {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+[% FOREACH lane IN item.lanes -%]
+# align pair reads to reference genome
+bwa aln -q 15 -t [% parallel %] [% ref_file.seq %] [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    > [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.sai
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [bwa aln] failed >> [% base_dir %]/fail.log && exit 255
+
+# align pair reads to reference genome
+bwa aln -q 15 -t [% parallel %] [% ref_file.seq %] [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+    > [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.sai
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [bwa aln] failed >> [% base_dir %]/fail.log && exit 255
+
+# convert sai to sam
+# add read groups info
+bwa sampe -r "[% lane.rg_str %]" \
+    [% ref_file.seq %] \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]*.sai \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]*.fastq.gz \
+    | gzip > [% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz
+[ $? -ne 0 ] && echo `date` [% item.name %] [bwa sampe] failed >> [% base_dir %]/fail.log && exit 255
+
+find [% item.dir %]/[% lane.srr %] -type f -name "*.fastq.gz" -o -name "*.sai" | xargs rm
+
+# convert sam to bam and fix mate info
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/FixMateInformation.jar \
+    INPUT=[% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz \
+    OUTPUT=[% item.dir %]/[% lane.srr %]/[% lane.srr %].bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+# clean
+mv [% item.dir %]/[% lane.srr %]/[% lane.srr %].bam [% item.dir %]/[% lane.srr %].srr.bam
+rm -fr [% item.dir %]/[% lane.srr %]/
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -211,6 +277,54 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub merge_bam_picard {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+[% IF item.lanes.size > 1 -%]
+# merge with picard
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/MergeSamFiles.jar \
+[% FOREACH lane IN item.lanes -%]
+    INPUT=[% item.dir %]/[% lane.srr %].srr.bam \
+[% END -%]
+    OUTPUT=[% item.dir %]/[% item.name %].sort.bam \
+    VALIDATION_STRINGENCY=LENIENT \
+    SORT_ORDER=coordinate \
+    USE_THREADING=True
+
+[% ELSE -%]
+# rename bam
+cp [% item.dir %]/[% item.lanes.0.srr %].srr.bam [% item.dir %]/[% item.name %].sort.bam
+
+[% END -%]
+# index bam
+samtools index [% item.dir %]/[% item.name %].sort.bam
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -227,7 +341,8 @@ sub realign_dedup {
 
     my $text = <<'EOF';
 # index regions for realignment
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
     -T RealignerTargetCreator \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].sort.bam  \
@@ -235,7 +350,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% paral
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk target] failed >> [% base_dir %]/fail.log && exit 255
 
 # realign bam to get better Indel calling
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T IndelRealigner \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].sort.bam \
@@ -245,7 +361,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
 rm [% item.dir %]/[% item.name %].sort.bam
 
 # dup marking
-java -Xmx[% memory %]g -jar [% bin_dir.pcd %]/MarkDuplicates.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/MarkDuplicates.jar \
     INPUT=[% item.dir %]/[% item.name %].realign.bam \
     OUTPUT=[% item.dir %]/[% item.name %].dedup.bam \
     METRICS_FILE=[% item.dir %]/output.metrics \
@@ -269,6 +386,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -285,7 +403,8 @@ sub recal {
 
     my $text = <<'EOF';
 # recalibration - Count covariates
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
     -T CountCovariates  \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].dedup.bam \
@@ -298,7 +417,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% paral
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk covariates] failed >> [% base_dir %]/fail.log && exit 255
 
 # recalibration - Tabulate recalibration
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T TableRecalibration  \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].dedup.bam \
@@ -319,6 +439,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -363,6 +484,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -371,7 +493,7 @@ EOF
     return;
 }
 
-sub call_snp_indel {
+sub call_snp_recal {
     my $self = shift;
     my $item = shift;
 
@@ -383,7 +505,8 @@ sub call_snp_indel {
 #    | bcftools view -vc - > [% item.dir %]/[% item.name %].snp.vcf
 
 # snp calling
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
     -T UnifiedGenotyper \
     -R [% ref_file.seq %] \
     -glm SNP \
@@ -395,7 +518,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% paral
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk snp calling] failed >> [% base_dir %]/fail.log && exit 255
 
 # snp recal
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
     -T VariantRecalibrator \
     -R [% ref_file.seq %] \
     -input [% item.dir %]/[% item.name %].snp.raw.vcf \
@@ -406,7 +530,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% paral
     -rscriptFile [% item.dir %]/[% item.name %].snp.plots.R
 
 # apply snp recal
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T ApplyRecalibration \
     -R [% ref_file.seq %] \
     -input [% item.dir %]/[% item.name %].snp.raw.vcf \
@@ -415,8 +540,98 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -recalFile [% item.dir %]/[% item.name %].snp.recal \
     -o [% item.dir %]/[% item.name %].snp.vcf
 
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub call_snp_filter {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+## call snp and skip indel calling by -I
+#samtools  mpileup -I -ugf [% ref_file.seq %] [% item.dir %]/[% item.name %].baq.bam \
+#    | bcftools view -vc - > [% item.dir %]/[% item.name %].snp.vcf
+
+# snp calling
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+    -T UnifiedGenotyper \
+    -R [% ref_file.seq %] \
+    -glm SNP \
+    -I [% item.dir %]/[% item.name %].baq.bam \
+    -o [% item.dir %]/[% item.name %].snp.raw.vcf \
+    -A AlleleBalance \
+    -A DepthOfCoverage \
+    -A FisherStrand
+[ $? -ne 0 ] && echo `date` [% item.name %] [gatk snp calling] failed >> [% base_dir %]/fail.log && exit 255
+
+# snp hard filter
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+    -T VariantFiltration \
+    -R [% ref_file.seq %] \
+    --variant [% item.dir %]/[% item.name %].snp.raw.vcf \
+    -o [% item.dir %]/[% item.name %].snp.vcf \
+    --filterExpression "QUAL<30.0" \
+    --filterName "LowQual" \
+    --filterExpression "SB>=-1.0" \
+    --filterName "StrandBias" \
+    --filterExpression "QD<1.0" \
+    --filterName "QualByDepth" \
+    --filterExpression "(MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1))" \
+    --filterName "HARD_TO_VALIDATE" \
+    --filterExpression "HRun>=15" \
+    --filterName "HomopolymerRun"
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub call_indel {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
 # indel calling
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
     -T UnifiedGenotyper \
     -R [% ref_file.seq %] \
     -glm INDEL \
@@ -425,7 +640,8 @@ java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% paral
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk indel calling] failed >> [% base_dir %]/fail.log && exit 255
 
 # indel hard filter
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T VariantFiltration \
     -R [% ref_file.seq %] \
     --variant [% item.dir %]/[% item.name %].indel.raw.vcf \
@@ -452,6 +668,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -487,6 +704,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -521,7 +739,8 @@ maskFastaFromBed -fi  [% ref_file.seq %] \
     -fo [% item.dir %]/ref.masked.fa
 
 # vcf to new fasta
-java -Xmx[% memory %]g -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
     -T FastaAlternateReferenceMaker \
     -R [% item.dir %]/ref.masked.fa \
     --variant [% item.dir %]/[% item.name %].indel.vcf \
@@ -542,6 +761,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -581,6 +801,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -621,6 +842,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -658,6 +880,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
@@ -688,6 +911,7 @@ EOF
             ref_file => $self->ref_file,
             parallel => $self->parallel,
             memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
         },
         \$output
     ) or die Template->error;
