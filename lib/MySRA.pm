@@ -32,10 +32,10 @@ sub srp_worker {
 
     $mech->get($url);
 
-    my @links = $mech->find_all_links( url_regex => => qr{sra\/[ES]RX\d+}, );
+    my @links = $mech->find_all_links( url_regex => => qr{sra\/[DES]RX\d+}, );
 
     printf "OK, get %d SRX\n", scalar @links;
-    @srx = map { /sra\/([ES]RX\d+)/; $1} map { $_->url } @links;
+    @srx = map { /sra\/([DES]RX\d+)/; $1 } map { $_->url } @links;
 
     return \@srx;
 }
@@ -58,13 +58,13 @@ sub srs_worker {
 
     # this link exists in both summary and detailed pages
     $mech->follow_link(
-        text_regex => qr{SRS\d+},
+        text_regex => qr{[DES]RS\d+},
         url_regex  => => qr{sample},
     );
 
     {
         my @links = $mech->find_all_links(
-            text_regex => qr{SRX\d+},
+            text_regex => qr{[DES]RX\d+},
             url_regex  => qr{report},
         );
 
@@ -123,7 +123,7 @@ sub srx_worker {
 
     {
         my ( @srr, @downloads );
-        my @links = $mech->find_all_links( text_regex => qr{[ES]RR}, );
+        my @links = $mech->find_all_links( text_regex => qr{[DES]RR}, );
         printf "OK, get %d SRR\n", scalar @links;
 
         @srr       = map { $_->text } @links;
@@ -143,7 +143,7 @@ sub srx_worker {
 
     {
         my @links = $mech->find_all_links(
-            text_regex => qr{[ES]RS},
+            text_regex => qr{[DES]RS},
             url_regex  => => qr{sample},
         );
         $info->{srs} = $links[0]->text;
