@@ -89,6 +89,7 @@ __END__
     sra_prep.pl - prepare for sra
 
 =head1 SYNOPSIS
+
     perl sra_prep.pl -y DGRP.yml -p illumina -l pair
 
     sra_stat.pl [options]
@@ -98,7 +99,7 @@ __END__
         -y, --yml           yaml file of sra info
         -p, --platform      illumina or 454
         -l, --layout        pair or single
-        
+
     perl sra_prep.pl -y dpgp.yml
 
     You can edit the generated csv file for custom filters.
