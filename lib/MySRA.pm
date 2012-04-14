@@ -117,6 +117,7 @@ sub srx_worker {
             text      => "sra",
             url_regex => => qr{ftp},
         );
+        return unless scalar @links;
         $info->{ftp_base} = $links[0]->url;
         ( $info->{srx} ) = reverse grep {$_} split /\//, $info->{ftp_base};
     }
