@@ -113,10 +113,7 @@ sub srx_worker {
     $info->{srr_info} = \%srr_info;
 
     {
-        my @links = $mech->find_all_links(
-            text      => "sra",
-            url_regex => => qr{ftp},
-        );
+        my @links = $mech->find_all_links( url_regex => => qr{ftp.*RX\/.RX}, );
         return unless scalar @links;
         $info->{ftp_base} = $links[0]->url;
         ( $info->{srx} ) = reverse grep {$_} split /\//, $info->{ftp_base};
@@ -152,6 +149,7 @@ sub srx_worker {
 
     {
         my $content = $mech->content;
+
         $content =~ s/^.+Accession\://s;
         $content =~ s/Download reads.+$//s;
         $content =~ s/$RE{balanced}{-parens=>'<>'}/ /g;
@@ -160,7 +158,7 @@ sub srx_worker {
         $content =~ s/\n+/\n/g;
         $content =~ s/\s{2,}/\n/g;
         my @lines = grep {$_} split /\n/, $content;
-
+        
         while (@lines) {
             my $line = shift @lines;
             if ( $line =~ /(sample|library|platform)\:\s+(.+)$/i ) {
