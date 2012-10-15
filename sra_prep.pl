@@ -90,7 +90,7 @@ __END__
 
 =head1 SYNOPSIS
 
-    perl sra_prep.pl -y DGRP.yml -p illumina -l pair
+    perl sra_prep.pl -y dpgp.yml -p illumina -l pair
 
     sra_stat.pl [options]
       Options:
@@ -100,7 +100,10 @@ __END__
         -p, --platform      illumina or 454
         -l, --layout        pair or single
 
-    perl sra_prep.pl -y dpgp.yml
+    Two files will be generated, dpgp.csv and dpgp.ftp.txt
 
     You can edit the generated csv file for custom filters.
-    And don't forget to rename modified csv.
+    And don't forget to rename the modified csv.
+
+    dpgp.ftp.txt containg all sra files' ftp url.
+    aria2c -x 12 -s 4 -i dpgp.ftp.txt
