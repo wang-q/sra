@@ -920,4 +920,52 @@ EOF
     return;
 }
 
+sub trinity_pe {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# trinity pe
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+# set stacksize to unlimited
+ulimit
+
+[% bin_dir.trinity %]/Trinity.pl --seqType fq --kmer_method meryl \
+    --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+    --min_contig_length 200 \
+    --output [% item.dir %]/[% lane.srr %] \
+    --CPU [% parallel %] --bfly_opts "-V 10 --stderr"
+    #--SS_lib_type RF \
+    #--paired_fragment_length 300  \
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
 1;
