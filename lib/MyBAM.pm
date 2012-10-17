@@ -113,7 +113,52 @@ EOF
 
     $self->{bash} .= $output;
     return;
+}
 
+sub sam_dump_pe {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+mkdir [% item.dir %]/[% lane.srr %]
+
+# sra to fastq (pair end)
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/SamToFastq.jar \
+    INPUT=[% lane.file %] \
+    FASTQ=[% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq \
+    SECOND_END_FASTQ=[% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq \
+    VALIDATION_STRINGENCY=LENIENT
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
+
+gzip [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq
+gzip [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
 }
 
 sub bwa_aln_pe {
@@ -298,7 +343,7 @@ sub merge_bam_picard {
 java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
     -jar [% bin_dir.pcd %]/MergeSamFiles.jar \
 [% FOREACH lane IN item.lanes -%]
-    INPUT=[% item.dir %]/[% lane.srr %].srr.bam \
+    INPUT=[% lane.file %] \
 [% END -%]
     OUTPUT=[% item.dir %]/[% item.name %].sort.bam \
     VALIDATION_STRINGENCY=LENIENT \
@@ -308,6 +353,53 @@ java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
 [% ELSE -%]
 # rename bam
 cp [% item.dir %]/[% item.lanes.0.srr %].srr.bam [% item.dir %]/[% item.name %].sort.bam
+
+[% END -%]
+# index bam
+samtools index [% item.dir %]/[% item.name %].sort.bam
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub merge_exist_bam_picard {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+[% IF item.lanes.size > 1 -%]
+# merge with picard
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/MergeSamFiles.jar \
+[% FOREACH lane IN item.lanes -%]
+    INPUT=[% lane.file %] \
+[% END -%]
+    OUTPUT=[% item.dir %]/[% item.name %].sort.bam \
+    VALIDATION_STRINGENCY=LENIENT \
+    SORT_ORDER=coordinate \
+    USE_THREADING=True
+
+[% ELSE -%]
+# rename bam
+cp [% lane.file %] [% item.dir %]/[% item.name %].sort.bam
 
 [% END -%]
 # index bam
