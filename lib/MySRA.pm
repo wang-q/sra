@@ -158,7 +158,7 @@ sub srx_worker {
         $content =~ s/\n+/\n/g;
         $content =~ s/\s{2,}/\n/g;
         my @lines = grep {$_} split /\n/, $content;
-        
+
         while (@lines) {
             my $line = shift @lines;
             if ( $line =~ /(sample|library|platform)\:\s+(.+)$/i ) {
@@ -168,6 +168,92 @@ sub srx_worker {
                 $info->{ lc $1 } = $2;
             }
         }
+    }
+
+    return $info;
+}
+
+sub wgs_worker {
+    my $self = shift;
+    my $term = shift;
+
+    my $mech = WWW::Mechanize->new;
+    $mech->stack_depth(0);    # no history to save memory
+
+    my $url_part = "http://www.ncbi.nlm.nih.gov/Traces/wgs/";
+    my $url      = $url_part . '?val=' . $term;
+    print $url, "\n";
+
+    my $info = { prefix => $term, };
+    $mech->get($url);
+
+    {                         # extract from tables
+        my $page    = $mech->content;
+        my @tables  = qw{ meta-table structured-comments };
+        my @columns = (
+            '#_of_Contigs',
+            'Total_length',
+            'Update_date',
+            'BioProject',
+            'Keywords',
+            'Organism',
+            'Assembly_Method',
+            'Assembly_Name',
+            'Genome_Coverage',
+            'Sequencing_Technology',
+        );
+
+        for my $table (@tables) {
+            print "Extract from table ", $table, "\n";
+            my $te
+                = HTML::TableExtract->new( attribs => { class => $table, }, );
+            $te->parse($page);
+
+            my %srr_info;
+            for my $ts ( $te->table_states ) {
+                for my $row ( $ts->rows ) {
+                    for my $cell (@$row) {
+                        if ($cell) {
+                            $cell =~ s/[,:]//g;
+                            $cell =~ s/^\s+//g;
+                            $cell =~ s/\s+$//g;
+                            $cell =~ s/\s+/ /g;
+                        }
+                    }
+                    next unless $row->[0];
+                    $row->[0] =~ s/\s+/_/g;
+                    next unless grep { $row->[0] eq $_ } @columns;
+
+                    $info->{ $row->[0] } = $row->[1];
+                }
+            }
+        }
+    }
+    
+    { # taxon id
+        my @links = $mech->find_all_links(
+            url_regex  => => qr{wwwtax},
+        );
+        if (@links and $links[0]->url =~ /\?id=(\d+)/) {
+            $info->{taxon_id} = $1;
+        }
+    }
+    
+    { # pubmed id
+        my @links = $mech->find_all_links(
+            url_regex  => => qr{\/pubmed\/},
+        );
+        if (@links and $links[0]->url =~ /\/pubmed\/(\d+)/) {
+            $info->{pubmed} = $1;
+        }
+    }
+
+    {    # downloads
+        my @links = $mech->find_all_links(
+            text_regex => qr{$term},
+            url_regex  => => qr{download=},
+        );
+        $info->{download} = [ map { $url_part . $_->url } @links ];
     }
 
     return $info;
