@@ -1012,6 +1012,101 @@ EOF
     return;
 }
 
+sub head_trinity {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#!/bin/bash
+start_time=`date +%s`
+
+cd [% base_dir %]
+
+if [ ! -d [% item.dir %] ];
+then
+    mkdir [% item.dir %];
+fi;
+
+# set stacksize to unlimited
+ulimit -s unlimited
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            ref_file => $self->ref_file,
+            item     => $item,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub ngsqc_pe {
+    my $self = shift;
+    my $item = shift;
+    
+    $item->{filtered} = 1;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# ngsqc pe
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+if [ ! -d [% item.dir %]/[% lane.srr %] ];
+then
+    mkdir [% item.dir %]/[% lane.srr %];
+fi;
+
+if [ ! -d [% item.dir %]/[% lane.srr %]/filtered  ];
+then
+    mkdir [% item.dir %]/[% lane.srr %]/filtered ;
+fi;
+
+perl [% bin_dir.ngsqc %]/QC/IlluQC_PRLL.pl -c [% parallel %] \
+[% IF lane.fq -%]
+    --pe [% lane.file.0 %] [% lane.file.1 %] \
+    2 4 \
+[% ELSE -%]
+    --pe [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+    2 4 \
+[% END -%]
+    -o [% item.dir %]/[% lane.srr %]/filtered 
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [ngsqc] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+
 sub trinity_pe {
     my $self = shift;
     my $item = shift;
@@ -1024,19 +1119,28 @@ sub trinity_pe {
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 
-# set stacksize to unlimited
-ulimit
-
-[% bin_dir.trinity %]/Trinity.pl --seqType fq --kmer_method meryl \
+perl [% bin_dir.trinity %]/Trinity.pl --seqType fq --JM 64G \
+[% IF lane.fq -%]
+[% IF item.filtered -%]
+    --left  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
+    --right [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
+    --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
+[% ELSE -%]
+    --left  [% lane.file.0 %] \
+    --right [% lane.file.1 %] \
+[% END -%]
+[% ELSE -%]
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+[% END -%]
     --min_contig_length 200 \
     --output [% item.dir %]/[% lane.srr %] \
-    --CPU [% parallel %] --bfly_opts "-V 10 --stderr"
+    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
+    --bflyHeapSpaceMax 64G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %]
     #--SS_lib_type RF \
     #--paired_fragment_length 300  \
 
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
 
 [% END -%]
 
