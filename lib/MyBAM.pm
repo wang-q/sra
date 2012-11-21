@@ -1047,6 +1047,83 @@ EOF
     return;
 }
 
+sub seqprep_pe {
+    my $self = shift;
+    my $item = shift;
+    
+    $item->{trimmed} = 1;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# seqprep pe
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+if [ ! -d [% item.dir %]/[% lane.srr %] ];
+then
+    mkdir [% item.dir %]/[% lane.srr %];
+fi;
+
+if [ ! -d [% item.dir %]/[% lane.srr %]/trimmed  ];
+then
+    mkdir [% item.dir %]/[% lane.srr %]/trimmed ;
+fi;
+
+[% bin_dir.seqprep %]/SeqPrep \
+[% IF lane.fq -%]
+    -f [% lane.file.0 %] \
+    -r [% lane.file.1 %] \
+[% ELSE -%]
+    -f [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    -r [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+[% END -%]
+[% IF lane.adapters.A -%]
+    -A [% lane.adapters.A %] \
+    -B [% lane.adapters.B %] \
+[% END -%]
+    -1 [% item.dir %]/[% lane.srr %]/trimmed/1.fq.gz \
+    -2 [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
+    -3 [% item.dir %]/[% lane.srr %]/trimmed/1.discard.fq.gz \
+    -4 [% item.dir %]/[% lane.srr %]/trimmed/2.discard.fq.gz \
+    -E [% item.dir %]/[% lane.srr %]/trimmed/alignments_trimmed.txt.gz \
+    -q 20 -L 20 
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [seqprep] failed >> [% base_dir %]/fail.log && exit 255
+
+cd [% item.dir %]/[% lane.srr %]/trimmed
+
+perl [% bin_dir.condetri %]/condetri.pl \
+    -fastq1 [% item.dir %]/[% lane.srr %]/trimmed/1.fq.gz \
+    -fastq2 [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
+    -prefix [% lane.srr %] \
+    -rmN -ml=0 -minlen=25
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [condetri] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
 sub ngsqc_pe {
     my $self = shift;
     my $item = shift;
@@ -1106,7 +1183,6 @@ EOF
     return;
 }
 
-
 sub trinity_pe {
     my $self = shift;
     my $item = shift;
@@ -1122,9 +1198,13 @@ sub trinity_pe {
 perl [% bin_dir.trinity %]/Trinity.pl --seqType fq --JM 64G \
 [% IF lane.fq -%]
 [% IF item.filtered -%]
-    --left  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
-    --right [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
+    --left   [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
+    --right  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
     --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
+[% ELSIF item.trimmed -%]
+    --left   [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim1.fastq \
+    --right  [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim2.fastq \
+    --single [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim_unpaired.fastq \
 [% ELSE -%]
     --left  [% lane.file.0 %] \
     --right [% lane.file.1 %] \
