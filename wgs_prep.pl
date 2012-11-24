@@ -132,6 +132,8 @@ my $master = {};
     else {
         print "Download files in $file_url\n";
     }
+    print "Use the following cmd to check .gz files\n";
+    print "find . -name \"*.gz\" | xargs gzip -t \n";
 }
 
 #----------------------------------------------------------#
