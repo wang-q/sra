@@ -1213,7 +1213,7 @@ perl [% bin_dir.trinity %]/Trinity.pl --seqType fq --JM 64G \
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
-    --min_contig_length 200 \
+    --min_contig_length 300 \
     --output [% item.dir %]/[% lane.srr %] \
     --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
     --bflyHeapSpaceMax 64G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %]
