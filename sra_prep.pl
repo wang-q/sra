@@ -107,3 +107,6 @@ __END__
 
     dpgp.ftp.txt containg all sra files' ftp url.
     aria2c -x 12 -s 4 -i dpgp.ftp.txt
+    
+    continue unfinished downloading
+    aria2c -x 12 -s 4 -i dpgp.ftp.txt -c
