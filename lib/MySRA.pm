@@ -164,7 +164,19 @@ sub srx_worker {
             if ( $line =~ /(sample|library|platform)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(layout)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Layout)\:\s+(\w+)/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(Strategy)\:\s+(\w+)/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(Source)\:\s+(\w+)/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(Selection)\:\s+(\w+)/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(Nominal length)\:\s+(\w+)/i ) {
                 $info->{ lc $1 } = $2;
             }
         }
@@ -191,16 +203,11 @@ sub wgs_worker {
         my $page    = $mech->content;
         my @tables  = qw{ meta-table structured-comments };
         my @columns = (
-            '#_of_Contigs',
-            'Total_length',
-            'Update_date',
-            'BioProject',
-            'Keywords',
-            'Organism',
-            'Assembly_Method',
-            'Assembly_Name',
-            'Genome_Coverage',
-            'Sequencing_Technology',
+            '#_of_Contigs',    'Total_length',
+            'Update_date',     'BioProject',
+            'Keywords',        'Organism',
+            'Assembly_Method', 'Assembly_Name',
+            'Genome_Coverage', 'Sequencing_Technology',
         );
 
         for my $table (@tables) {
@@ -229,21 +236,17 @@ sub wgs_worker {
             }
         }
     }
-    
-    { # taxon id
-        my @links = $mech->find_all_links(
-            url_regex  => => qr{wwwtax},
-        );
-        if (@links and $links[0]->url =~ /\?id=(\d+)/) {
+
+    {    # taxon id
+        my @links = $mech->find_all_links( url_regex => => qr{wwwtax}, );
+        if ( @links and $links[0]->url =~ /\?id=(\d+)/ ) {
             $info->{taxon_id} = $1;
         }
     }
-    
-    { # pubmed id
-        my @links = $mech->find_all_links(
-            url_regex  => => qr{\/pubmed\/},
-        );
-        if (@links and $links[0]->url =~ /\/pubmed\/(\d+)/) {
+
+    {    # pubmed id
+        my @links = $mech->find_all_links( url_regex => => qr{\/pubmed\/}, );
+        if ( @links and $links[0]->url =~ /\/pubmed\/(\d+)/ ) {
             $info->{pubmed} = $1;
         }
     }

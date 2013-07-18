@@ -1244,4 +1244,233 @@ EOF
     return;
 }
 
+sub soap_head {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#!/bin/bash
+start_time=`date +%s`
+
+cd [% base_dir %]
+
+if [ ! -d [% item.dir %] ];
+then
+    mkdir [% item.dir %];
+fi;
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub soap_srr_dump_pe {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------------------------------------#
+# srr dump
+#----------------------------------------------------------#
+    
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+mkdir [% item.dir %]/[% lane.srr %]
+
+# sra to fastq (pair end)
+[% bin_dir.stk %]/fastq-dump [% lane.file %] \
+    --split-files -O [% item.dir %]/[% lane.srr %]
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub soap_kmerfreq {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------------------------------------#
+# build Kmer frequency table
+#----------------------------------------------------------#
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+echo -e "[% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq" > [% item.dir %]/[% lane.srr %]/ReadFiles.lst
+echo -e "[% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq" >> [% item.dir %]/[% lane.srr %]/ReadFiles.lst
+
+[% bin_dir.soap %]/KmerFreq_AR [% item.dir %]/[% lane.srr %]/ReadFiles.lst \
+    -t [% parallel %] -k 17 -c -1 -q 33 -m 1 \
+    -p [% item.dir %]/[% lane.srr %]/[% lane.srr %] \
+    > [% item.dir %]/[% lane.srr %]/ReadsKmerfreq.log
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [kmer freq] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+    
+sub soap_corrector {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------------------------------------#
+# correct reads
+#----------------------------------------------------------#
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+[% bin_dir.soap %]/Corrector_AR \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %].freq.cz \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %].freq.cz.len \
+    [% item.dir %]/[% lane.srr %]/ReadFiles.lst \
+    -t [% parallel %] -k 17 -l 3 -a 0 -e 1 -w 0 -Q 33 -q 30 -x 8 -o 1 \
+    > [% item.dir %]/[% lane.srr %]/Reads_Correct.log \
+    2> [% item.dir %]/[% lane.srr %]/Reads_Correct.err
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [correct reads] failed >> [% base_dir %]/fail.log && exit 255
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub soap_denovo {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------------------------------------#
+# assemble reads
+#----------------------------------------------------------#
+
+#----------------------------#
+# config file
+#----------------------------#
+echo -e "max_rd_len=100\n" > [% item.dir %]/Lib.cfg
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+echo -e "[LIB]\navg_ins=[% lane.ilegnth %]"                       >> [% item.dir %]/Lib.cfg
+echo -e "asm_flags=3\nreverse_seq=0\nrank=1"                      >> [% item.dir %]/Lib.cfg
+echo -e "q1=[% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq" >> [% item.dir %]/Lib.cfg
+echo -e "q2=[% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq" >> [% item.dir %]/Lib.cfg
+
+[% END -%]
+
+#----------------------------#
+# SOAPdenovo
+#----------------------------#
+[% bin_dir.soap %]/SOAPdenovo-63mer all \
+    -s [% item.dir %]/Lib.cfg \
+    -p [% parallel %] -d 1 -F -K 31 -R \
+    -o [% item.dir %]/[% item.name %] \
+    >  [% item.dir %]/asm.log \
+    2> [% item.dir %]/asm.err
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [assemble reads] failed >> [% base_dir %]/fail.log && exit 255
+
+#----------------------------#
+# GapCloser
+#----------------------------#
+cp [% item.dir %]/Lib.cfg [% item.dir %]/GapCloser.cfg
+
+[% bin_dir.soap %]/GapCloser \
+    -a [% item.dir %]/[% item.name %].scafSeq \
+    -b [% item.dir %]/GapCloser.cfg \
+    -t [% parallel %] -l 100 -p 31 \
+    -o [% item.dir %]/[% item.name %].scafSeq.GC.fa \
+    > [% item.dir %]/GapCloser.log
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [GapCloser] failed >> [% base_dir %]/fail.log && exit 255
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+    
+
 1;

@@ -46,7 +46,7 @@ $csv->eol("\n");
 open my $csv_fh, ">", "$basename.csv";
 open my $ftp_fh, ">", "$basename.ftp.txt";
 
-$csv->print( $csv_fh, [qw{ name srx platform layout srr spot base }] );
+$csv->print( $csv_fh, [qw{ name srx platform layout ilength srr spot base }] );
 for my $name ( sort keys %{$yml} ) {
     print "$name\n";
 
@@ -56,6 +56,7 @@ for my $name ( sort keys %{$yml} ) {
 
         my $platform = $info->{platform};
         my $layout   = $info->{layout};
+        my $ilength  = $info->{"nominal length"};
         print " " x 8, $platform, " " x 8, $layout, "\n";
 
         if ($platform_rx) {
@@ -72,8 +73,12 @@ for my $name ( sort keys %{$yml} ) {
             my $spot = $info->{srr_info}{$srr}{spot};
             my $base = $info->{srr_info}{$srr}{base};
 
-            $csv->print( $csv_fh,
-                [ $name, $srx, $platform, $layout, $srr, $spot, $base, ] );
+            $csv->print(
+                $csv_fh,
+                [   $name,    $srx, $platform, $layout,
+                    $ilength, $srr, $spot,     $base,
+                ]
+            );
             print {$ftp_fh} $url, "\n";
         }
     }
@@ -109,4 +114,4 @@ __END__
     aria2c -x 12 -s 4 -i dpgp.ftp.txt
     
     continue unfinished downloading
-    aria2c -x 12 -s 4 -i dpgp.ftp.txt -c
+    aria2c -x 12 -s 4 -c -i dpgp.ftp.txt 
