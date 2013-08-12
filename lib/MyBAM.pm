@@ -1088,19 +1088,23 @@ fi;
     -3 [% item.dir %]/[% lane.srr %]/trimmed/1.discard.fq.gz \
     -4 [% item.dir %]/[% lane.srr %]/trimmed/2.discard.fq.gz \
     -E [% item.dir %]/[% lane.srr %]/trimmed/alignments_trimmed.txt.gz \
-    -q 20 -L 20 
+    -q 20 -L 25 
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [seqprep] failed >> [% base_dir %]/fail.log && exit 255
 
 cd [% item.dir %]/[% lane.srr %]/trimmed
 
-perl [% bin_dir.condetri %]/condetri.pl \
-    -fastq1 [% item.dir %]/[% lane.srr %]/trimmed/1.fq.gz \
-    -fastq2 [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
-    -prefix [% lane.srr %] \
-    -rmN -ml=0 -minlen=25
+[% bin_dir.sickle %]/sickle pe \
+    -t sanger \
+    -q 20 \
+    -l 20 \
+    -f [% item.dir %]/[% lane.srr %]/trimmed/1.fq.gz \
+    -r [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
+    -o [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
+    -p [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
+    -s [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq
 
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [condetri] failed >> [% base_dir %]/fail.log && exit 255
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 
 [% END -%]
 
@@ -1195,16 +1199,21 @@ sub trinity_pe {
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 
-perl [% bin_dir.trinity %]/Trinity.pl --seqType fq --JM 64G \
+perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
+    --JM [% memory %]G \
+    --inchworm_cpu [% parallel %] \
+    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
+    --bflyHeapSpaceMax [% memory %]G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %] \
+    --min_contig_length 300 \
 [% IF lane.fq -%]
 [% IF item.filtered -%]
     --left   [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
     --right  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
     --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
 [% ELSIF item.trimmed -%]
-    --left   [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim1.fastq \
-    --right  [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim2.fastq \
-    --single [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_trim_unpaired.fastq \
+    --left   [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
+    --right  [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
+    --single [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
 [% ELSE -%]
     --left  [% lane.file.0 %] \
     --right [% lane.file.1 %] \
@@ -1213,14 +1222,15 @@ perl [% bin_dir.trinity %]/Trinity.pl --seqType fq --JM 64G \
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
-    --min_contig_length 300 \
-    --output [% item.dir %]/[% lane.srr %] \
-    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
-    --bflyHeapSpaceMax 64G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %]
+    --output [% item.dir %]/[% lane.srr %]
     #--SS_lib_type RF \
     #--paired_fragment_length 300  \
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
+
+rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
+
+perl [% bin_dir.trinity %]/util/TrinityStats.pl [% item.dir %]/[% lane.srr %]/Trinity.fasta > [% item.dir %]/[% lane.srr %]/Trinity.Stats
 
 [% END -%]
 
