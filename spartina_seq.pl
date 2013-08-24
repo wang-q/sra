@@ -13,16 +13,17 @@ use lib "$FindBin::Bin/lib";
 
 use MyBAM;
 
-my $base_dir = File::Spec->catdir( $ENV{HOME}, "data/spartina" );
+my $base_dir = File::Spec->catdir( $ENV{HOME}, "data/rna-seq/spartina" );
 my $bin_dir = {
-    stk  => File::Spec->catdir( $ENV{HOME}, "share/sratoolkit" ),
-    gatk => File::Spec->catdir( $ENV{HOME}, "share/GenomeAnalysisTK" ),
-    pcd  => File::Spec->catdir( $ENV{HOME}, "share/picard" ),
+    script => $FindBin::Bin,
+    stk    => File::Spec->catdir( $ENV{HOME}, "share/sratoolkit" ),
+    gatk   => File::Spec->catdir( $ENV{HOME}, "share/GenomeAnalysisTK" ),
+    pcd    => File::Spec->catdir( $ENV{HOME}, "share/picard" ),
     trinity =>
-        File::Spec->catdir( $ENV{HOME}, "share/trinityrnaseq_r2012-10-05" ),
-    ngsqc    => File::Spec->catdir( $ENV{HOME}, "share/NGSQCToolkit_v2.3" ),
-    seqprep  => File::Spec->catdir( $ENV{HOME}, "bin" ),
-    condetri => File::Spec->catdir( $ENV{HOME}, "bin" ),
+        File::Spec->catdir( $ENV{HOME}, "share/trinityrnaseq_r2013-02-25" ),
+    ngsqc   => File::Spec->catdir( $ENV{HOME}, "share/NGSQCToolkit_v2.3" ),
+    seqprep => File::Spec->catdir( $ENV{HOME}, "bin" ),
+    sickle  => File::Spec->catdir( $ENV{HOME}, "bin" ),
 };
 my $data_dir = {
     sra  => File::Spec->catdir( $base_dir, "data" ),
@@ -34,8 +35,8 @@ my $adapters = {
     B => 'AGATCGGAAGAGCGTCGTGT ',
 };
 
-my $parallel = 12;
-my $memory   = 16;
+my $parallel = 16;
+my $memory   = 128;
 
 my $csv_file = "spartina.csv";
 
@@ -108,6 +109,7 @@ for my $item (@data) {
     $mybam->head_trinity($item);
     $mybam->seqprep_pe($item);
     $mybam->trinity_pe($item);
+    $mybam->trinity_rsem($item);
 
     $mybam->write($item);
 }

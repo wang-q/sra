@@ -1088,7 +1088,8 @@ fi;
     -3 [% item.dir %]/[% lane.srr %]/trimmed/1.discard.fq.gz \
     -4 [% item.dir %]/[% lane.srr %]/trimmed/2.discard.fq.gz \
     -E [% item.dir %]/[% lane.srr %]/trimmed/alignments_trimmed.txt.gz \
-    -q 20 -L 25 
+    -q 20 -L 20 \
+    2>&1 | tee -a [% base_dir %]/SeqPrep.log ; ( exit ${PIPESTATUS} )
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [seqprep] failed >> [% base_dir %]/fail.log && exit 255
 
@@ -1102,7 +1103,8 @@ cd [% item.dir %]/[% lane.srr %]/trimmed
     -r [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
     -p [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
-    -s [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq
+    -s [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
+    2>&1 | tee -a [% base_dir %]/sickle.log ; ( exit ${PIPESTATUS} )
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 
@@ -1199,6 +1201,8 @@ sub trinity_pe {
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 
+cd [% item.dir %]/[% lane.srr %]
+
 perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
     --JM [% memory %]G \
     --inchworm_cpu [% parallel %] \
@@ -1222,7 +1226,8 @@ perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
-    --output [% item.dir %]/[% lane.srr %]
+    --output [% item.dir %]/[% lane.srr %] \
+    2>&1 | tee -a [% base_dir %]/trinity.log ; ( exit ${PIPESTATUS} )
     #--SS_lib_type RF \
     #--paired_fragment_length 300  \
 
@@ -1230,8 +1235,87 @@ perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
 
 rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
 
-perl [% bin_dir.trinity %]/util/TrinityStats.pl [% item.dir %]/[% lane.srr %]/Trinity.fasta > [% item.dir %]/[% lane.srr %]/Trinity.Stats
+perl [% bin_dir.trinity %]/util/TrinityStats.pl \
+    [% item.dir %]/[% lane.srr %]/Trinity.fasta \
+    > [% item.dir %]/[% lane.srr %]/Trinity.Stats
 
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub trinity_rsem {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# trinity rsem
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+if [ ! -d [% item.dir %]/[% lane.srr %]/rsem  ];
+then
+    mkdir [% item.dir %]/[% lane.srr %]/rsem ;
+fi;
+
+cd [% item.dir %]/[% lane.srr %]/rsem
+
+perl [% bin_dir.trinity %]/util/RSEM_util/run_RSEM_align_n_estimate.pl \
+    --seqType fq \
+    --thread_count [% parallel %] \
+[% IF lane.fq -%]
+[% IF item.filtered -%]
+    --left   [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
+    --right  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
+    --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
+[% ELSIF item.trimmed -%]
+    --left   [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
+    --right  [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
+    --single [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
+[% ELSE -%]
+    --left  [% lane.file.0 %] \
+    --right [% lane.file.1 %] \
+[% END -%]
+[% ELSE -%]
+    --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+[% END -%]
+    --transcripts [% item.dir %]/[% lane.srr %]/Trinity.fasta \
+    2>&1 | tee -a [% base_dir %]/trinity_rsme.log ; ( exit ${PIPESTATUS} )
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity_rsem] failed >> [% base_dir %]/fail.log && exit 255
+
+perl [% bin_dir.script %]/trinity_unigene.pl \
+    -r [% item.dir %]/[% lane.srr %]/rsem/RSEM.isoforms.results \
+    -f [% item.dir %]/[% lane.srr %]/Trinity.fasta \
+    -o [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.fasta \
+    -u 
+
+perl [% bin_dir.trinity %]/util/TrinityStats.pl \
+    [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.fasta \
+    > [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.Stats
+    
+    
 [% END -%]
 
 EOF
