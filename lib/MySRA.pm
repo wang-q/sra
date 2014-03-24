@@ -10,6 +10,8 @@ use HTML::TableExtract;
 
 use YAML qw(Dump Load DumpFile LoadFile);
 
+has 'proxy' => ( is => 'rw', isa => 'Str', );
+
 sub BUILD {
     my $self = shift;
 
@@ -22,6 +24,7 @@ sub srp_worker {
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
+    $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/sra?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
@@ -46,6 +49,7 @@ sub srs_worker {
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
+    $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/biosample/?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
@@ -81,6 +85,7 @@ sub srx_worker {
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
+    $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
     my $url_part = "http://www.ncbi.nlm.nih.gov/sra?term=";
     my $url      = $url_part . $term;
@@ -133,15 +138,13 @@ sub srx_worker {
 
     {
         my @links = $mech->find_all_links(
-            text      => "Study",
-            url_regex => => qr{study},
+            url_regex => qr{study},
         );
         ( $info->{srp} ) = reverse grep {$_} split /\=/, $links[0]->url;
     }
 
     {
         my @links = $mech->find_all_links(
-            text_regex => qr{[DES]RS},
             url_regex  => => qr{sample},
         );
         $info->{srs} = $links[0]->text;
@@ -191,6 +194,7 @@ sub wgs_worker {
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
+    $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
     my $url_part = "http://www.ncbi.nlm.nih.gov/Traces/wgs/";
     my $url      = $url_part . '?val=' . $term;
