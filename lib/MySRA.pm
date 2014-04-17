@@ -35,7 +35,7 @@ sub srp_worker {
 
     $mech->get($url);
 
-    my @links = $mech->find_all_links( url_regex => => qr{sra\/[DES]RX\d+}, );
+    my @links = $mech->find_all_links( url_regex => qr{sra\/[DES]RX\d+}, );
 
     printf "OK, get %d SRX\n", scalar @links;
     @srx = map { /sra\/([DES]RX\d+)/; $1 } map { $_->url } @links;
@@ -137,29 +137,31 @@ sub srx_worker {
     }
 
     {
-        my @links = $mech->find_all_links(
-            url_regex => qr{study},
-        );
+        my @links = $mech->find_all_links( url_regex => qr{study}, );
         ( $info->{srp} ) = reverse grep {$_} split /\=/, $links[0]->url;
     }
 
     {
-        my @links = $mech->find_all_links(
-            url_regex  => => qr{sample},
-        );
+        my @links = $mech->find_all_links( url_regex => => qr{sample}, );
         $info->{srs} = $links[0]->text;
     }
 
     {
         my $content = $mech->content;
 
-        $content =~ s/^.+Accession\://s;
-        $content =~ s/Download reads.+$//s;
+        $content =~ s/\<br \/?\>/\n/g;        # turn <br> to real \n
+        $content =~ s/(\<\/span\>)/$1\n/g;    # turn </span> to real \n
+        $content =~ s/^.+?Accession\://s
+            ;    # remove content from top to first "Accession"
+        $content
+            =~ s/Total:.+?$//s;    # remove content from last "Total" to bottom
         $content =~ s/$RE{balanced}{-parens=>'<>'}/ /g;
         $content =~ s/$RE{balanced}{-parens=>'()'}/\n/g;
         $content =~ s/ +/ /g;
         $content =~ s/\n+/\n/g;
         $content =~ s/\s{2,}/\n/g;
+
+        #print $content;
         my @lines = grep {$_} split /\n/, $content;
 
         while (@lines) {
