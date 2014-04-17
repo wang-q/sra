@@ -29,12 +29,11 @@ sub BUILD {
 sub write {
     my $self = shift;
     my $item = shift;
-    my $bash = shift || 'bash';
     my $file = shift
-        || $self->data_dir->{bash} . "/" . $item->{name} . "_sra.sh";
+        || $self->data_dir->{bash} . "/" . "sra." . $item->{name} . ".sh";
 
     open my $fh, ">", $file;
-    print {$fh} $self->{$bash};
+    print {$fh} $self->bash;
     close $fh;
 
     return;
@@ -58,7 +57,7 @@ start_time=`date +%s`
 
 cd [% base_dir %]
 
-# index reference genome
+### index reference genome
 # bwa index -a bwtsw [% ref_file.seq %]
 # samtools faidx [% ref_file.seq %]
 
@@ -135,7 +134,7 @@ sub srr_dump {
 # lane [% lane.srr %]
 mkdir [% item.dir %]/[% lane.srr %]
 
-echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/srr_dump.log
+echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
 
 [% IF lane.layout == 'PAIRED' -%]
 # sra to fastq (pair end)
@@ -146,10 +145,10 @@ echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% ba
 [% bin_dir.stk %]/fastq-dump [% lane.file %] \
     --gzip -O [% item.dir %]/[% lane.srr %] \
 [% END -%]
-    2>&1 | tee -a [% base_dir %]/srr_dump.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
-echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/srr_dump.log
+echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
 
 [% END -%]
 
@@ -194,14 +193,14 @@ echo -e '[% FOREACH lane IN item.lanes %][% IF lane.layout == 'PAIRED' %][% lane
     | grep '.' \
     | parallel --jobs [% parallel %] --keep-order --colsep '\t' \
         'echo "* Start srr_dump [[% item.name %]] [{1}] `date`"; [% bin_dir.stk %]/fastq-dump {2} --split-files --gzip -O [% item.dir %]/{1}; echo "* End srr_dump [[% item.name %]] [{1}] `date`";' \
-    2>&1 | tee -a [% base_dir %]/srr_dump.log
+    2>&1 | tee -a [% data_dir.log %]/srr_dump.log
 
 # sra to fastq (single end)
 echo -e '[% FOREACH lane IN item.lanes %][% IF lane.layout == 'SINGLE' %][% lane.srr %]\t[% lane.file %]\n[% END %][% END %]' \
     | grep '.' \
     | parallel --jobs [% parallel %] --keep-order --colsep '\t' \
         'echo "* Start srr_dump [[% item.name %]] [{1}] `date`"; [% bin_dir.stk %]/fastq-dump {2} --gzip -O [% item.dir %]/{1}; echo "* End srr_dump [[% item.name %]] [{1}] `date`";' \
-    2>&1 | tee -a [% base_dir %]/srr_dump.log
+    2>&1 | tee -a [% data_dir.log %]/srr_dump.log
 
 EOF
     my $output;
@@ -236,7 +235,7 @@ sub fastqc {
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 
-echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/fastqc.log
+echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/fastqc.log
 
 [% IF lane.layout == 'PAIRED' -%]
 # fastqc (pair end)
@@ -249,7 +248,7 @@ echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
-    2>&1 | tee -a [% base_dir %]/fastqc.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/fastqc.log ; ( exit ${PIPESTATUS} )
 
 [% ELSE -%]
 # fastqc (single end)
@@ -259,12 +258,12 @@ echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base
 [% ELSE -%]
     [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
 [% END -%]
-    2>&1 | tee -a [% base_dir %]/fastqc.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/fastqc.log ; ( exit ${PIPESTATUS} )
 
 [% END -%]
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastqc[% IF item.sickle %].sickle[% END %]] failed >> [% base_dir %]/fail.log && exit 255
-echo "* End fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/fastqc.log
+echo "* End fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/fastqc.log
 
 [% END -%]
 
@@ -315,7 +314,7 @@ fi;
 
 cd [% item.dir %]/[% lane.srr %]/trimmed
 
-echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/scythe.log
+echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/scythe.log
 
 [% IF lane.layout == 'PAIRED' -%]
 # scythe (pair end)
@@ -351,7 +350,7 @@ echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base
 [% END -%]
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [scythe] failed >> [% base_dir %]/fail.log && exit 255
-echo "* End scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/scythe.log
+echo "* End scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/scythe.log
 
 [% END -%]
 
@@ -362,38 +361,397 @@ echo "* End scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_d
 # lane [% lane.srr %]
 cd [% item.dir %]/[% lane.srr %]/trimmed
 
-echo "* Start sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/sickle.log
+echo "* Start sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
 [% IF lane.layout == 'PAIRED' -%]
 # sickle (pair end)
 [% bin_dir.sickle %]/sickle pe \
-    -t sanger \
-    -q 20 \
-    -l 20 \
+    -t sanger -l 20 -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz \
     -r [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq \
     -p [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq \
     -s [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_single.sickle.fq \
-    2>&1 | tee -a [% base_dir %]/sickle.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/sickle.log ; ( exit ${PIPESTATUS} )
 
 [% ELSE -%]
 # sickle (single end)
 [% bin_dir.sickle %]/sickle se \
-    -t sanger \
-    -q 20 \
-    -l 20 \
+    -t sanger -l 20 -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq
-    2>&1 | tee -a [% base_dir %]/sickle.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/sickle.log ; ( exit ${PIPESTATUS} )
 
 [% END -%]
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
-echo "* End sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/sickle.log
+echo "* End sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
-find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" | parallel -j [% parallel %] gzip --fast
-echo "* Gzip sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% base_dir %]/sickle.log
+find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" | parallel -j [% parallel %] gzip --best
+echo "* Gzip sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub head_tophat {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#!/bin/bash
+start_time=`date +%s`
+
+### bash hints
+### 2>&1                        redirect stderr to stdout
+### | tee -a log.log            screen outputs also append to log file
+### ; ( exit ${PIPESTATUS} )    correct program exitting status
+### Only run parallel when you're sure that there are no errors.
+
+cd [% base_dir %]
+
+### bowtie index
+# bowtie2-build [% ref_file.seq %] [% ref_file.bowtie_index %]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            ref_file => $self->ref_file,
+            item     => $item,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub tophat {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# tophat
+#----------------------------#
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+cd [% item.dir %]/[% lane.srr %]/
+
+echo "* Start tophat [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/tophat.log
+
+[% IF lane.layout == 'PAIRED' -%]
+# tophat (pair end)
+[% bin_dir.tophat %]/tophat -p [% parallel %] \
+    -G [% ref_file.gtf %] \
+    -o [% item.dir %]/[% lane.srr %]/th_out \
+    [% ref_file.bowtie_index %] \
+[% IF item.sickle -%]
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq.gz \
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq.gz
+[% ELSE -%]
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz
+[% END -%]
+
+[% ELSE -%]
+# tophat (single end)
+[% bin_dir.tophat %]/tophat -p [% parallel %] \
+    -G [% ref_file.gtf %] \
+    -o [% item.dir %]/[% lane.srr %]/th_out \
+    [% ref_file.bowtie_index %] \
+[% IF item.sickle -%]
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq.gz
+[% ELSE -%]
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz
+[% END -%]
+
+[% END -%]
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [tophat] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End tophat [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/tophat.log
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub cufflinks {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# cufflinks
+#----------------------------#
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+cd [% item.dir %]/[% lane.srr %]/
+
+echo "* Start cufflinks [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cufflinks.log
+
+# cufflinks
+[% bin_dir.cuff %]/cufflinks -p [% parallel %] \
+    --no-update-check [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
+    -o [% item.dir %]/[% lane.srr %]/cl_out \
+    [% item.dir %]/[% lane.srr %]/th_out/accepted_hits.bam
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [cufflinks] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cufflinks [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cufflinks.log
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub cuffmerge {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+cd [% data_dir.proc %]
+
+#----------------------------#
+# config file
+#----------------------------#
+if [ -e [% data_dir.proc %]/assemblies.txt ]
+then
+    rm [% data_dir.proc %]/assemblies.txt
+fi
+
+[% FOREACH item IN data -%]
+[% FOREACH lane IN item.lanes -%]
+echo [% item.dir %]/[% lane.srr %]/cl_out/transcripts.gtf >> [% data_dir.proc %]/assemblies.txt
+[% END -%]
+[% END -%]
+
+#----------------------------#
+# cuffmerge
+#----------------------------#
+if [ -d [% data_dir.proc %]/merged_asm ]
+then
+    rm -fr [% data_dir.proc %]/merged_asm
+fi
+
+echo "* Start cuffmerge `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+[% bin_dir.cuff %]/cuffmerge -p [% parallel %] \
+    -g [% ref_file.gtf %] \
+    -s [% ref_file.seq %] \
+    -o [% data_dir.proc %]/merged_asm \
+    [% data_dir.proc %]/assemblies.txt
+
+[ $? -ne 0 ] && echo `date` ] [cuffmerge] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cuffmerge `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub cuffdiff {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+cd [% data_dir.proc %]
+
+#----------------------------#
+# cuffdiff
+#----------------------------#
+echo "* Start cuffdiff `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+[% bin_dir.cuff %]/cuffdiff -p [% parallel %] \
+    --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
+    -b [% ref_file.seq %] \
+    [% data_dir.proc %]/merged_asm/merged.gtf \
+    -L [% name_str = ''; name_str = name_str _ item.name _ ',' FOREACH item IN data; name_str FILTER remove('\,$') %] \
+[% FOREACH item IN data -%]
+[% bam_str = ''; bam_str = bam_str _ item.dir _ '/' _ lane.srr _ '/th_out/accepted_hits.bam' _ ',' FOREACH lane IN item.lanes -%]
+    [% bam_str FILTER remove('\,$') %] \
+[% END -%]
+    -o [% data_dir.proc %]/diff_out
+
+[ $? -ne 0 ] && echo `date` ] [cuffdiff] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cuffdiff `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub cuffdiff_cxb {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+cd [% data_dir.proc %]
+
+#----------------------------#
+# cuffdiff_cxb
+#----------------------------#
+echo "* Start cuffdiff_cxb `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+[% bin_dir.cuff %]/cuffdiff -p [% parallel %] \
+    --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
+    -b [% ref_file.seq %] \
+    [% data_dir.proc %]/merged_asm/merged.gtf \
+    -L [% name_str = ''; name_str = name_str _ item.name _ ',' FOREACH item IN data; name_str FILTER remove('\,$') %] \
+[% FOREACH item IN data -%]
+[% bam_str = ''; bam_str = bam_str _ item.dir _ '/' _ lane.srr _ '/cq_out/abundances.cxb' _ ',' FOREACH lane IN item.lanes -%]
+    [% bam_str FILTER remove('\,$') %] \
+[% END -%]
+    -o [% data_dir.proc %]/diff_out_cxb
+
+[ $? -ne 0 ] && echo `date` ] [cuffdiff_cxb] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cuffdiff_cxb `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub cuffquant {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# cuffquant
+#----------------------------#
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+cd [% item.dir %]/[% lane.srr %]/
+
+echo "* Start cuffquant [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cuffquant.log
+
+# cuffquant
+[% bin_dir.cuff %]/cuffquant -p [% parallel %] \
+    --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
+    -b [% ref_file.seq %] \
+    [% data_dir.proc %]/merged_asm/merged.gtf \
+    -o [% item.dir %]/[% lane.srr %]/cq_out \
+    [% item.dir %]/[% lane.srr %]/th_out/accepted_hits.bam
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [cuffquant] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cuffquant [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cuffquant.log
 
 [% END -%]
 
