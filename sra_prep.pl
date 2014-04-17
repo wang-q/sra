@@ -9,6 +9,7 @@ use YAML qw(Dump Load DumpFile LoadFile);
 
 use Text::CSV_XS;
 use File::Basename;
+use URI;
 
 #----------------------------------------------------------#
 # GetOpt section
@@ -43,8 +44,9 @@ my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
 $csv->eol("\n");
 
-open my $csv_fh, ">", "$basename.csv";
-open my $ftp_fh, ">", "$basename.ftp.txt";
+open my $csv_fh,    ">", "$basename.csv";
+open my $ftp_fh,    ">", "$basename.ftp.txt";
+open my $aspera_fh, ">", "$basename.aspera.txt";
 
 $csv->print( $csv_fh, [qw{ name srx platform layout ilength srr spot base }] );
 for my $name ( sort keys %{$yml} ) {
@@ -80,12 +82,25 @@ for my $name ( sort keys %{$yml} ) {
                 ]
             );
             print {$ftp_fh} $url, "\n";
+
+            {
+                my $ascp_bin = "~/.aspera/connect/bin/ascp";
+                my $key_file = "~/.aspera/connect/etc/asperaweb_id_dsa.openssh";
+                my $ncbi_prefix = 'anonftp@ftp-private.ncbi.nlm.nih.gov';
+                my $file_path   = URI->new($url)->path;
+
+                my $cmd_line
+                    = "$ascp_bin -TQ -k1 -i $key_file $ncbi_prefix:$file_path .";
+
+                print {$aspera_fh} $cmd_line, "\n";
+            }
         }
     }
 }
 
-close $ftp_fh;
 close $csv_fh;
+close $ftp_fh;
+close $aspera_fh;
 
 __END__
 
