@@ -90,7 +90,7 @@ for my $name ( sort keys %{$yml} ) {
                 my $file_path   = URI->new($url)->path;
 
                 my $cmd_line
-                    = "$ascp_bin -TQ -k1 -i $key_file $ncbi_prefix:$file_path .";
+                    = "$ascp_bin -TQ -k1 -p -v -i $key_file $ncbi_prefix:$file_path . ";
 
                 print {$aspera_fh} $cmd_line, "\n";
             }
