@@ -725,6 +725,53 @@ EOF
     return;
 }
 
+sub cuffnorm {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+cd [% data_dir.proc %]
+
+#----------------------------#
+# cuffdiff_cxb
+#----------------------------#
+echo "* Start cuffnorm `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+[% bin_dir.cuff %]/cuffnorm -p [% parallel %] \
+    --no-update-check \
+    [% data_dir.proc %]/merged_asm/merged.gtf \
+    -L [% name_str = ''; name_str = name_str _ item.name _ ',' FOREACH item IN data; name_str FILTER remove('\,$') %] \
+[% FOREACH item IN data -%]
+[% bam_str = ''; bam_str = bam_str _ item.dir _ '/' _ lane.srr _ '/cq_out/abundances.cxb' _ ',' FOREACH lane IN item.lanes -%]
+    [% bam_str FILTER remove('\,$') %] \
+[% END -%]
+    -o [% data_dir.proc %]/norm_out
+
+[ $? -ne 0 ] && echo `date` ] [cuffnorm] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End cuffnorm `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
 sub cuffquant {
     my $self = shift;
     my $item = shift;
