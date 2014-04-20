@@ -169,19 +169,25 @@ sub srx_worker {
             if ( $line =~ /(sample|library|platform)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(Layout)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Layout)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(Strategy)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Strategy)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(Source)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Source)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(Selection)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Selection)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
-            if ( $line =~ /(Nominal length)\:\s+(\w+)/i ) {
+            if ( $line =~ /(Nominal length)\:\s+(.+)$/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(Instrument model)\:\s+(.+)$/i ) {
+                $info->{ lc $1 } = $2;
+            }
+            if ( $line =~ /(readtype)\:\s+(.+)$/i ) {
                 $info->{ lc $1 } = $2;
             }
         }
