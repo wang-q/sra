@@ -45,13 +45,14 @@ $dir_output = "." unless $dir_output;
 #----------------------------------------------------------#
 # Read
 #----------------------------------------------------------#
-my $basename = basename( $file_input, ".txt", ".tab" );
+my $basename = basename( $file_input, ".txt", ".tab", ".tsv" );
 
 my $id_of = {};
 {
     my @lines = read_file($file_input);
     for my $line (@lines) {
-        my ( $name, $prefix ) = split /\s+/, $line;
+        $line =~ /^#/ and next;
+        my ( $name, $prefix ) = split /\t/, $line;
         $prefix or next;
         $id_of->{$name} = $prefix;
     }
@@ -70,7 +71,7 @@ my $master = {};
         $info->{name} = $key;
         $master->{$key} = $info;
     }
-    
+
     print "\n", "=" x 20, "\n";
     print "Finish scrapping\n";
 }
@@ -120,7 +121,7 @@ my $master = {};
 
     close $csv_fh;
     close $url_fh;
-    
+
     print "\n", "=" x 20, "\n";
     print ".csv generated.\n";
 
@@ -133,7 +134,7 @@ my $master = {};
         print "Download files in $file_url\n";
     }
     print "Use the following cmd to check .gz files\n";
-    print "find . -name \"*.gz\" | xargs gzip -t \n";
+    print "find $dir_output -name \"*.gz\" | xargs gzip -t \n";
 }
 
 #----------------------------------------------------------#
@@ -141,7 +142,7 @@ my $master = {};
 #----------------------------------------------------------#
 {
     my $file_data = File::Spec->catfile( $dir_output, "$basename.data.txt" );
-    
+
     my $text = <<'EOF';
 my @data = (
 [% FOREACH name IN names -%]
@@ -155,12 +156,10 @@ my @data = (
 );
 EOF
     my $tt = Template->new;
-    $tt->process(
-        \$text,
-        { names => [sort keys %{$id_of}], master => $master,},
-        $file_data
-    ) or die Template->error;
-    
+    $tt->process( \$text,
+        { names => [ sort keys %{$id_of} ], master => $master, }, $file_data )
+        or die Template->error;
+
     print "\n", "=" x 20, "\n";
     print ".data.txt generated.\n";
 }
@@ -173,7 +172,7 @@ exit;
 
 =head1 SYNOPSIS
 
-    perl wgs_prep.pl -a -f trichoderma.txt
+    perl wgs_prep.pl -a -f trichoderma.tsv -o WGS
 
     wgs_prep.pl [options]
       Options:

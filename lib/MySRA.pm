@@ -243,6 +243,7 @@ sub wgs_worker {
                     $row->[0] =~ s/\s+/_/g;
                     next unless grep { $row->[0] eq $_ } @columns;
 
+                    $row->[1] =~ s/\s+.\s+show.+lineage.+$//g;
                     $info->{ $row->[0] } = $row->[1];
                 }
             }
