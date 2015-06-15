@@ -1968,6 +1968,70 @@ EOF
     return;
 }
 
+sub trinity_se {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+# trinity se
+
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+
+cd [% item.dir %]/[% lane.srr %]
+
+perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
+    --JM [% memory %]G \
+    --inchworm_cpu [% parallel %] \
+    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
+    --bflyHeapSpaceMax [% memory %]G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %] \
+    --min_contig_length 50 \
+[% IF lane.fq -%]
+[% IF item.sickle -%]
+    --single [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq.gz \
+[% ELSE -%]
+    --single [% lane.file.0 %] \
+[% END -%]
+[% ELSE -%]
+    --single [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
+[% END -%]
+    --output [% item.dir %]/[% lane.srr %] \
+    2>&1 | tee -a [% base_dir %]/trinity.log ; ( exit ${PIPESTATUS} )
+    #--SS_lib_type RF \
+    #--paired_fragment_length 300  \
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
+
+rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
+
+perl [% bin_dir.trinity %]/util/TrinityStats.pl \
+    [% item.dir %]/[% lane.srr %]/Trinity.fasta \
+    > [% item.dir %]/[% lane.srr %]/Trinity.Stats
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
 sub trinity_rsem {
     my $self = shift;
     my $item = shift;
