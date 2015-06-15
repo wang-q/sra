@@ -25,13 +25,16 @@ my $data_dir = {
     proc => File::Spec->catdir( $base_dir, "process" ),
     bash => File::Spec->catdir( $base_dir, "bash" ),
 };
-my $parallel = 8;
-my $memory   = 4;
+
+my $parallel = 16;
+my $memory   = 128;
+
+my $csv_file = "dioscorea_villosa_leaf_stem_root.csv";
 
 my @rows;
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
-open my $fh, "<", "dioscorea_villosa_leaf_stem_root.csv";
+open my $fh, "<", $csv_file;
 $csv->getline($fh);    # skip headers
 while ( my $row = $csv->getline($fh) ) {
     push @rows, $row;
