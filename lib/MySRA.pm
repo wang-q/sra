@@ -18,6 +18,7 @@ sub BUILD {
     return;
 }
 
+# if the srp contains more than 200 srx, use erp_worker
 sub srp_worker {
     my $self = shift;
     my $term = shift;
@@ -39,6 +40,36 @@ sub srp_worker {
 
     printf "OK, get %d SRX\n", scalar @links;
     @srx = map { /sra\/([DES]RX\d+)/; $1 } map { $_->url } @links;
+
+    return \@srx;
+}
+
+sub erp_worker {
+    my $self = shift;
+    my $term = shift;
+
+    my $mech = WWW::Mechanize->new;
+    $mech->stack_depth(0);    # no history to save memory
+    $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
+
+    my $url_part1
+        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part2
+        = "&result=read_run&fields=secondary_study_accession,experiment_accession";
+    my $url = $url_part1 . $term . $url_part2;
+    print $url, "\n";
+
+    $mech->get($url);
+    my @line = split /\n/, $mech->content;
+
+    my @srx;
+    for (@line) {
+        if (/^$term\t([DES]RX\d+)/) {
+            push @srx, $1;
+
+        }
+    }
+    printf "OK, get %d SRX\n", scalar @srx;
 
     return \@srx;
 }

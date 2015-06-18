@@ -20,7 +20,7 @@ my $mysra = MySRA->new;
 
 
 print "$name\n";
-my @srx = @{ $mysra->srp_worker($name) };
+my @srx = @{ $mysra->erp_worker($name) };
 print "@srx\n";
 
 my $master = {};
