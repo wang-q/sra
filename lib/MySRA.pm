@@ -132,7 +132,13 @@ sub erx_worker {
 
     # prompt SRR
     chomp for @lines;
-    printf "OK, get %d SRR\n", scalar @lines;
+    if ( scalar @lines ) {
+        printf "OK, get %d SRR\n", scalar @lines;
+    }
+    else {
+        print "Can't get any SRR, please check.\n";
+        return;
+    }
 
     my $info = {
         sample   => "",
@@ -162,7 +168,7 @@ sub erx_worker {
         my @f = split /\t/, $line;
         print " " x 4, "$f[3]\n";
         push @srr,       $f[3];
-        push @downloads, $f[15];
+        push @downloads, "ftp://" . $f[15];
         $info->{srr_info}{ $f[3] } = {
             spot => $f[12],
             base => format_bytes( $f[13] ),
