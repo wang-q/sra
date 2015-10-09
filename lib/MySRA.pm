@@ -52,11 +52,9 @@ sub erp_worker {
     $mech->stack_depth(0);    # no history to save memory
     $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
-    my $url_part1
-        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
-    my $url_part2
-        = "&result=read_run&fields=secondary_study_accession,experiment_accession";
-    my $url = $url_part1 . $term . $url_part2;
+    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part2 = "&result=read_run&fields=secondary_study_accession,experiment_accession";
+    my $url       = $url_part1 . $term . $url_part2;
     print $url, "\n";
 
     $mech->get($url);
@@ -74,6 +72,7 @@ sub erp_worker {
     return \@srx;
 }
 
+# query sample name, not srs
 sub srs_worker {
     my $self = shift;
     my $term = shift;
@@ -110,7 +109,7 @@ sub srs_worker {
     return \@srx;
 }
 
-sub srx_worker {
+sub erx_worker {
     my $self = shift;
     my $term = shift;
 
@@ -118,9 +117,26 @@ sub srx_worker {
     $mech->stack_depth(0);    # no history to save memory
     $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
-    my $url_part = "http://www.ncbi.nlm.nih.gov/sra?term=";
-    my $url      = $url_part . $term;
+    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part2
+        = "&result=read_run&fields=secondary_study_accession,secondary_sample_accession,"
+        . "experiment_accession,run_accession,scientific_name,"
+        . "instrument_platform,instrument_model,"
+        . "library_name,library_layout,nominal_length,library_source,library_selection,"
+        . "read_count,base_count,sra_md5,sra_ftp&download=txt";
+    my $url = $url_part1 . $term . $url_part2;
     print $url, "\n";
+
+    $mech->get($url);
+    my @lines = split /\n/, $mech->content;
+
+    # header line
+    shift @lines;
+    
+    # prompt SRR
+    chomp for @lines;
+    printf "OK, get %d SRR\n", scalar @lines;
+
 
     my $info = {
         sample   => "",
@@ -129,100 +145,37 @@ sub srx_worker {
         layout   => "",
     };
 
-    $mech->get($url);
-
-    my $page = $mech->content;
-    my $te   = HTML::TableExtract->new;
-    $te->parse($page);
-
-    my %srr_info;
-    for my $ts ( $te->table_states ) {
-        for my $row ( $ts->rows ) {
-            for my $cell (@$row) {
-                $cell =~ s/,//g;
-                $cell =~ s/\s+//g;
-            }
-            next unless $row->[0] =~ /\d+/;
-            $srr_info{ $row->[1] } = { spot => $row->[2], base => $row->[3] };
-        }
-    }
-    $info->{srr_info} = \%srr_info;
-
     {
-        my @links = $mech->find_all_links( url_regex => => qr{ftp.*RX\/.RX}, );
-        return unless scalar @links;
-        $info->{ftp_base} = $links[0]->url;
-        ( $info->{srx} ) = reverse grep {$_} split /\//, $info->{ftp_base};
+        my @f = split /\t/, $lines[0];
+        $info->{srp}                = $f[0];
+        $info->{srs}                = $f[1];
+        $info->{srx}                = $f[2];
+        $info->{scientific_name}    = $f[4];
+        $info->{platform}           = $f[5];
+        $info->{"instrument model"} = $f[6];
+        $info->{library}            = $f[7];
+        $info->{layout}             = $f[8];
+        $info->{"nominal length"}   = $f[9];
+        $info->{source}             = $f[10];
+        $info->{selection}          = $f[11];
     }
 
-    {
-        my ( @srr, @downloads );
-        my @links = $mech->find_all_links( text_regex => qr{[DES]RR}, );
-        printf "OK, get %d SRR\n", scalar @links;
-
-        @srr       = map { $_->text } @links;
-        @downloads = map { $info->{ftp_base} . "/$_/$_.sra" } @srr;
-
-        $info->{srr}       = \@srr;
-        $info->{downloads} = \@downloads;
+    my ( @srr, @srr_info, @download );
+    for my $line (@lines) {
+        my @f = split /\t/, $line;
+        print " " x 4, "$f[3]\n";
+        push @srr,      $f[3];
+        push @download, $f[15];
+        push @srr_info,
+            {
+            spot => $f[12],
+            base => $f[13],
+            md5  => $f[14],
+            };
     }
-
-    {
-        my @links = $mech->find_all_links( url_regex => qr{study}, );
-        ( $info->{srp} ) = reverse grep {$_} split /\=/, $links[0]->url;
-    }
-
-    {
-        my @links = $mech->find_all_links( url_regex => => qr{sample}, );
-        $info->{srs} = $links[0]->text;
-    }
-
-    {
-        my $content = $mech->content;
-
-        $content =~ s/\<br \/?\>/\n/g;        # turn <br> to real \n
-        $content =~ s/(\<\/span\>)/$1\n/g;    # turn </span> to real \n
-        $content =~ s/^.+?Accession\://s
-            ;    # remove content from top to first "Accession"
-        $content
-            =~ s/Total:.+?$//s;    # remove content from last "Total" to bottom
-        $content =~ s/$RE{balanced}{-parens=>'<>'}/ /g;
-        $content =~ s/$RE{balanced}{-parens=>'()'}/\n/g;
-        $content =~ s/ +/ /g;
-        $content =~ s/\n+/\n/g;
-        $content =~ s/\s{2,}/\n/g;
-
-        #print $content;
-        my @lines = grep {$_} split /\n/, $content;
-
-        while (@lines) {
-            my $line = shift @lines;
-            if ( $line =~ /(sample|library|platform)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Layout)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Strategy)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Source)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Selection)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Nominal length)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(Instrument model)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-            if ( $line =~ /(readtype)\:\s+(.+)$/i ) {
-                $info->{ lc $1 } = $2;
-            }
-        }
-    }
+    $info->{srr}      = \@srr;
+    $info->{srr_info} = \@srr_info;
+    $info->{download} = \@download;
 
     return $info;
 }
