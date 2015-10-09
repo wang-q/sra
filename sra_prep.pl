@@ -17,6 +17,7 @@ use URI;
 my $yml_file;
 my $platform_rx;
 my $layout_rx;
+my $ascp;
 
 my $man  = 0;
 my $help = 0;
@@ -27,6 +28,7 @@ GetOptions(
     'y|yml=s'      => \$yml_file,
     'p|platform=s' => \$platform_rx,
     'l|layout=s'   => \$layout_rx,
+    'ascp'         => \$ascp,
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -44,9 +46,12 @@ my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
 $csv->eol("\n");
 
-open my $csv_fh,    ">", "$basename.csv";
-open my $ftp_fh,    ">", "$basename.ftp.txt";
-open my $aspera_fh, ">", "$basename.aspera.txt";
+open my $csv_fh, ">", "$basename.csv";
+open my $ftp_fh, ">", "$basename.ftp.txt";
+my $aspera_fh;
+if ($ascp) {
+    open $aspera_fh, ">", "$basename.aspera.txt";
+}
 
 $csv->print( $csv_fh, [qw{ name srx platform layout ilength srr spot base }] );
 for my $name ( sort keys %{$yml} ) {
@@ -75,22 +80,17 @@ for my $name ( sort keys %{$yml} ) {
             my $spot = $info->{srr_info}{$srr}{spot};
             my $base = $info->{srr_info}{$srr}{base};
 
-            $csv->print(
-                $csv_fh,
-                [   $name,    $srx, $platform, $layout,
-                    $ilength, $srr, $spot,     $base,
-                ]
-            );
+            $csv->print( $csv_fh,
+                [ $name, $srx, $platform, $layout, $ilength, $srr, $spot, $base, ] );
             print {$ftp_fh} $url, "\n";
 
-            {
-                my $ascp_bin = "~/.aspera/connect/bin/ascp";
-                my $key_file = "~/.aspera/connect/etc/asperaweb_id_dsa.openssh";
+            if ($ascp) {
+                my $ascp_bin    = "~/.aspera/connect/bin/ascp";
+                my $key_file    = "~/.aspera/connect/etc/asperaweb_id_dsa.openssh";
                 my $ncbi_prefix = 'anonftp@ftp-private.ncbi.nlm.nih.gov';
                 my $file_path   = URI->new($url)->path;
 
-                my $cmd_line
-                    = "$ascp_bin -TQ -k1 -p -v -i $key_file $ncbi_prefix:$file_path . ";
+                my $cmd_line = "$ascp_bin -TQ -k1 -p -v -i $key_file $ncbi_prefix:$file_path . ";
 
                 print {$aspera_fh} $cmd_line, "\n";
             }
@@ -100,13 +100,15 @@ for my $name ( sort keys %{$yml} ) {
 
 close $csv_fh;
 close $ftp_fh;
-close $aspera_fh;
+if ($ascp) {
+    close $aspera_fh;
+}
 
 __END__
 
 =head1 NAME
 
-    sra_prep.pl - prepare for sra
+sra_prep.pl - prepare for sra
 
 =head1 SYNOPSIS
 
@@ -119,6 +121,7 @@ __END__
         -y, --yml           yaml file of sra info
         -p, --platform      illumina or 454
         -l, --layout        pair or single
+        --ascp              generate a aspera file
 
     Two files will be generated, dpgp.csv and dpgp.ftp.txt
 
@@ -130,3 +133,5 @@ __END__
     
     continue unfinished downloading
     aria2c -x 12 -s 4 -c -i dpgp.ftp.txt 
+
+=cut
