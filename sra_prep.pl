@@ -18,6 +18,7 @@ my $yml_file;
 my $platform_rx;
 my $layout_rx;
 my $ascp;
+my $md5;
 
 my $man  = 0;
 my $help = 0;
@@ -29,6 +30,7 @@ GetOptions(
     'p|platform=s' => \$platform_rx,
     'l|layout=s'   => \$layout_rx,
     'ascp'         => \$ascp,
+    'md5'          => \$md5,
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -49,8 +51,12 @@ $csv->eol("\n");
 open my $csv_fh, ">", "$basename.csv";
 open my $ftp_fh, ">", "$basename.ftp.txt";
 my $aspera_fh;
+my $md5_fh;
 if ($ascp) {
     open $aspera_fh, ">", "$basename.aspera.txt";
+}
+if ($md5) {
+    open $md5_fh, ">", "$basename.md5.txt";
 }
 
 $csv->print( $csv_fh, [qw{ name srx platform layout ilength srr spot base }] );
@@ -60,6 +66,10 @@ for my $name ( sort keys %{$yml} ) {
     for my $srx ( sort keys %{ $yml->{$name} } ) {
         my $info = $yml->{$name}{$srx};
         print " " x 4, "$srx\n";
+        if ( !defined $yml->{$name}{$srx} ) {
+            print " " x 8, "Empty record\n";
+            next;
+        }
 
         my $platform = $info->{platform};
         my $layout   = $info->{layout};
@@ -94,6 +104,10 @@ for my $name ( sort keys %{$yml} ) {
 
                 print {$aspera_fh} $cmd_line, "\n";
             }
+
+            if ($md5) {
+                printf {$md5_fh} "%s\t%s\n", $info->{srr_info}{$srr}{md5}, $srr;
+            }
         }
     }
 }
@@ -102,6 +116,9 @@ close $csv_fh;
 close $ftp_fh;
 if ($ascp) {
     close $aspera_fh;
+}
+if ($md5) {
+    close $md5_fh;
 }
 
 __END__
@@ -122,6 +139,7 @@ sra_prep.pl - prepare for sra
         -p, --platform      illumina or 454
         -l, --layout        pair or single
         --ascp              generate a aspera file
+        --md5               generate a md5sum file
 
     Two files will be generated, dpgp.csv and dpgp.ftp.txt
 
