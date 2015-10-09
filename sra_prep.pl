@@ -25,7 +25,7 @@ my $help = 0;
 GetOptions(
     'help|?'       => \$help,
     'man'          => \$man,
-    'y|yml=s'      => \$yml_file,
+    'i|yml=s'      => \$yml_file,
     'p|platform=s' => \$platform_rx,
     'l|layout=s'   => \$layout_rx,
     'ascp'         => \$ascp,
@@ -112,13 +112,13 @@ sra_prep.pl - prepare for sra
 
 =head1 SYNOPSIS
 
-    perl sra_prep.pl -y dpgp.yml -p illumina -l pair
+    perl sra_prep.pl -i dpgp.yml -p illumina -l pair
 
     sra_stat.pl [options]
       Options:
         --help              brief help message
         --man               full documentation
-        -y, --yml           yaml file of sra info
+        -i, --yml           yaml file of sra info
         -p, --platform      illumina or 454
         -l, --layout        pair or single
         --ascp              generate a aspera file
