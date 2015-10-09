@@ -3,10 +3,7 @@ use Moose;
 use Carp;
 
 use WWW::Mechanize;
-use Regexp::Common qw(balanced);
-use List::MoreUtils qw(uniq zip);
-use List::Util qw(first max maxstr min minstr reduce shuffle sum);
-use HTML::TableExtract;
+use Number::Format qw(:subs);
 
 use YAML qw(Dump Load DumpFile LoadFile);
 
@@ -132,17 +129,17 @@ sub erx_worker {
 
     # header line
     shift @lines;
-    
+
     # prompt SRR
     chomp for @lines;
     printf "OK, get %d SRR\n", scalar @lines;
-
 
     my $info = {
         sample   => "",
         library  => "",
         platform => "",
         layout   => "",
+        srr_info => {},
     };
 
     {
@@ -160,22 +157,20 @@ sub erx_worker {
         $info->{selection}          = $f[11];
     }
 
-    my ( @srr, @srr_info, @download );
+    my ( @srr, @downloads );
     for my $line (@lines) {
         my @f = split /\t/, $line;
         print " " x 4, "$f[3]\n";
-        push @srr,      $f[3];
-        push @download, $f[15];
-        push @srr_info,
-            {
+        push @srr,       $f[3];
+        push @downloads, $f[15];
+        $info->{srr_info}{ $f[3] } = {
             spot => $f[12],
-            base => $f[13],
+            base => format_bytes( $f[13] ),
             md5  => $f[14],
-            };
+        };
     }
-    $info->{srr}      = \@srr;
-    $info->{srr_info} = \@srr_info;
-    $info->{download} = \@download;
+    $info->{srr}       = \@srr;
+    $info->{downloads} = \@downloads;
 
     return $info;
 }
