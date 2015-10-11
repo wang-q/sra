@@ -1,26 +1,21 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use autodie;
 
-use Getopt::Long;
-use Pod::Usage;
+use Tie::IxHash;
 use YAML qw(Dump Load DumpFile LoadFile);
-
-use List::MoreUtils qw(uniq zip);
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-
 use MySRA;
-
-#my $mysra = MySRA->new;
-my $mysra = MySRA->new( proxy => "http://127.0.0.1:8087" );
 
 # http://intermine.modencode.org/query/experiment.do?experiment=Tissue-specific+Transcriptional+Profiling+of+D.+melanogaster+using+Illumina+poly%28A%29%2B+RNA-Seq
 # http://www.ebi.ac.uk/ena/data/view/SRP003905
-# http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=SRP003905&result=read_run&fields=study_accession,secondary_study_accession,sample_accession,secondary_sample_accession,experiment_accession,run_accession,scientific_name,instrument_model,library_layout,run_file_md5
 
-my $name_of = {
+my $file    = "dmel_transcriptome";
+tie my %name_of, "Tie::IxHash";
+%name_of = (
     SRS118258 => "mated_female_eclosion_1d_heads",
     SRS118259 => "mated_female_eclosion_20d_heads",
     SRS118260 => "mated_female_eclosion_4d_heads",
@@ -50,23 +45,25 @@ my $name_of = {
     SRS118284 => "WPP_2d_fat_body",
     SRS118285 => "WPP_fat_body",
     SRS118286 => "WPP_salivary_glands",
-};
+
+);
+my $mysra = MySRA->new;
 
 my $master = {};
-for my $srs ( sort keys %{$name_of} ) {
+for my $key ( keys %name_of ) {
 
-    my $name = $name_of->{$srs};
-    print "$srs\t$name\n";
+    my $name = $name_of{$key};
+    print "$key\t$name\n";
 
-    my @srx = @{ $mysra->srp_worker($srs) };
+    my @srx = @{ $mysra->srp_worker($key) };
     print "@srx\n";
 
     my $sample = {};
     for (@srx) {
-        $sample->{$_} = $mysra->srx_worker($_);
+        $sample->{$_} = $mysra->erx_worker($_);
     }
     $master->{$name} = $sample;
     print "\n";
 }
 
-DumpFile( "dmel_transcriptome.yml", $master );
+DumpFile( "$file.yml", $master );
