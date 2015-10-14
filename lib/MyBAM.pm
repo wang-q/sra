@@ -18,7 +18,6 @@ has memory   => ( is => 'rw', isa => 'Int', default => 1, );
 has tmpdir   => ( is => 'rw', isa => 'Str', default => "/tmp", );
 
 has bash => ( is => 'ro', isa => 'Str' );
-has imr  => ( is => 'ro', isa => 'Str' );
 
 sub BUILD {
     my $self = shift;
@@ -387,7 +386,7 @@ sickle se \
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 echo "* End sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
-find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" | parallel -j [% parallel %] gzip --best
+find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" | parallel -j [% parallel %] gzip -f
 echo "* Gzip sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
 [% END -%]
@@ -1609,47 +1608,6 @@ EOF
     return;
 }
 
-sub imr_denom_desc {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-#---example2.t---
-outputfolder [% item.dir %]/
-reference [% ref_file.seq %]
-iterations 5
-threads 8
-maxreads 4000000
-
-[% FOREACH lane IN item.lanes -%]
-#Group [% loop.index + 1 %]
-grouppara_[% loop.index + 1 %] ID:[% lane.srr %],LB:[% lane.srx %],PL:[% lane.platform %],SM:[% item.name %]
-loaddata_[% loop.index + 1 %] [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz
-
-[% END -%]
-## ---end--
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{imr} .= $output;
-    return;
-}
-
 sub srr_dump_pe_q64 {
     my $self = shift;
     my $item = shift;
@@ -1687,36 +1645,6 @@ EOF
     $self->{bash} .= $output;
     return;
 
-}
-
-sub imr_run {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-# imr
-imr easyrun [% item.desc_file %] -m bwa
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
 }
 
 sub head_trinity {
@@ -1802,17 +1730,18 @@ fi;
 
 cd [% item.dir %]/[% lane.srr %]/trimmed
 
-[% bin_dir.sickle %]/sickle pe \
+# sickle (pair end)
+sickle pe \
     -t sanger \
     -q 20 \
     -l 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/1.fq.gz \
     -r [% item.dir %]/[% lane.srr %]/trimmed/2.fq.gz \
-    -o [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
-    -p [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
-    -s [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
-    2>&1 | tee -a [% base_dir %]/sickle.log ; ( exit ${PIPESTATUS} )
-
+    -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq \
+    -p [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq \
+    -s [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_single.sickle.fq \
+    2>&1 | tee -a [% data_dir.log %]/sickle.log ; ( exit ${PIPESTATUS} )
+    
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 
 [% END -%]
@@ -1837,171 +1766,48 @@ EOF
     return;
 }
 
-sub ngsqc_pe {
-    my $self = shift;
-    my $item = shift;
-
-    $item->{filtered} = 1;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-# ngsqc pe
-
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-
-if [ ! -d [% item.dir %]/[% lane.srr %] ];
-then
-    mkdir [% item.dir %]/[% lane.srr %];
-fi;
-
-if [ ! -d [% item.dir %]/[% lane.srr %]/filtered  ];
-then
-    mkdir [% item.dir %]/[% lane.srr %]/filtered ;
-fi;
-
-perl [% bin_dir.ngsqc %]/QC/IlluQC_PRLL.pl -c [% parallel %] \
-[% IF lane.fq -%]
-    --pe [% lane.file.0 %] [% lane.file.1 %] \
-    2 4 \
-[% ELSE -%]
-    --pe [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
-    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
-    2 4 \
-[% END -%]
-    -o [% item.dir %]/[% lane.srr %]/filtered 
-
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [ngsqc] failed >> [% base_dir %]/fail.log && exit 255
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
-sub trinity_pe {
+# All lanes should be the same, PAIRED or SINGLE
+sub trinity {
     my $self = shift;
     my $item = shift;
 
     my $tt = Template->new;
 
     my $text = <<'EOF';
-# trinity pe
-
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
+#----------------------------#
+# trinity
+#----------------------------#
+# item [% item.name %]
 
 cd [% item.dir %]/[% lane.srr %]
 
-perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
-    --JM [% memory %]G \
-    --inchworm_cpu [% parallel %] \
-    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
-    --bflyHeapSpaceMax [% memory %]G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %] \
-    --min_contig_length 300 \
-[% IF lane.fq -%]
-[% IF item.filtered -%]
-    --left   [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
-    --right  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
-    --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
-[% ELSIF item.trimmed -%]
-    --left   [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
-    --right  [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
-    --single [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
-[% ELSE -%]
+perl [% bin_dir.trinity %]/Trinity --seqType fq \
+    --max_memory [% memory %]G \
+    --CPU [% parallel %] \
+    --min_contig_length 200 \
+[% IF item.lanes.0.layout == 'PAIRED' -%]
+[% IF item.sickle -%]
+    --left  [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '_1.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+    --right [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '_2.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+[% ELSIF lane.fq -%]
     --left  [% lane.file.0 %] \
     --right [% lane.file.1 %] \
-[% END -%]
 [% ELSE -%]
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
-    --output [% item.dir %]/[% lane.srr %] \
-    2>&1 | tee -a [% base_dir %]/trinity.log ; ( exit ${PIPESTATUS} )
-    #--SS_lib_type RF \
-    #--paired_fragment_length 300  \
-
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
-
-rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
-
-perl [% bin_dir.trinity %]/util/TrinityStats.pl \
-    [% item.dir %]/[% lane.srr %]/Trinity.fasta \
-    > [% item.dir %]/[% lane.srr %]/Trinity.Stats
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
-sub trinity_se {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-# trinity se
-
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-
-cd [% item.dir %]/[% lane.srr %]
-
-perl [% bin_dir.trinity %]/Trinity.pl --seqType fq \
-    --JM [% memory %]G \
-    --inchworm_cpu [% parallel %] \
-    --CPU [% parallel %] --bfly_opts "-V 10 --stderr" \
-    --bflyHeapSpaceMax [% memory %]G --bflyHeapSpaceInit 32G --bflyCPU [% parallel %] \
-    --min_contig_length 50 \
-[% IF lane.fq -%]
+[% ELSE -%]
 [% IF item.sickle -%]
-    --single [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq.gz \
-[% ELSE -%]
+    --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+[% ELSIF lane.fq -%]
     --single [% lane.file.0 %] \
-[% END -%]
 [% ELSE -%]
-    --single [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
+    --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/' _ lane.srr _ 'fastq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
 [% END -%]
-    --output [% item.dir %]/[% lane.srr %] \
-    2>&1 | tee -a [% base_dir %]/trinity.log ; ( exit ${PIPESTATUS} )
-    #--SS_lib_type RF \
-    #--paired_fragment_length 300  \
-
+[% END -%]
+    --output [% item.dir %]/[% lane.srr %]/trinity \
+    2>&1 | tee -a [% data_dir.log %]/trinity.log ; ( exit ${PIPESTATUS} )
+    
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
 
 rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
@@ -2009,8 +1815,6 @@ rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     [% item.dir %]/[% lane.srr %]/Trinity.fasta \
     > [% item.dir %]/[% lane.srr %]/Trinity.Stats
-
-[% END -%]
 
 EOF
     my $output;
@@ -2039,10 +1843,10 @@ sub trinity_rsem {
     my $tt = Template->new;
 
     my $text = <<'EOF';
+#----------------------------#
 # trinity rsem
-
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
+#----------------------------#
+# item [% item.name %]
 
 if [ ! -d [% item.dir %]/[% lane.srr %]/rsem  ];
 then
@@ -2051,28 +1855,31 @@ fi;
 
 cd [% item.dir %]/[% lane.srr %]/rsem
 
-perl [% bin_dir.trinity %]/util/RSEM_util/run_RSEM_align_n_estimate.pl \
+perl [% bin_dir.trinity %]/util/deprecated/RSEM_util/run_RSEM_align_n_estimate.pl \
     --seqType fq \
     --thread_count [% parallel %] \
-[% IF lane.fq -%]
-[% IF item.filtered -%]
-    --left   [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_filtered \
-    --right  [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.1 %]`_filtered \
-    --single [% item.dir %]/[% lane.srr %]/filtered/`basename [% lane.file.0 %]`_`basename [% lane.file.1 %]`_unPaired_HQReads \
-[% ELSIF item.trimmed -%]
-    --left   [% item.dir %]/[% lane.srr %]/trimmed/trimmed_1.fq \
-    --right  [% item.dir %]/[% lane.srr %]/trimmed/trimmed_2.fq \
-    --single [% item.dir %]/[% lane.srr %]/trimmed/trimmed_single.fq \
-[% ELSE -%]
+[% IF item.lanes.0.layout == 'PAIRED' -%]
+[% IF item.sickle -%]
+    --left  [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '_1.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+    --right [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '_2.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+[% ELSIF lane.fq -%]
     --left  [% lane.file.0 %] \
     --right [% lane.file.1 %] \
-[% END -%]
 [% ELSE -%]
     --left  [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     --right [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
 [% END -%]
+[% ELSE -%]
+[% IF item.sickle -%]
+    --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+[% ELSIF lane.fq -%]
+    --single [% lane.file.0 %] \
+[% ELSE -%]
+    --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/' _ lane.srr _ 'fastq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
+[% END -%]
+[% END -%]
     --transcripts [% item.dir %]/[% lane.srr %]/Trinity.fasta \
-    2>&1 | tee -a [% base_dir %]/trinity_rsme.log ; ( exit ${PIPESTATUS} )
+    2>&1 | tee -a [% data_dir.log %]/trinity_rsme.log ; ( exit ${PIPESTATUS} )
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity_rsem] failed >> [% base_dir %]/fail.log && exit 255
 
@@ -2085,9 +1892,6 @@ perl [% bin_dir.script %]/trinity_unigene.pl \
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.fasta \
     > [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.Stats
-    
-    
-[% END -%]
 
 EOF
     my $output;
