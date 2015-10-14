@@ -138,11 +138,11 @@ echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% da
 
 [% IF lane.layout == 'PAIRED' -%]
 # sra to fastq (pair end)
-[% bin_dir.stk %]/fastq-dump [% lane.file %] \
+fastq-dump [% lane.file %] \
     --split-files --gzip -O [% item.dir %]/[% lane.srr %] \
 [% ELSE -%]
 # sra to fastq (single end)
-[% bin_dir.stk %]/fastq-dump [% lane.file %] \
+fastq-dump [% lane.file %] \
     --gzip -O [% item.dir %]/[% lane.srr %] \
 [% END -%]
     2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
@@ -239,7 +239,7 @@ echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% IF lane.layout == 'PAIRED' -%]
 # fastqc (pair end)
-[% bin_dir.fastqc %]/fastqc -t [% parallel %] \
+fastqc -t [% parallel %] \
 [% IF item.sickle -%]
     [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq.gz \
     [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq.gz \
@@ -252,7 +252,7 @@ echo "* Start fastqc [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% ELSE -%]
 # fastqc (single end)
-[% bin_dir.fastqc %]/fastqc -t [% parallel %] \
+fastqc -t [% parallel %] \
 [% IF item.sickle -%]
     [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq.gz \
 [% ELSE -%]
@@ -318,7 +318,7 @@ echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% IF lane.layout == 'PAIRED' -%]
 # scythe (pair end)
-[% bin_dir.scythe %]/scythe \
+scythe \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
     -q sanger \
     -M 20 \
@@ -327,7 +327,7 @@ echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
     --quiet \
     | gzip -c --fast > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
 
-[% bin_dir.scythe %]/scythe \
+scythe \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
     -q sanger \
     -M 20 \
@@ -338,7 +338,7 @@ echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% ELSE -%]
 # scythe (single end)
-[% bin_dir.scythe %]/scythe \
+scythe \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
     -q sanger \
     -M 20 \
@@ -365,7 +365,7 @@ echo "* Start sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% IF lane.layout == 'PAIRED' -%]
 # sickle (pair end)
-[% bin_dir.sickle %]/sickle pe \
+sickle pe \
     -t sanger -l 20 -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz \
     -r [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz \
@@ -376,7 +376,7 @@ echo "* Start sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% ELSE -%]
 # sickle (single end)
-[% bin_dir.sickle %]/sickle se \
+sickle se \
     -t sanger -l 20 -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq
