@@ -29,7 +29,7 @@ Use `prefetch` of sra toolkit to download DRR files.
 ```bash
 prefetch DRR029569 DRR029570 DRR016460
 
-mv ~/ncbi/public/sra/DRR*.sra ~/data/rna-seq/medfood/sra
+cp ~/ncbi/public/sra/DRR*.sra ~/data/rna-seq/medfood/sra
 ```
 
 * http://www.ncbi.nlm.nih.gov/sra/?term=DRX026628
@@ -38,8 +38,19 @@ mv ~/ncbi/public/sra/DRR*.sra ~/data/rna-seq/medfood/sra
 ```bash
 cd ~/Scripts/sra
 
-echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029569,4000000,808M >> medfood.csv
-echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029570,2135878,431.4M >> medfood.csv
+cp medfood.csv medfood_all.csv
+echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029569,4000000,808M >> medfood_all.csv
+echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029570,2135878,431.4M >> medfood_all.csv
 
-echo Pueraria_lobata,DRX014826,ILLUMINA,PAIRED,101,DRR016460,23802502,2.4G >> medfood.csv
+echo Pueraria_lobata,DRX014826,ILLUMINA,PAIRED,101,DRR016460,23802502,2.4G >> medfood_all.csv
+```
+
+Generate bash files and run a sample.
+
+```bash
+cd ~/data/rna-seq/medfood
+perl ~/Scripts/sra/medfood_seq.pl
+
+sh bash/sra.Cichorium_intybus.sh
+
 ```
