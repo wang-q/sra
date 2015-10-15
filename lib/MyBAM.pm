@@ -171,6 +171,59 @@ EOF
     return;
 }
 
+sub srr_dump_q64 {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# srr dump
+#----------------------------#
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
+mkdir [% item.dir %]/[% lane.srr %]
+
+echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
+
+[% IF lane.layout == 'PAIRED' -%]
+# sra to fastq (pair end)
+fastq-dump [% lane.file %] \
+    --split-files --offset 64 --gzip -O [% item.dir %]/[% lane.srr %] \
+[% ELSE -%]
+# sra to fastq (single end)
+fastq-dump [% lane.file %] \
+    --offset 64 --gzip -O [% item.dir %]/[% lane.srr %] \
+[% END -%]
+    2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+
+}
+
 sub srr_dump_parallel {
     my $self = shift;
     my $item = shift;
@@ -1608,45 +1661,6 @@ EOF
     return;
 }
 
-sub srr_dump_pe_q64 {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-mkdir [% item.dir %]/[% lane.srr %]
-
-# sra to fastq (pair end)
-[% bin_dir.stk %]/fastq-dump [% lane.file %] \
-    --split-files --offset 64 --gzip -O [% item.dir %]/[% lane.srr %]
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-
-}
-
 sub head_trinity {
     my $self = shift;
     my $item = shift;
@@ -1835,15 +1849,6 @@ EOF
     $self->{bash} .= $output;
     return;
 }
-
-
-#perl /home/wangq/share/trinityrnaseq-2.0.6/util/align_and_estimate_abundance.pl \
-#    --seqType fq \
-#    --thread_count 12 \
-#	--est_method RSEM --aln_method bowtie --trinity_mode --prep_reference \
-#    --left  /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trimmed/SRR797207_1.sickle.fq.gz \
-#    --right /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trimmed/SRR797207_2.sickle.fq.gz \
-#    --transcripts /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trinity/Trinity.fasta
 
 sub trinity_rsem {
     my $self = shift;
@@ -2143,6 +2148,114 @@ EOF
             parallel => $self->parallel,
             memory   => $self->memory,
             tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub screen_fq {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# Quality assessment & improvement
+#----------------------------#
+cd [% data_dir.log %]
+
+[% FOREACH item IN data -%]
+# [% item.name %]
+screen -L -dmS sra_[% item.name %] bash [% data_dir.bash %]/sra.[% item.name %].sh
+
+[% END -%]
+
+#----------------------------#
+# Monitoring
+#----------------------------#
+cd [% base_dir %]
+
+### Quit a session
+# screen -S sra_ -X quit 
+
+### Kill all custom named sessions
+# screen -ls | grep Detached | sort | grep -v pts- | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
+
+### Count running sessions
+# screen -ls | grep Detached | sort | grep -v pts- | wc -l
+
+### What's done
+# find [% data_dir.sra %]  -type f -regextype posix-extended -regex ".*\/[DES]RR.*" | sort | wc -l
+# find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | wc -l
+# find [% data_dir.proc %] -type f -name "*_[12].fastq.gz" | sort | wc -l
+# find [% data_dir.proc %] -type f -name "*_fastqc.zip" | sort | grep -v trimmed | wc -l
+# find [% data_dir.proc %] -type f -name "*_[12]_fastqc.zip" | sort | grep -v trimmed | wc -l
+#
+# find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | wc -l
+# find [% data_dir.proc %] -type f -name "*sickle.fq.gz" | sort | grep trimmed | wc -l
+# find [% data_dir.proc %] -type f -name "*fq_fastqc.zip" | sort | grep trimmed | wc -l
+
+### total size
+# find [% data_dir.sra %]  -type f -regextype posix-extended -regex ".*\/[DES]RR.*" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
+# find [% data_dir.proc %] -type f -name "*fastq.gz" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
+# find [% data_dir.proc %] -type f -name "*sickle.fq.gz" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
+
+### Clean
+# find [% data_dir.proc %] -type d -name "*fastqc" | sort | xargs rm -fr
+# find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | grep -v trimmed | xargs rm
+# find [% data_dir.proc %] -type f -name "*matches.txt" | sort | xargs rm
+# find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub screen_trinity {
+    my $self = shift;
+    my $data = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+#----------------------------#
+# trinity
+#----------------------------#
+cd [% data_dir.log %]
+
+[% FOREACH item IN data -%]
+# [% item.name %]
+screen -L -dmS tri_[% item.name %] bash [% data_dir.bash %]/tri.[% item.name %].sh
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            data     => $data,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            parallel => $self->parallel,
+            memory   => $self->memory,
         },
         \$output
     ) or die Template->error;

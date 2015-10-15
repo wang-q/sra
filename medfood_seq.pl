@@ -143,74 +143,21 @@ for my $item (@data) {
 # Execute bash in background with GNU screen
 #----------------------------------------------------------#
 {
-    my $text = <<'EOF';
-#----------------------------#
-# Quality assessment & improvement
-#----------------------------#
-cd [% $data_dir.log %]
+    my $mybam = MyBAM->new(
+        base_dir => $base_dir,
+        bin_dir  => $bin_dir,
+        data_dir => $data_dir,
+        ref_file => $ref_file,
+        parallel => $parallel,
+        memory   => $memory,
+        sickle   => 1,
+    );
 
-[% FOREACH item IN data -%]
-# [% item.name %]
-screen -L -dmS sra_[% item.name %] bash [% data_dir.bash %]/sra.[% item.name %].sh
+    $mybam->screen_fq( \@data );
+    $mybam->screen_trinity( \@data );
 
-[% END -%]
-
-#----------------------------#
-# Monitoring
-#----------------------------#
-###
-cd [% base_dir %]
-
-### Kill all custom named sessions
-# screen -ls | grep Detached | sort | grep -v pts- | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
-
-### Count running sessions
-# screen -ls | grep Detached | sort | grep -v pts- | wc -l
-
-### What's done
-# find [% data_dir.sra %]  -type f -regextype posix-extended -regex ".*\/[DES]RR.*" | sort | wc -l
-# find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | wc -l
-# find [% data_dir.proc %] -type f -name "*_[12].fastq.gz" | sort | wc -l
-# find [% data_dir.proc %] -type f -name "*_fastqc.zip" | sort | grep -v trimmed | wc -l
-# find [% data_dir.proc %] -type f -name "*_[12]_fastqc.zip" | sort | grep -v trimmed | wc -l
-#
-# find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | wc -l
-# find [% data_dir.proc %] -type f -name "*sickle.fq.gz" | sort | grep trimmed | wc -l
-# find [% data_dir.proc %] -type f -name "*fq_fastqc.zip" | sort | grep trimmed | wc -l
-
-### total size
-# find [% data_dir.sra %]  -type f -regextype posix-extended -regex ".*\/[DES]RR.*" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
-# find [% data_dir.proc %] -type f -name "*fastq.gz" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
-# find [% data_dir.proc %] -type f -name "*sickle.fq.gz" | perl -nl -MNumber::Format -e '$sum += (stat($_))[7]; END{print Number::Format::format_bytes($sum)}'
-
-### Clean
-# find [% data_dir.proc %] -type d -name "*fastqc" | sort | xargs rm -fr
-# find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | grep -v trimmed | xargs rm
-# find [% data_dir.proc %] -type f -name "*matches.txt" | sort | xargs rm
-# find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
-
-#----------------------------#
-# trinity
-#----------------------------#
-cd [% $data_dir.log %]
-
-[% FOREACH item IN data -%]
-# [% item.name %]
-screen -L -dmS tri_[% item.name %] sh [% data_dir.bash %]/tri.[% item.name %].sh
-
-[% END -%]
-
-EOF
-    my $tt = Template->new;
-    $tt->process(
-        \$text,
-        {   data     => \@data,
-            base_dir => $base_dir,
-            data_dir => $data_dir,
-            parallel => $parallel,
-        },
-        path( $base_dir, "screen.sh.txt" )->stringify
-    ) or die Template->error;
+    $mybam->write( undef,
+        path( $base_dir, "screen.sh.txt" )->stringify );
 }
 
 {    # for Scythe

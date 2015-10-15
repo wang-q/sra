@@ -42,7 +42,9 @@ cp medfood.csv medfood_all.csv
 echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029569,4000000,808M >> medfood_all.csv
 echo Perilla_frutescens,DRX026628,ILLUMINA,PAIRED,199,DRR029570,2135878,431.4M >> medfood_all.csv
 
-echo Pueraria_lobata,DRX014826,ILLUMINA,PAIRED,101,DRR016460,23802502,2.4G >> medfood_all.csv
+# NCBI metainfo error
+# http://trace.ncbi.nlm.nih.gov/Traces/study/?acc=DRX014826
+echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.4G >> medfood_all.csv
 ```
 
 Generate bash files and run a sample.
@@ -53,4 +55,24 @@ perl ~/Scripts/sra/medfood_seq.pl
 
 sh bash/sra.Cichorium_intybus.sh
 
+```
+
+Open `~/data/rna-seq/medfood/screen.sh.txt` and paste bash lines to terminal.
+
+When the size of `screen.sra_Cichorium_intybus-0.log` reach 6.5K, the process should be finished.
+
+```bash
+# fq
+# Cichorium_intybus
+screen -L -dmS sra_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/sra.Cichorium_intybus.sh
+
+# screen.sra_Hippophae_rhamnoides-0.log
+
+# ...
+
+# trinity
+# Cichorium_intybus
+screen -L -dmS tri_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/tri.Cichorium_intybus.sh
+
+# ...
 ```
