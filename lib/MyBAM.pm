@@ -1779,7 +1779,7 @@ sub trinity {
 #----------------------------#
 # item [% item.name %]
 
-cd [% item.dir %]/[% lane.srr %]
+cd [% item.dir %]
 
 perl [% bin_dir.trinity %]/Trinity --seqType fq \
     --max_memory [% memory %]G \
@@ -1805,16 +1805,16 @@ perl [% bin_dir.trinity %]/Trinity --seqType fq \
     --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/' _ lane.srr _ 'fastq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
 [% END -%]
 [% END -%]
-    --output [% item.dir %]/[% lane.srr %]/trinity \
+    --output [% item.dir %]/trinity \
     2>&1 | tee -a [% data_dir.log %]/trinity.log ; ( exit ${PIPESTATUS} )
     
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
+[ $? -ne 0 ] && echo `date` [% item.name %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
 
-rm -fr [% item.dir %]/[% lane.srr %]/chrysalis
+rm -fr [% item.dir %]/trinity/chrysalis
 
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
-    [% item.dir %]/[% lane.srr %]/Trinity.fasta \
-    > [% item.dir %]/[% lane.srr %]/Trinity.Stats
+    [% item.dir %]/trinity/Trinity.fasta \
+    > [% item.dir %]/trinity/Trinity.Stats
 
 EOF
     my $output;
@@ -1836,6 +1836,15 @@ EOF
     return;
 }
 
+
+#perl /home/wangq/share/trinityrnaseq-2.0.6/util/align_and_estimate_abundance.pl \
+#    --seqType fq \
+#    --thread_count 12 \
+#	--est_method RSEM --aln_method bowtie --trinity_mode --prep_reference \
+#    --left  /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trimmed/SRR797207_1.sickle.fq.gz \
+#    --right /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trimmed/SRR797207_2.sickle.fq.gz \
+#    --transcripts /home/wangq/data/rna-seq/medfood/process/Cichorium_intybus/SRR797207/trinity/Trinity.fasta
+
 sub trinity_rsem {
     my $self = shift;
     my $item = shift;
@@ -1848,16 +1857,17 @@ sub trinity_rsem {
 #----------------------------#
 # item [% item.name %]
 
-if [ ! -d [% item.dir %]/[% lane.srr %]/rsem  ];
+if [ ! -d [% item.dir %]/rsem  ];
 then
-    mkdir [% item.dir %]/[% lane.srr %]/rsem ;
+    mkdir -p [% item.dir %]/rsem ;
 fi;
 
-cd [% item.dir %]/[% lane.srr %]/rsem
+cd [% item.dir %]/rsem
 
-perl [% bin_dir.trinity %]/util/deprecated/RSEM_util/run_RSEM_align_n_estimate.pl \
+perl [% bin_dir.trinity %]/util/align_and_estimate_abundance.pl \
     --seqType fq \
     --thread_count [% parallel %] \
+    --est_method RSEM --aln_method bowtie --trinity_mode --prep_reference \
 [% IF item.lanes.0.layout == 'PAIRED' -%]
 [% IF item.sickle -%]
     --left  [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/trimmed/' _ lane.srr _ '_1.sickle.fq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
@@ -1878,20 +1888,20 @@ perl [% bin_dir.trinity %]/util/deprecated/RSEM_util/run_RSEM_align_n_estimate.p
     --single [% str = ''; str = str _ item.dir _ '/' _ lane.srr _ '/' _ lane.srr _ 'fastq.gz,' FOREACH lane IN item.lanes; str FILTER remove('\,$') -%] \
 [% END -%]
 [% END -%]
-    --transcripts [% item.dir %]/[% lane.srr %]/Trinity.fasta \
+    --transcripts [% item.dir %]/trinity/Trinity.fasta \
     2>&1 | tee -a [% data_dir.log %]/trinity_rsme.log ; ( exit ${PIPESTATUS} )
 
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [trinity_rsem] failed >> [% base_dir %]/fail.log && exit 255
+[ $? -ne 0 ] && echo `date` [% item.name %] [trinity_rsem] failed >> [% base_dir %]/fail.log && exit 255
 
 perl [% bin_dir.script %]/trinity_unigene.pl \
-    -r [% item.dir %]/[% lane.srr %]/rsem/RSEM.isoforms.results \
-    -f [% item.dir %]/[% lane.srr %]/Trinity.fasta \
-    -o [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.fasta \
+    -r [% item.dir %]/rsem/RSEM.isoforms.results \
+    -f [% item.dir %]/trinity/Trinity.fasta \
+    -o [% item.dir %]/rsem/Trinity.unigene.fasta \
     -u 
 
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
-    [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.fasta \
-    > [% item.dir %]/[% lane.srr %]/rsem/Trinity.unigene.Stats
+    [% item.dir %]/rsem/Trinity.unigene.fasta \
+    > [% item.dir %]/rsem/Trinity.unigene.Stats
 
 EOF
     my $output;
