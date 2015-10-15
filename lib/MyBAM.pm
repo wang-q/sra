@@ -1830,6 +1830,10 @@ perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     [% item.dir %]/trinity/Trinity.fasta \
     > [% item.dir %]/trinity/Trinity.Stats
 
+mkdir -p [% item.dir %]/result
+cp [% item.dir %]/trinity/Trinity.fasta [% item.dir %]/result
+cp [% item.dir %]/trinity/Trinity.Stats [% item.dir %]/result
+
 EOF
     my $output;
     $tt->process(
@@ -1907,6 +1911,10 @@ perl [% bin_dir.script %]/trinity_unigene.pl \
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     [% item.dir %]/rsem/Trinity.unigene.fasta \
     > [% item.dir %]/rsem/Trinity.unigene.Stats
+
+mkdir -p [% item.dir %]/result
+cp [% item.dir %]/rsem/Trinity.unigene.fasta [% item.dir %]/result
+cp [% item.dir %]/rsem/Trinity.unigene.Stats [% item.dir %]/result
 
 EOF
     my $output;
