@@ -1791,7 +1791,7 @@ sub trinity {
 #----------------------------#
 # trinity
 #----------------------------#
-# item [% item.name %]
+# [% item.name %]
 
 cd [% item.dir %]
 
@@ -1864,7 +1864,7 @@ sub trinity_rsem {
 #----------------------------#
 # trinity rsem
 #----------------------------#
-# item [% item.name %]
+# [% item.name %]
 
 if [ ! -d [% item.dir %]/rsem  ];
 then
