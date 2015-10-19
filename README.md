@@ -59,11 +59,13 @@ sh bash/sra.Cichorium_intybus.sh
 
 Open `~/data/rna-seq/medfood/screen.sh.txt` and paste bash lines to terminal.
 
-When the size of `screen.sra_Cichorium_intybus-0.log` reach 6.5K, the process should be finished.
+When the size of `screen.sra_XXX-0.log` reach 6.5K, the process should be finished.
+The size of `screen.tri_XXX-0.log` varies a lot, from 4M to 30M.
 
 ```bash
+cd ~/data/rna-seq/medfood/log
+
 # fq
-# Cichorium_intybus
 screen -L -dmS sra_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/sra.Cichorium_intybus.sh
 
 # screen.sra_Hippophae_rhamnoides-0.log
@@ -71,7 +73,6 @@ screen -L -dmS sra_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/sr
 # ...
 
 # trinity
-# Cichorium_intybus
 screen -L -dmS tri_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/tri.Cichorium_intybus.sh
 
 # ...

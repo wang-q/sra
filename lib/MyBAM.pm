@@ -1831,8 +1831,9 @@ perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     > [% item.dir %]/trinity/Trinity.Stats
 
 mkdir -p [% item.dir %]/result
-cp [% item.dir %]/trinity/Trinity.fasta [% item.dir %]/result
-cp [% item.dir %]/trinity/Trinity.Stats [% item.dir %]/result
+cp [% item.dir %]/trinity/Trinity.fasta  [% item.dir %]/result
+cp [% item.dir %]/trinity/Trinity.Stats  [% item.dir %]/result
+cp [% item.dir %]/trinity/Trinity.timing [% item.dir %]/result
 
 EOF
     my $output;
@@ -2190,8 +2191,8 @@ cd [% base_dir %]
 ### Quit a session
 # screen -S sra_ -X quit 
 
-### Kill all custom named sessions
-# screen -ls | grep Detached | sort | grep -v pts- | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
+### Kill all sessions started with sra_
+# screen -ls | grep Detached | sort | grep sra_ | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
 
 ### Count running sessions
 # screen -ls | grep Detached | sort | grep -v pts- | wc -l
@@ -2253,6 +2254,20 @@ cd [% data_dir.log %]
 screen -L -dmS tri_[% item.name %] bash [% data_dir.bash %]/tri.[% item.name %].sh
 
 [% END -%]
+
+#----------------------------#
+# Monitoring
+#----------------------------#
+cd [% base_dir %]
+
+### Quit a session
+# screen -S tri_ -X quit 
+
+### Kill all sessions started with sra_
+# screen -ls | grep Detached | sort | grep tri_ | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
+
+### Clean
+# find [% data_dir.proc %] -type f -name "*sickle.fq" | sort | grep trimmed | xargs rm
 
 EOF
     my $output;
