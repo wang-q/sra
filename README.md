@@ -53,27 +53,27 @@ Generate bash files and run a sample.
 cd ~/data/rna-seq/medfood
 perl ~/Scripts/sra/medfood_seq.pl
 
-sh bash/sra.Cichorium_intybus.sh
+bash bash/sra.Cichorium_intybus.sh
 
 ```
 
 Open `~/data/rna-seq/medfood/screen.sh.txt` and paste bash lines to terminal.
 
 When the size of `screen.sra_XXX-0.log` reach 6.5K, the process should be finished.
-The size of `screen.tri_XXX-0.log` varies a lot, from 4M to 30M.
+The size of `screen.tri_XXX-0.log` varies a lot, from 700K to 30M.
 
 ```bash
 cd ~/data/rna-seq/medfood/log
 
 # fq
-screen -L -dmS sra_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/sra.Cichorium_intybus.sh
+screen -L -dmS sra_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/sra.Cichorium_intybus.sh
 
 # screen.sra_Hippophae_rhamnoides-0.log
 
 # ...
 
 # trinity
-screen -L -dmS tri_Cichorium_intybus sh /home/wangq/data/rna-seq/medfood/bash/tri.Cichorium_intybus.sh
+screen -L -dmS tri_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/tri.Cichorium_intybus.sh
 
 # ...
 ```
