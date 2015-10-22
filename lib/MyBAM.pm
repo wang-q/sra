@@ -2268,6 +2268,12 @@ cd [% base_dir %]
 
 ### Clean
 # find [% data_dir.proc %] -type f -name "*sickle.fq" | sort | grep trimmed | xargs rm
+# find [% data_dir.proc %] -type f -name "*jellyfish*" | sort | grep trinity | xargs rm
+# find [% data_dir.proc %] -type f -name "*both.fa" | sort | grep trinity | xargs rm
+# find [% data_dir.proc %] -type f -name "*single.fa" | sort | grep trinity | xargs rm
+# find [% data_dir.proc %] -type d -name "read_partitions" | sort | grep trinity | xargs rm -fr
+
+# find [% data_dir.proc %] -type f -name "*bowtie.bam*" | sort | grep rsem | xargs rm
 
 EOF
     my $output;
