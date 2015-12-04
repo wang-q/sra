@@ -77,3 +77,25 @@ screen -L -dmS tri_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/
 
 # ...
 ```
+
+### cele82: 40 Wild strains from *C. elegans* million mutation project
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+perl cele_mmp_info.pl
+
+perl sra_prep.pl -i cele_mmp.yml --md5
+
+mkdir -p ~/data/dna-seq/cele_mmp/sra
+cd ~/data/dna-seq/cele_mmp/sra
+cp ~/Scripts/sra/cele_mmp.ftp.txt .
+aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
+
+cd ~/data/dna-seq/cele_mmp/sra
+cp ~/Scripts/sra/cele_mmp.md5.txt .
+md5sum --check cele_mmp.md5.txt
+
+# rsync -avP wangq@45.79.80.100:data/dna-seq/ ~/data/dna-seq
+```
