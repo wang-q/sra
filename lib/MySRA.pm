@@ -4,6 +4,7 @@ use Carp;
 
 use WWW::Mechanize;
 use Number::Format qw(:subs);
+use List::MoreUtils qw(uniq);
 
 use YAML qw(Dump Load DumpFile LoadFile);
 
@@ -55,15 +56,15 @@ sub erp_worker {
     print $url, "\n";
 
     $mech->get($url);
-    my @line = split /\n/, $mech->content;
+    my @lines = split /\n/, $mech->content;
 
     my @srx;
-    for (@line) {
+    for (@lines) {
         if (/^$term\t([DES]RX\d+)/) {
             push @srx, $1;
-
         }
     }
+    @srx = uniq(@srx);
     printf "OK, get %d SRX\n", scalar @srx;
 
     return \@srx;
