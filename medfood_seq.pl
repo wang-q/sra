@@ -16,7 +16,7 @@ use MyBAM;
 #----------------------------------------------------------#
 # parameters
 #----------------------------------------------------------#
-my $base_dir = File::Spec->catdir( $ENV{HOME}, "data/rna-seq/medfood" );
+my $base_dir = path( $ENV{HOME}, "data", "rna-seq", "medfood" )->stringify;
 my $csv_file = "medfood_all.csv";
 
 my $parallel = 8;
@@ -37,7 +37,7 @@ my $data_dir = {
     log  => path( $base_dir, "log" )->stringify,
     ref  => path( $base_dir, "ref" )->stringify,
 };
-my $ref_file = { adapters => File::Spec->catfile( $base_dir, "ref", "illumina_adapters.fa" ), };
+my $ref_file = { adapters => path( $base_dir, "ref", "illumina_adapters.fa" )->stringify, };
 
 for my $key ( keys %{$data_dir} ) {
     path( $data_dir->{$key} )->mkpath;
@@ -156,8 +156,7 @@ for my $item (@data) {
     $mybam->screen_fq( \@data );
     $mybam->screen_trinity( \@data );
 
-    $mybam->write( undef,
-        path( $base_dir, "screen.sh.txt" )->stringify );
+    $mybam->write( undef, path( $base_dir, "screen.sh.txt" )->stringify );
 }
 
 {    # for Scythe
