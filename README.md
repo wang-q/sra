@@ -65,7 +65,7 @@ The size of `screen.tri_XXX-0.log` varies a lot, from 700K to 30M.
 ```bash
 cd ~/data/rna-seq/medfood/log
 
-# fq
+# sra
 screen -L -dmS sra_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/sra.Cichorium_intybus.sh
 
 # screen.sra_Hippophae_rhamnoides-0.log
@@ -99,3 +99,30 @@ md5sum --check cele_mmp.md5.txt
 
 # rsync -avP wangq@45.79.80.100:data/dna-seq/ ~/data/dna-seq
 ```
+
+Prepare reference genome.
+
+`~/data/alignment/Ensembl/Cele` should contain [C. elegans genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#caenorhabditis-elegans) from ensembl.
+
+```bash
+mkdir -p ~/data/dna-seq/cele_mmp/ref
+cd ~/data/dna-seq/cele_mmp/ref
+
+cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa > Cele_82.fa
+faops size Cele_82.fa > chr.sizes
+
+samtools faidx Cele_82.fa
+bwa index -a bwtsw Cele_82.fa
+```
+
+Generate bash files and run a sample.
+
+```bash
+cd ~/data/dna-seq/cele_mmp
+perl ~/Scripts/sra/cele_mmp_seq.pl
+
+bash bash/sra.AB1.sh
+
+```
+
+Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.

@@ -60,11 +60,7 @@ cd [% base_dir %]
 # bwa index -a bwtsw [% ref_file.seq %]
 # samtools faidx [% ref_file.seq %]
 
-if [ -d [% item.dir %] ];
-then
-    rm -fr [% item.dir %] ;
-fi;
-mkdir [% item.dir %]
+mkdir -p [% item.dir %]
 
 EOF
     my $output;
@@ -1046,6 +1042,75 @@ EOF
     return;
 }
 
+
+sub bwa_mem {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+[% FOREACH lane IN item.lanes -%]
+# align (paired) reads to reference genome
+bwa mem -M -t [% parallel %] -R "[% lane.rg_str %]" \
+    [% ref_file.seq %] \
+[% IF item.lanes.0.layout == 'PAIRED' -%]
+[% IF item.sickle -%]
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq.gz \
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq.gz \
+[% ELSIF lane.fq -%]
+    [% lane.file.0 %] \
+    [% lane.file.1 %] \
+[% ELSE -%]
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+[% END -%]
+[% ELSE -%]
+[% IF item.sickle -%]
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq.gz \
+[% ELSIF lane.fq -%]
+    [% lane.file.0 %] \
+[% ELSE -%]
+    [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
+[% END -%]
+[% END -%]
+    | gzip -3 > [% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [bwa mem] failed >> [% base_dir %]/fail.log && exit 255
+
+# convert sam to bam and fix mate info
+java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
+    -jar [% bin_dir.pcd %]/picard.jar \
+    FixMateInformation \
+    INPUT=[% item.dir %]/[% lane.srr %]/[% lane.srr %].sam.gz \
+    OUTPUT=[% item.dir %]/[% lane.srr %]/[% lane.srr %].bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+# mv
+mv [% item.dir %]/[% lane.srr %]/[% lane.srr %].bam [% item.dir %]/[% lane.srr %].srr.bam
+
+[% END -%]
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
+            item     => $item,
+            bin_dir  => $self->bin_dir,
+            data_dir => $self->data_dir,
+            ref_file => $self->ref_file,
+            parallel => $self->parallel,
+            memory   => $self->memory,
+            tmpdir   => $self->tmpdir,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
 sub merge_bam {
     my $self = shift;
     my $item = shift;
@@ -1673,10 +1738,7 @@ start_time=`date +%s`
 
 cd [% base_dir %]
 
-if [ ! -d [% item.dir %] ];
-then
-    mkdir [% item.dir %];
-fi;
+mkdir -p [% item.dir %];
 
 # set stacksize to unlimited
 ulimit -s unlimited
@@ -2175,10 +2237,9 @@ sub screen_fq {
 #----------------------------#
 # Quality assessment & improvement
 #----------------------------#
-cd [% data_dir.log %]
-
 [% FOREACH item IN data -%]
 # [% item.name %]
+cd [% data_dir.log %]
 screen -L -dmS sra_[% item.name %] bash [% data_dir.bash %]/sra.[% item.name %].sh
 
 [% END -%]
@@ -2247,10 +2308,9 @@ sub screen_trinity {
 #----------------------------#
 # trinity
 #----------------------------#
-cd [% data_dir.log %]
-
 [% FOREACH item IN data -%]
 # [% item.name %]
+cd [% data_dir.log %]
 screen -L -dmS tri_[% item.name %] bash [% data_dir.bash %]/tri.[% item.name %].sh
 
 [% END -%]
