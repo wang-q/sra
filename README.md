@@ -113,6 +113,10 @@ faops size Cele_82.fa > chr.sizes
 
 samtools faidx Cele_82.fa
 bwa index -a bwtsw Cele_82.fa
+
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CreateSequenceDictionary \
+    R=Cele_82.fa O=Cele_82.dict
 ```
 
 Generate bash files and run a sample.
