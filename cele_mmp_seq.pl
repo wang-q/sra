@@ -21,7 +21,7 @@ my $base_dir = path( $ENV{HOME}, "data", "dna-seq", "cele_mmp" )->stringify;
 my $csv_file = "cele_mmp.csv";
 
 my $parallel = 8;
-my $memory   = 32; # It's enough for picard and gatk
+my $memory   = 32;    # It's enough for picard and gatk
 
 #----------------------------#
 # directories
@@ -30,7 +30,7 @@ my $brew_home = `brew --prefix`;
 my $bin_dir   = {
     script => $FindBin::Bin,
     gatk   => path( $ENV{HOME}, "share/gatk" )->stringify,
-    pcd    => path( $ENV{HOME}, "share/picard-tools-2.0.1" )->stringify,
+    pcd    => path( $ENV{HOME}, "share/picard-tools-1.128" )->stringify,
 };
 my $data_dir = {
     sra  => path( $base_dir, "sra" )->stringify,
@@ -141,11 +141,11 @@ for my $item (@data) {
 
     $mybam->head($item);
     $mybam->bwa_mem($item);
-    $mybam->merge_bam_picard($item);
-    $mybam->realign_dedup($item);
+    $mybam->merge_bam($item);
+    $mybam->realign_indel($item);
+    $mybam->recal_reads($item) if exists $ref_file->{vcf};
 
-    #$mybam->recal($item);
-    $mybam->calmd_baq($item);
+    # the following is not current best practices
     $mybam->call_snp_filter($item);
     $mybam->call_indel($item);
     $mybam->vcf_to_fasta($item);
@@ -170,8 +170,8 @@ for my $item (@data) {
         sickle   => 1,
     );
 
-    $mybam->screen_fq( \@data );
-    $mybam->screen_trinity( \@data );
+    $mybam->screen_sra( \@data );
+    $mybam->screen_bwa( \@data );
 
     my $sh_file = path( $base_dir, "screen.sh.txt" )->stringify;
     print "Create [$sh_file].\n";
