@@ -168,59 +168,6 @@ EOF
     return;
 }
 
-sub srr_dump_q64 {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-#----------------------------#
-# srr dump
-#----------------------------#
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-mkdir [% item.dir %]/[% lane.srr %]
-
-echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
-
-[% IF lane.layout == 'PAIRED' -%]
-# sra to fastq (pair end)
-fastq-dump [% lane.file %] \
-    --split-files --offset 64 --gzip -O [% item.dir %]/[% lane.srr %] \
-[% ELSE -%]
-# sra to fastq (single end)
-fastq-dump [% lane.file %] \
-    --offset 64 --gzip -O [% item.dir %]/[% lane.srr %] \
-[% END -%]
-    2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
-
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
-echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-
-}
-
 sub srr_dump_parallel {
     my $self = shift;
     my $item = shift;
