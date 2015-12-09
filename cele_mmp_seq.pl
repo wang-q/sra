@@ -10,7 +10,6 @@ use YAML qw(Dump Load DumpFile LoadFile);
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-
 use MyBAM;
 
 #----------------------------------------------------------#
@@ -21,7 +20,7 @@ my $base_dir = path( $ENV{HOME}, "data", "dna-seq", "cele_mmp" )->stringify;
 my $csv_file = "cele_mmp.csv";
 
 my $parallel = 8;
-my $memory   = 32;    # It's enough for picard and gatk
+my $memory   = 16;    # It's enough for picard and gatk
 
 #----------------------------#
 # directories
