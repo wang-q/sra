@@ -78,44 +78,6 @@ EOF
     return;
 }
 
-sub srr_dump_pe {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-mkdir [% item.dir %]/[% lane.srr %]
-
-# sra to fastq (pair end)
-[% bin_dir.stk %]/fastq-dump [% lane.file %] \
-    --split-files --gzip -O [% item.dir %]/[% lane.srr %]
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
 sub srr_dump {
     my $self = shift;
     my $item = shift;
@@ -147,56 +109,6 @@ fastq-dump [% lane.file %] \
 echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
 
 [% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
-sub srr_dump_parallel {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-#----------------------------#
-# srr dump (parallel)
-#----------------------------#
-
-# make dir for each lanes
-[% FOREACH lane IN item.lanes -%]
-mkdir [% item.dir %]/[% lane.srr %]
-[% END -%]
-
-# sra to fastq (pair end)
-echo -e '[% FOREACH lane IN item.lanes %][% IF lane.layout == 'PAIRED' %][% lane.srr %]\t[% lane.file %]\n[% END %][% END %]' \
-    | grep '.' \
-    | parallel --jobs [% parallel %] --keep-order --colsep '\t' \
-        'echo "* Start srr_dump [[% item.name %]] [{1}] `date`"; [% bin_dir.stk %]/fastq-dump {2} --split-files --gzip -O [% item.dir %]/{1}; echo "* End srr_dump [[% item.name %]] [{1}] `date`";' \
-    2>&1 | tee -a [% data_dir.log %]/srr_dump.log
-
-# sra to fastq (single end)
-echo -e '[% FOREACH lane IN item.lanes %][% IF lane.layout == 'SINGLE' %][% lane.srr %]\t[% lane.file %]\n[% END %][% END %]' \
-    | grep '.' \
-    | parallel --jobs [% parallel %] --keep-order --colsep '\t' \
-        'echo "* Start srr_dump [[% item.name %]] [{1}] `date`"; [% bin_dir.stk %]/fastq-dump {2} --gzip -O [% item.dir %]/{1}; echo "* End srr_dump [[% item.name %]] [{1}] `date`";' \
-    2>&1 | tee -a [% data_dir.log %]/srr_dump.log
 
 EOF
     my $output;
@@ -1117,14 +1029,14 @@ java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].realign.bam \
     -knownSites [% ref_file.vcf %] \
-    -BQSR [% item.name %].recal_data.table \ 
-    --out [% item.dir %]/[% item.name %].post_recal_data.table 
+    -BQSR [% item.name %].recal_data.table \
+    --out [% item.dir %]/[% item.name %].post_recal_data.table
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk 2nd recal] failed >> [% base_dir %]/fail.log && exit 255
 
 # Generate before/after plots
 java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
     -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar \
-    -T AnalyzeCovariates \ 
+    -T AnalyzeCovariates \
     -R [% ref_file.seq %] \
     -before [% item.dir %]/[% item.name %].recal_data.table \
     -after [% item.dir %]/[% item.name %].post_recal_data.table \
@@ -1134,10 +1046,10 @@ java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
 # Apply the recalibration to your sequence data
 java -Djava.io.tmpdir=[% tmpdir %] -Xmx[% memory %]g \
     -jar [% bin_dir.gatk %]/GenomeAnalysisTK.jar -nt [% parallel %] \
-    -T PrintReads \ 
+    -T PrintReads \
     -R [% ref_file.seq %] \
     -I [% item.dir %]/[% item.name %].realign.bam \
-    -BQSR recal_data.table \ 
+    -BQSR recal_data.table \
     -o [% item.dir %]/[% item.name %].recal.bam
 [ $? -ne 0 ] && echo `date` [% item.name %] [gatk printreads] failed >> [% base_dir %]/fail.log && exit 255
 
@@ -1298,7 +1210,7 @@ samtools mpileup -uf [% ref_file.seq %] [% item.dir %]/[% item.name %].baq.bam \
     | bcftools view -cg - \
     | vcfutils.pl vcf2fq > [% item.dir %]/[% item.name %].fq
 
-# convert fastq to fasta 
+# convert fastq to fasta
 # mask bases with quality lower than 20
 seqtk fq2fa [% item.dir %]/[% item.name %].fq 20 > [% item.dir %]/[% item.name %].fa
 
@@ -1530,7 +1442,7 @@ sickle pe \
     -p [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.sickle.fq \
     -s [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_single.sickle.fq \
     2>&1 | tee -a [% data_dir.log %]/sickle.log ; ( exit ${PIPESTATUS} )
-    
+
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 
 [% END -%]
@@ -1596,7 +1508,7 @@ perl [% bin_dir.trinity %]/Trinity --seqType fq \
 [% END -%]
     --output [% item.dir %]/trinity \
     2>&1 | tee -a [% data_dir.log %]/trinity.log ; ( exit ${PIPESTATUS} )
-    
+
 [ $? -ne 0 ] && echo `date` [% item.name %] [trinity] failed >> [% base_dir %]/fail.log && exit 255
 
 rm -fr [% item.dir %]/trinity/chrysalis
@@ -1682,7 +1594,7 @@ perl [% bin_dir.script %]/trinity_unigene.pl \
     -r [% item.dir %]/rsem/RSEM.isoforms.results \
     -f [% item.dir %]/trinity/Trinity.fasta \
     -o [% item.dir %]/rsem/Trinity.unigene.fasta \
-    -u 
+    -u
 
 perl [% bin_dir.trinity %]/util/TrinityStats.pl \
     [% item.dir %]/rsem/Trinity.unigene.fasta \
@@ -1753,7 +1665,7 @@ sub soap_srr_dump_pe {
 #----------------------------------------------------------#
 # srr dump
 #----------------------------------------------------------#
-    
+
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 mkdir [% item.dir %]/[% lane.srr %]
@@ -1963,7 +1875,7 @@ screen -L -dmS sra_[% item.name %] bash [% data_dir.bash %]/sra.[% item.name %].
 cd [% base_dir %]
 
 ### Quit a session
-# screen -S sra_ -X quit 
+# screen -S sra_ -X quit
 
 ### Kill all sessions started with sra_
 # screen -ls | grep Detached | sort | grep sra_ | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
@@ -2034,7 +1946,7 @@ screen -L -dmS bwa_[% item.name %] bash [% data_dir.bash %]/bwa.[% item.name %].
 cd [% base_dir %]
 
 ### Quit a session
-# screen -S bwa_ -X quit 
+# screen -S bwa_ -X quit
 
 ### Kill all sessions started with bwa_
 # screen -ls | grep Detached | sort | grep bwa_ | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
@@ -2080,7 +1992,7 @@ screen -L -dmS tri_[% item.name %] bash [% data_dir.bash %]/tri.[% item.name %].
 cd [% base_dir %]
 
 ### Quit a session
-# screen -S tri_ -X quit 
+# screen -S tri_ -X quit
 
 ### Kill all sessions started with tri_
 # screen -ls | grep Detached | sort | grep tri_ | perl -nl -e '/^\s+(\d+)/ and system qq{screen -S $1 -X quit}'
