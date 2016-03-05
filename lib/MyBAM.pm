@@ -90,10 +90,20 @@ sub srr_dump {
 #----------------------------#
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
-mkdir [% item.dir %]/[% lane.srr %]
+mkdir -p [% item.dir %]/[% lane.srr %]
 
 echo "* Start srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
 
+[% IF lane.fq -%]
+
+[% IF lane.file.1 -%]
+cp [% lane.file.0 %] [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz
+cp [% lane.file.1 %] [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz
+[% ELSE -%]
+cp [% lane.file.0 %] [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz
+[% END -%]
+
+[% ELSE -%]
 [% IF lane.layout == 'PAIRED' -%]
 # sra to fastq (pair end)
 fastq-dump [% lane.file %] \
@@ -104,6 +114,7 @@ fastq-dump [% lane.file %] \
     --gzip -O [% item.dir %]/[% lane.srr %] \
 [% END -%]
     2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
+[% END -%]
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
 echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
@@ -375,7 +386,7 @@ echo "* Start tophat [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% IF lane.layout == 'PAIRED' -%]
 # tophat (pair end)
-[% bin_dir.tophat %]/tophat -p [% parallel %] \
+tophat -p [% parallel %] \
     -G [% ref_file.gtf %] \
     -o [% item.dir %]/[% lane.srr %]/th_out \
     [% ref_file.bowtie_index %] \
@@ -389,7 +400,7 @@ echo "* Start tophat [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 [% ELSE -%]
 # tophat (single end)
-[% bin_dir.tophat %]/tophat -p [% parallel %] \
+tophat -p [% parallel %] \
     -G [% ref_file.gtf %] \
     -o [% item.dir %]/[% lane.srr %]/th_out \
     [% ref_file.bowtie_index %] \
@@ -444,7 +455,7 @@ cd [% item.dir %]/[% lane.srr %]/
 echo "* Start cufflinks [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cufflinks.log
 
 # cufflinks
-[% bin_dir.cuff %]/cufflinks -p [% parallel %] \
+cufflinks -p [% parallel %] \
     --no-update-check [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
     -o [% item.dir %]/[% lane.srr %]/cl_out \
     [% item.dir %]/[% lane.srr %]/th_out/accepted_hits.bam
@@ -507,7 +518,7 @@ fi
 
 echo "* Start cuffmerge `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
 
-[% bin_dir.cuff %]/cuffmerge -p [% parallel %] \
+cuffmerge -p [% parallel %] \
     -g [% ref_file.gtf %] \
     -s [% ref_file.seq %] \
     -o [% data_dir.proc %]/merged_asm \
@@ -551,7 +562,7 @@ cd [% data_dir.proc %]
 #----------------------------#
 echo "* Start cuffdiff `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
 
-[% bin_dir.cuff %]/cuffdiff -p [% parallel %] \
+cuffdiff -p [% parallel %] \
     --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
     -b [% ref_file.seq %] \
     [% data_dir.proc %]/merged_asm/merged.gtf \
@@ -599,7 +610,7 @@ cd [% data_dir.proc %]
 #----------------------------#
 echo "* Start cuffdiff_cxb `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
 
-[% bin_dir.cuff %]/cuffdiff -p [% parallel %] \
+cuffdiff -p [% parallel %] \
     --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
     -b [% ref_file.seq %] \
     [% data_dir.proc %]/merged_asm/merged.gtf \
@@ -647,7 +658,7 @@ cd [% data_dir.proc %]
 #----------------------------#
 echo "* Start cuffnorm `date`" | tee -a [% data_dir.log %]/cuffmergediff.log
 
-[% bin_dir.cuff %]/cuffnorm -p [% parallel %] \
+cuffnorm -p [% parallel %] \
     --no-update-check \
     [% data_dir.proc %]/merged_asm/merged.gtf \
     -L [% name_str = ''; name_str = name_str _ item.name _ ',' FOREACH item IN data; name_str FILTER remove('\,$') %] \
@@ -698,7 +709,7 @@ cd [% item.dir %]/[% lane.srr %]/
 echo "* Start cuffquant [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/cuffquant.log
 
 # cuffquant
-[% bin_dir.cuff %]/cuffquant -p [% parallel %] \
+cuffquant -p [% parallel %] \
     --no-update-check -u [% IF ref_file.mask_gtf -%]-M [% ref_file.mask_gtf %] [% END %]\
     -b [% ref_file.seq %] \
     [% data_dir.proc %]/merged_asm/merged.gtf \
