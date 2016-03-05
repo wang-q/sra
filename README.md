@@ -130,3 +130,69 @@ bash bash/sra.AB1.sh
 ```
 
 Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.
+
+### Rat hypertension
+
+Information.
+
+```bash
+cat <<EOF > ~/Scripts/sra/rat_hypertension.csv
+name,srx,platform,layout,ilength,srr,spot,base
+Control,Control_S4,Illumina,PAIRED,,Control_S4,,
+QHDG,QHDG_S12,Illumina,PAIRED,,QHDG_S12,,
+QLDG,QLDG_S13,Illumina,PAIRED,,QLDG_S13,,
+EOF
+
+```
+
+Prepare reference genome.
+
+```bash
+mkdir -p ~/data/alignment/Ensembl/Rat
+cd ~/data/alignment/Ensembl/Rat
+
+#curl -O --socks5 127.0.0.1:1080 ftp://ftp.ensembl.org/pub/release-82/fasta/rattus_norvegicus/dna/Rattus_norvegicus.Rnor_6.0.dna_sm.toplevel.fa.gz
+wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/rattus_norvegicus/dna/Rattus_norvegicus.Rnor_6.0.dna_sm.toplevel.fa.gz
+
+gzip -d -c Rattus_norvegicus.Rnor_6.0.dna_sm.toplevel.fa.gz > toplevel.fa
+faops count toplevel.fa | perl -aln -e 'next if $F[0] eq 'total'; print $F[0] if $F[1] > 50000; print $F[0] if $F[1] > 5000  and $F[6]/$F[1] < 0.05' | uniq > listFile
+faops some toplevel.fa listFile toplevel.filtered.fa
+faops split-name toplevel.filtered.fa .
+rm toplevel.fa toplevel.filtered.fa listFile
+
+cat KL*.fa > Un.fa
+cat AABR*.fa >> Un.fa
+rm KL*.fa AABR*.fa
+
+mkdir -p ~/data/rna-seq/rat_hypertension/ref
+cd ~/data/rna-seq/rat_hypertension/ref
+
+cat ~/data/alignment/Ensembl/Rat/{1,2,3,4,5,6,7,8,9,10}.fa > rat_82.fa
+cat ~/data/alignment/Ensembl/Rat/{11,12,13,14,15,16,17,18,19,20}.fa >> rat_82.fa
+cat ~/data/alignment/Ensembl/Rat/{X,Y,MT}.fa >> rat_82.fa
+faops size rat_82.fa > chr.sizes
+
+samtools faidx rat_82.fa
+bwa index -a bwtsw rat_82.fa
+bowtie2-build rat_82.fa rat_82
+
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CreateSequenceDictionary \
+    R=rat_82.fa O=rat_82.dict
+
+wget -N ftp://ftp.ensembl.org/pub/release-82/gtf/rattus_norvegicus/Rattus_norvegicus.Rnor_6.0.82.gtf.gz
+gzip -d -c Rattus_norvegicus.Rnor_6.0.82.gtf.gz > rat_82.gtf
+
+perl -nl -e '/^(MT|KL|AABR)/ and print' rat_82.gtf > rat_82.mask.gtf
+
+```
+
+Generate bash files.
+
+```bash
+cd ~/data/rna-seq/rat_hypertension
+perl ~/Scripts/sra/rat_hypertension_seq.pl
+
+bash bash/sra.Control.sh
+
+```
