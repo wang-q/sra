@@ -249,6 +249,7 @@ cd [% base_dir %]
 
 ### Clean
 # find [% data_dir.proc %] -type d -name "*fastqc" | sort | xargs rm -fr
+# find [% data_dir.proc %] -type f -name "*_fastqc.zip" | sort | xargs rm
 # find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | grep -v trimmed | xargs rm
 # find [% data_dir.proc %] -type f -name "*matches.txt" | sort | xargs rm
 # find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
@@ -303,7 +304,17 @@ screen -L -dmS cuffdiff_cxb sh [% data_dir.bash %]/cuffdiff_cxb.sh
 #----------------------------#
 screen -L -dmS cuffnorm sh [% data_dir.bash %]/cuffnorm.sh
 
+#----------------------------#
+# Save all genes with P<0.05
+#----------------------------#
+# https://github.com/griffithlab/rnaseq_tutorial/wiki/Differential-Expression
+perl -nl -e '/OK|gene_id/ and print' [% data_dir.proc %]/diff_out_cxb/gene_exp.diff \
+    | sort -k 12n,12n \
+    | cut -f 3,5,6,8,9,10,12,13,14 \
+    | perl -an -F"\t" -e 'if ($F[0] ne q{-} and $F[6] <= 0.05) {print;}' \
+    > [% data_dir.proc %]/DE_genes.tsv
 EOF
+
     my $tt = Template->new;
     $tt->process(
         \$text,
