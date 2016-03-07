@@ -169,7 +169,7 @@ cd ~/data/rna-seq/rat_hypertension/ref
 
 cat ~/data/alignment/Ensembl/Rat/{1,2,3,4,5,6,7,8,9,10}.fa > rat_82.fa
 cat ~/data/alignment/Ensembl/Rat/{11,12,13,14,15,16,17,18,19,20}.fa >> rat_82.fa
-cat ~/data/alignment/Ensembl/Rat/{X,Y,MT}.fa >> rat_82.fa
+cat ~/data/alignment/Ensembl/Rat/{X,Y,MT,Un}.fa >> rat_82.fa
 faops size rat_82.fa > chr.sizes
 
 samtools faidx rat_82.fa
