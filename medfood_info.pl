@@ -4,13 +4,13 @@ use warnings;
 use autodie;
 
 use Tie::IxHash;
-use YAML qw(Dump Load DumpFile LoadFile);
+use YAML::Syck;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use MySRA;
 
-my $file    = "medfood";
+my $file = "medfood";
 tie my %name_of, "Tie::IxHash";
 %name_of = (
     SRX305204 => "Crataegus_pinnatifida",    # 山楂
@@ -47,6 +47,8 @@ tie my %name_of, "Tie::IxHash";
     SRX096128 => "Prunella_vulgaris",        # 夏枯草
     SRX447081 => "Crocus_sativus",           # 藏红花
     SRX146981 => "Curcuma_Longa",            # 姜黄
+
+    SRX761199 => "Malus_hupehensis",         # 湖北海棠
 );
 
 my $mysra = MySRA->new;
@@ -68,4 +70,4 @@ for my $key ( keys %name_of ) {
     print "\n";
 }
 
-DumpFile( "$file.yml", $master );
+YAML::Syck::DumpFile( "$file.yml", $master );
