@@ -22,6 +22,18 @@ cp ~/Scripts/sra/medfood.md5.txt .
 md5sum --check medfood.md5.txt
 ```
 
+Metainfo of Pueraria_lobata in NCBI is wrong.
+
+```bash
+cd ~/Scripts/sra
+cat medfood.csv \
+    | grep -v "Pueraria_lobata" \
+    > medfood_all.csv
+echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.19G \
+    >> medfood_all.csv
+
+```
+
 Generate bash files and run a sample.
 
 ```bash

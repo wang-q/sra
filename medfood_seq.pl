@@ -9,8 +9,7 @@ use List::MoreUtils qw(uniq);
 use YAML qw(Dump Load DumpFile LoadFile);
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
-
+use lib "$FindBin::RealBin/lib";
 use MyBAM;
 
 #----------------------------------------------------------#
@@ -27,7 +26,7 @@ my $memory   = 64;
 #----------------------------#
 my $brew_home = `brew --prefix`;
 my $bin_dir   = {
-    script  => $FindBin::Bin,
+    script  => $FindBin::RealBin,
     trinity => path( $ENV{HOME}, "share/trinityrnaseq-2.0.6" )->stringify,
 };
 my $data_dir = {
@@ -37,7 +36,9 @@ my $data_dir = {
     log  => path( $base_dir, "log" )->stringify,
     ref  => path( $base_dir, "ref" )->stringify,
 };
-my $ref_file = { adapters => path( $base_dir, "ref", "illumina_adapters.fa" )->stringify, };
+my $ref_file
+    = { adapters => path( $base_dir, "ref", "illumina_adapters.fa" )->stringify,
+    };
 
 for my $key ( keys %{$data_dir} ) {
     path( $data_dir->{$key} )->mkpath;
@@ -46,7 +47,7 @@ for my $key ( keys %{$data_dir} ) {
 #----------------------------------------------------------#
 # read csv
 #----------------------------------------------------------#
-$csv_file = path( $FindBin::Bin, $csv_file )->stringify;
+$csv_file = path( $FindBin::RealBin, $csv_file )->stringify;
 my @rows;
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
@@ -84,8 +85,13 @@ ITEM: for my $name (@names) {
             next ITEM;
         }
 
-        my $rg_str = '@RG' . "\\tID:$srr" . "\\tLB:$srx" . "\\tPL:$platform" . "\\tSM:$name";
-        my $lane   = {
+        my $rg_str
+            = '@RG'
+            . "\\tID:$srr"
+            . "\\tLB:$srx"
+            . "\\tPL:$platform"
+            . "\\tSM:$name";
+        my $lane = {
             file     => $file,
             srx      => $srx,
             platform => $platform,
@@ -118,7 +124,8 @@ for my $item (@data) {
     $mybam->scythe_sickle($item);
     $mybam->fastqc($item);
 
-    $mybam->write( $item, path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify );
+    $mybam->write( $item,
+        path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify );
 }
 
 for my $item (@data) {
@@ -136,7 +143,8 @@ for my $item (@data) {
     $mybam->trinity($item);
     $mybam->trinity_rsem($item);
 
-    $mybam->write( $item, path( $data_dir->{bash}, "tri." . $item->{name} . ".sh" )->stringify );
+    $mybam->write( $item,
+        path( $data_dir->{bash}, "tri." . $item->{name} . ".sh" )->stringify );
 }
 
 #----------------------------------------------------------#
@@ -178,6 +186,7 @@ AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
 
 EOF
     my $tt = Template->new;
-    $tt->process( \$text, {}, path( $data_dir->{ref}, "illumina_adapters.fa" )->stringify )
+    $tt->process( \$text, {},
+        path( $data_dir->{ref}, "illumina_adapters.fa" )->stringify )
         or die Template->error;
 }
