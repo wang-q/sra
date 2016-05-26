@@ -6,7 +6,7 @@ use autodie;
 use Path::Tiny;
 use Text::CSV_XS;
 use List::MoreUtils qw(uniq);
-use YAML qw(Dump Load DumpFile LoadFile);
+use YAML::Syck;
 
 use FindBin;
 use lib "$FindBin::RealBin/lib";
@@ -161,7 +161,7 @@ for my $item (@data) {
         sickle   => 1,
     );
 
-    $mybam->screen_fq( \@data );
+    $mybam->screen_sra( \@data );
     $mybam->screen_trinity( \@data );
 
     $mybam->write( undef, path( $base_dir, "screen.sh.txt" )->stringify );
