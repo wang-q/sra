@@ -31,7 +31,6 @@ cat medfood.csv \
     > medfood_all.csv
 echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.19G \
     >> medfood_all.csv
-
 ```
 
 Generate bash files and run a sample.

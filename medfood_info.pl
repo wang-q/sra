@@ -49,6 +49,9 @@ tie my %name_of, "Tie::IxHash";
     SRX146981 => "Curcuma_Longa",            # 姜黄
 
     SRX761199 => "Malus_hupehensis",         # 湖北海棠
+
+    SRX477950  => "Oryza_sativa_Japonica",
+    SRX1418190 => "Arabidopsis_thaliana",
 );
 
 my $mysra = MySRA->new;
