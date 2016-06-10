@@ -288,6 +288,81 @@ cp ~/Scripts/sra/bodymap2.md5.txt .
 md5sum --check bodymap2.md5.txt
 ```
 
+### Mouse transcriptome
+
+http://www.ebi.ac.uk/ena/data/view/SRP012040
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+SRX135150,Ovary,
+SRX135151,MammaryGland,
+SRX135152,Stomach,
+SRX135153,SmIntestine,
+SRX135154,Duodenum,
+SRX135155,Adrenal,
+SRX135156,LgIntestine,
+SRX135157,GenitalFatPad,
+SRX135158,SubcFatPad,
+SRX135159,Thymus,
+SRX135160,Testis,
+SRX135161,Kidney,
+SRX135162,Liver,
+SRX135163,Lung,
+SRX135164,Spleen,
+SRX135165,Colon,
+SRX135166,Heart,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="mouse_transcriptome.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl mouse_transcriptome.yml --md5
+
+mkdir -p ~/data/rna-seq/mouse_trans/sra
+cd ~/data/rna-seq/mouse_trans/sra
+cp ~/Scripts/sra/mouse_transcriptome.ftp.txt .
+aria2c -x 9 -s 3 -c -i mouse_transcriptome.ftp.txt
+
+cd ~/data/rna-seq/mouse_trans/sra
+cp ~/Scripts/sra/mouse_transcriptome.md5.txt .
+md5sum --check mouse_transcriptome.md5.txt
+```
+
 ### Rat hypertension
 
 Information.
@@ -741,4 +816,4 @@ md5sum --check japonica24.md5.txt
 * 10_000_diploid_yeast_genomes: ERP000547, PRJEB2446
 * Arabidopsis thaliana recombinant tetrads and DH lines: ERP003793, PRJEB4500
 * Resequencing of 50 rice individuals: SRP003189
-* 
+* rice_omachi: DRX000450
