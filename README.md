@@ -568,8 +568,177 @@ cp ~/Scripts/sra/dicty.md5.txt .
 md5sum --check dicty.md5.txt
 ```
 
+### ath19
+
+ERP000565 ERA023479
+
+sf-2 is missing, use downloaded bam file.
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+ERS025622,Bur_0,
+ERS025623,Can_0,
+ERS025624,Col_0,
+ERS025625,Ct_1,
+ERS025626,Edi_0,
+ERS025627,Hi_0,
+ERS025628,Kn_0,
+ERS025629,Ler_0,
+ERS025630,Mt_0,
+ERS025631,No_0,
+ERS025632,Oy_0,
+ERS025633,Po_0,
+ERS025634,Rsch_4,
+ERS025635,Sf_2,
+ERS025636,Tsu_0,
+ERS025637,Wil_2,
+ERS025638,Ws_0,
+ERS025639,Wu_0,
+ERS025640,Zu_0,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="ath19.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl ath19.yml --md5
+
+mkdir -p ~/data/dna-seq/ath19/sra
+cd ~/data/dna-seq/ath19/sra
+cp ~/Scripts/sra/ath19.ftp.txt .
+aria2c -x 9 -s 3 -c -i ath19.ftp.txt
+
+cd ~/data/dna-seq/ath19/sra
+cp ~/Scripts/sra/ath19.md5.txt .
+md5sum --check ath19.md5.txt
+```
+
+### japonica24
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+#TEJ
+SRS086330,IRGC1107,
+SRS086334,IRGC2540,
+SRS086337,IRGC27630,
+SRS086341,IRGC32399,
+SRS086345,IRGC418,
+SRS086354,IRGC55471,
+SRS086360,IRGC8191,
+# tagged as TRJ in Table.S1
+SRS086343,IRGC38698,
+
+#TRJ
+SRS086329,IRGC11010,
+SRS086333,IRGC17757,
+SRS086342,IRGC328,
+SRS086346,IRGC43325,
+SRS086349,IRGC43675,
+SRS086351,IRGC50448,
+SRS086358,IRGC66756,
+SRS086362,IRGC8244,
+SRS086336,IRGC26872,
+
+#ARO
+SRS086331,IRGC12793,
+SRS086344,IRGC38994,
+SRS086365,IRGC9060,
+SRS086366,IRGC9062,
+SRS086371,RA4952,
+SRS086340,IRGC31856,
+
+# IRGC43397 is admixed
+# So there are 23 japonica accessions
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="japonica24.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl japonica24.yml --md5
+
+mkdir -p ~/data/dna-seq/japonica24/sra
+cd ~/data/dna-seq/japonica24/sra
+cp ~/Scripts/sra/japonica24.ftp.txt .
+aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
+
+cd ~/data/dna-seq/japonica24/sra
+cp ~/Scripts/sra/japonica24.md5.txt .
+md5sum --check japonica24.md5.txt
+```
+
 ## Unused projects
 
 * Glycine max Genome sequencing: SRP015830, PRJNA175477
 * 10_000_diploid_yeast_genomes: ERP000547, PRJEB2446
 * Arabidopsis thaliana recombinant tetrads and DH lines: ERP003793, PRJEB4500
+* Resequencing of 50 rice individuals: SRP003189
+* 
