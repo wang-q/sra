@@ -1,6 +1,6 @@
 # Processing NCBI sra/EBI ena data
 
-## Projects
+## De novo rna-seq projects
 
 ### medfood: medicine food homology. Rna-seq survey.
 
@@ -141,7 +141,72 @@ screen -L -dmS tri_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/
 # ...
 ```
 
-### cele_mmp: 40 Wild strains from *C. elegans* million mutation project
+### chickpea: de novo rna-seq.
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+SRX402846,ShootCold,
+SRX402839,RootControl,
+SRX402841,RootSalinity,
+SRX402842,RootCold,
+SRX402843,ShootControl,
+SRX402840,RootDesiccation,
+SRX402844,ShootDesiccation,
+SRX402845,ShootSalinity,
+SRX402846,ShootCold,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="chickpea_rnaseq.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl chickpea_rnaseq.yml --md5
+
+mkdir -p ~/data/rna-seq/chickpea/sra
+cd ~/data/rna-seq/chickpea/sra
+cp ~/Scripts/sra/chickpea_rnaseq.ftp.txt .
+aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
+
+cd ~/data/rna-seq/chickpea/sra
+cp ~/Scripts/sra/chickpea_rnaseq.md5.txt .
+md5sum --check chickpea_rnaseq.md5.txt
+```
+
+## Reference based rna-seq projects
+
+### cele_mmp: 40 wild strains from *C. elegans* million mutation project
 
 From http://genome.cshlp.org/content/23/10/1749.abstract ,
 http://genome.cshlp.org/content/suppl/2013/08/20/gr.157651.113.DC2/Supplemental_Table_12.txt
@@ -269,6 +334,79 @@ bash bash/sra.AB1.sh
 ```
 
 Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.
+
+### Human bodymap2
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+ERS025081,kidney,
+ERS025082,heart,
+ERS025083,ovary,
+ERS025085,brain,
+ERS025086,lymph_node,
+ERS025088,breast,
+ERS025089,colon,
+ERS025090,thyroid,
+ERS025091,white_blood_cells,
+ERS025092,adrenal,
+ERS025094,testes,
+ERS025095,prostate,
+ERS025096,liver,
+ERS025097,skeletal_muscle,
+ERS025098,adipose,
+ERS025099,lung,
+ERS025084,16_tissues_mixture_1,
+ERS025087,16_tissues_mixture_2,
+ERS025093,16_tissues_mixture_3,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="bodymap2.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl bodymap2.yml --md5
+
+mkdir -p ~/data/rna-seq/bodymap2/sra
+cd ~/data/rna-seq/bodymap2/sra
+cp ~/Scripts/sra/bodymap2.ftp.txt .
+aria2c -x 9 -s 3 -c -i bodymap2.ftp.txt
+
+cd ~/data/rna-seq/bodymap2/sra
+cp ~/Scripts/sra/bodymap2.md5.txt .
+md5sum --check bodymap2.md5.txt
+```
 
 ### Rat hypertension
 
