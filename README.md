@@ -68,7 +68,9 @@ EOF
         my @srx = @{ $mysra->srp_worker($key) };
         print "@srx";
 
-        my $sample = {};
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
         for (@srx) {
             $sample->{$_} = $mysra->erx_worker($_);
         }
@@ -173,7 +175,9 @@ EOF
         my @srx = @{ $mysra->srp_worker($key) };
         print "@srx";
 
-        my $sample = {};
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
         for (@srx) {
             $sample->{$_} = $mysra->erx_worker($_);
         }
@@ -206,136 +210,10 @@ md5sum --check chickpea_rnaseq.md5.txt
 
 ## Reference based rna-seq projects
 
-### cele_mmp: 40 wild strains from *C. elegans* million mutation project
-
-From http://genome.cshlp.org/content/23/10/1749.abstract ,
-http://genome.cshlp.org/content/suppl/2013/08/20/gr.157651.113.DC2/Supplemental_Table_12.txt
-
-Grab information.
-
-```bash
-cd ~/Scripts/sra
-
-cat << EOF |
-SRX218993,AB1,
-SRX218973,AB3,
-SRX218981,CB4853,
-SRX218994,CB4854,
-SRX219150,CB4856,
-SRX218999,ED3017,
-SRX219003,ED3021,
-SRX218982,ED3040,
-SRX219000,ED3042,
-SRX218983,ED3049,
-SRX218984,ED3052,
-SRX219004,ED3057,
-SRX218977,ED3072,
-SRX218988,GXW1,
-SRX218989,JU1088,
-SRX218974,JU1171,
-SRX218990,JU1400,
-SRX218979,JU1401,
-SRX218975,JU1652,
-SRX218971,JU258,
-SRX218978,JU263,
-SRX218991,JU300,
-SRX218992,JU312,
-SRX218969,JU322,
-SRX219001,JU345,
-SRX219005,JU360,
-SRX219002,JU361,
-SRX219153,JU394,
-SRX218972,JU397,
-SRX218980,JU533,
-SRX218970,JU642,
-SRX219006,JU775,
-SRX218995,KR314,
-SRX218996,LKC34,
-SRX218997,MY1,
-SRX218966,MY14,
-SRX218967,MY16,
-SRX218998,MY2,
-SRX218968,MY6,
-SRX219154,PX174,
-EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="cele_mmp.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
-
-```
-
-Download.
-
-```bash
-cd ~/Scripts/sra
-perl sra_prep.pl -i cele_mmp.yml --md5
-
-mkdir -p ~/data/dna-seq/cele_mmp/sra
-cd ~/data/dna-seq/cele_mmp/sra
-cp ~/Scripts/sra/cele_mmp.ftp.txt .
-aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
-
-cd ~/data/dna-seq/cele_mmp/sra
-cp ~/Scripts/sra/cele_mmp.md5.txt .
-md5sum --check cele_mmp.md5.txt
-
-# rsync -avP wangq@45.79.80.100:data/dna-seq/ ~/data/dna-seq
-```
-
-Prepare reference genome.
-
-`~/data/alignment/Ensembl/Cele` should contain [C. elegans genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#caenorhabditis-elegans) from ensembl.
-
-```bash
-mkdir -p ~/data/dna-seq/cele_mmp/ref
-cd ~/data/dna-seq/cele_mmp/ref
-
-cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa > Cele_82.fa
-faops size Cele_82.fa > chr.sizes
-
-samtools faidx Cele_82.fa
-bwa index -a bwtsw Cele_82.fa
-
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    CreateSequenceDictionary \
-    R=Cele_82.fa O=Cele_82.dict
-```
-
-Generate bash files and run a sample.
-
-```bash
-cd ~/data/dna-seq/cele_mmp
-perl ~/Scripts/sra/cele_mmp_seq.pl
-
-bash bash/sra.AB1.sh
-
-```
-
-Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.
-
 ### Human bodymap2
+
+* http://www.ebi.ac.uk/ena/data/view/ERP000546
+* http://www.ncbi.nlm.nih.gov/Traces/study/?acc=ERP000546
 
 Grab information.
 
@@ -377,7 +255,9 @@ EOF
         my @srx = @{ $mysra->srp_worker($key) };
         print "@srx";
 
-        my $sample = {};
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
         for (@srx) {
             $sample->{$_} = $mysra->erx_worker($_);
         }
@@ -473,3 +353,223 @@ perl ~/Scripts/sra/rat_hypertension_seq.pl
 bash bash/sra.Control.sh
 
 ```
+
+## Reference based dna-seq projects
+
+### cele_mmp: 40 wild strains from *C. elegans* million mutation project
+
+From http://genome.cshlp.org/content/23/10/1749.abstract ,
+http://genome.cshlp.org/content/suppl/2013/08/20/gr.157651.113.DC2/Supplemental_Table_12.txt
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+SRX218993,AB1,
+SRX218973,AB3,
+SRX218981,CB4853,
+SRX218994,CB4854,
+SRX219150,CB4856,
+SRX218999,ED3017,
+SRX219003,ED3021,
+SRX218982,ED3040,
+SRX219000,ED3042,
+SRX218983,ED3049,
+SRX218984,ED3052,
+SRX219004,ED3057,
+SRX218977,ED3072,
+SRX218988,GXW1,
+SRX218989,JU1088,
+SRX218974,JU1171,
+SRX218990,JU1400,
+SRX218979,JU1401,
+SRX218975,JU1652,
+SRX218971,JU258,
+SRX218978,JU263,
+SRX218991,JU300,
+SRX218992,JU312,
+SRX218969,JU322,
+SRX219001,JU345,
+SRX219005,JU360,
+SRX219002,JU361,
+SRX219153,JU394,
+SRX218972,JU397,
+SRX218980,JU533,
+SRX218970,JU642,
+SRX219006,JU775,
+SRX218995,KR314,
+SRX218996,LKC34,
+SRX218997,MY1,
+SRX218966,MY14,
+SRX218967,MY16,
+SRX218998,MY2,
+SRX218968,MY6,
+SRX219154,PX174,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="cele_mmp.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+perl sra_prep.pl -i cele_mmp.yml --md5
+
+mkdir -p ~/data/dna-seq/cele_mmp/sra
+cd ~/data/dna-seq/cele_mmp/sra
+cp ~/Scripts/sra/cele_mmp.ftp.txt .
+aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
+
+cd ~/data/dna-seq/cele_mmp/sra
+cp ~/Scripts/sra/cele_mmp.md5.txt .
+md5sum --check cele_mmp.md5.txt
+
+# rsync -avP wangq@45.79.80.100:data/dna-seq/ ~/data/dna-seq
+```
+
+Prepare reference genome.
+
+`~/data/alignment/Ensembl/Cele` should contain [C. elegans genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#caenorhabditis-elegans) from ensembl.
+
+```bash
+mkdir -p ~/data/dna-seq/cele_mmp/ref
+cd ~/data/dna-seq/cele_mmp/ref
+
+cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa > Cele_82.fa
+faops size Cele_82.fa > chr.sizes
+
+samtools faidx Cele_82.fa
+bwa index -a bwtsw Cele_82.fa
+
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CreateSequenceDictionary \
+    R=Cele_82.fa O=Cele_82.dict
+```
+
+Generate bash files and run a sample.
+
+```bash
+cd ~/data/dna-seq/cele_mmp
+perl ~/Scripts/sra/cele_mmp_seq.pl
+
+bash bash/sra.AB1.sh
+
+```
+
+Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.
+
+### dicty
+
+SRA012238, SRP002085
+
+Grab information.
+
+```bash
+cd ~/Scripts/sra
+
+cat << EOF |
+SRX017832,QS1,
+SRX017812,68,
+SRX018144,QS17,
+SRX018099,WS15,
+SRX018021,WS14,
+SRX018020,S224,
+SRX018019,QS9,
+SRX018018,QS80,
+SRX018017,QS74,
+SRX018016,QS73,
+SRX018015,QS69,
+SRX018012,QS4,
+SRX018011,QS37,
+SRX017848,QS36,
+SRX017847,QS23,
+SRX017846,QS18,
+SRX017845,QS11,
+SRX017814,AX4,
+SRX017813,70,
+SRX017442,TW5A,
+SRX017441,TW5A,
+SRX017440,MA12C1,
+SRX017439,MA12C1,
+EOF
+    grep . \
+    | grep -v "^#" \
+    | YML_FILE="dicty.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
+        BEGIN {
+            $mysra = MySRA->new;
+            $master = {};
+        }
+
+        my ($key, $name) = ($F[0], $F[1]);
+        print "$key\t$name";
+
+        my @srx = @{ $mysra->srp_worker($key) };
+        print "@srx";
+
+        my $sample = exists $master->{$name} 
+            ? $master->{$name}
+            : {};
+        for (@srx) {
+            $sample->{$_} = $mysra->erx_worker($_);
+        }
+        $master->{$name} = $sample;
+        print "";
+
+        END {
+            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
+        }
+    '
+
+```
+
+Download.
+
+```bash
+cd ~/Scripts/sra
+
+perl sra_prep.pl dicty.yml --md5
+
+mkdir -p ~/data/dna-seq/dicty/sra
+cd ~/data/dna-seq/dicty/sra
+cp ~/Scripts/sra/dicty.ftp.txt .
+aria2c -x 9 -s 3 -c -i dicty.ftp.txt
+
+cd ~/data/dna-seq/dicty/sra
+cp ~/Scripts/sra/dicty.md5.txt .
+md5sum --check dicty.md5.txt
+```
+
+## Unused projects
+
+* Glycine max Genome sequencing: SRP015830, PRJNA175477
+* 10_000_diploid_yeast_genomes: ERP000547, PRJEB2446
+* Arabidopsis thaliana recombinant tetrads and DH lines: ERP003793, PRJEB4500
