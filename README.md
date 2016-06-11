@@ -51,6 +51,14 @@ SRX1023176,Osmanthus_fragrans_Semperflorens,四季桂
 SRX1023177,Osmanthus_fragrans_Thunbergii,金桂
 SRX1023178,Osmanthus_fragrans_Latifolius,银桂
 
+SRX868796,Jasminum_sambac,茉莉
+SRX858389,Fraxinus_pennsylvanica_Leaf,美国红梣
+SRX858390,Fraxinus_pennsylvanica_Petiole,
+SRX823915,Fraxinus_velutina,绒毛白蜡
+SRX661505,Olea_europaea,油橄榄
+SRX1821033,Glycine_max_1,大豆
+SRX712834,Glycine_max_2,
+
 SRX477950,Oryza_sativa_Japonica,粳稻
 SRX1418190,Arabidopsis_thaliana,拟南芥
 EOF
