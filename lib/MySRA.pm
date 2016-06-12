@@ -28,16 +28,10 @@ sub srp_worker {
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/sra?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
     my $url       = $url_part1 . $term . $url_part2;
-    print $url, "\n";
-
-    my @srx;
-
     $mech->get($url);
 
     my @links = $mech->find_all_links( url_regex => qr{sra\/[DES]RX\d+}, );
-
-    printf "OK, get %d SRX\n", scalar @links;
-    @srx = map { /sra\/([DES]RX\d+)/; $1 } map { $_->url } @links;
+    my @srx = map { /sra\/([DES]RX\d+)/; $1 } map { $_->url } @links;
 
     return \@srx;
 }
@@ -123,7 +117,6 @@ sub erx_worker {
         . "library_name,library_layout,nominal_length,library_source,library_selection,"
         . "read_count,base_count,sra_md5,sra_ftp&download=txt";
     my $url = $url_part1 . $term . $url_part2;
-    print $url, "\n";
 
     $mech->get($url);
     my @lines = split /\n/, $mech->content;
