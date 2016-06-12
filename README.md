@@ -77,10 +77,10 @@ perl sra_prep.pl medfood.yml --md5
 mkdir -p ~/data/rna-seq/medfood/sra
 cd ~/data/rna-seq/medfood/sra
 cp ~/Scripts/sra/medfood.ftp.txt .
+cp ~/Scripts/sra/medfood.md5.txt .
+
 aria2c -x 9 -s 3 -c -i medfood.ftp.txt
 
-cd ~/data/rna-seq/medfood/sra
-cp ~/Scripts/sra/medfood.md5.txt .
 md5sum --check medfood.md5.txt
 ```
 
