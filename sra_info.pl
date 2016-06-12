@@ -70,10 +70,10 @@ while ( my $row = $csv->getline($csv_fh) ) {
     if ( !defined $name ) {
         $name = $key;
     }
-    print "$key\t$name\n";
+    warn "$key\t$name\n";
 
     my @srx = @{ $mysra->srp_worker($key) };
-    print "@srx\n";
+    warn "@srx\n";
 
     my $sample
         = exists $master->{$name}
@@ -83,7 +83,7 @@ while ( my $row = $csv->getline($csv_fh) ) {
         $sample->{$_} = $mysra->erx_worker($_);
     }
     $master->{$name} = $sample;
-    print "\n";
+    warn  "\n";
 }
 close $csv_fh;
 

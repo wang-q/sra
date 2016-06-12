@@ -44,10 +44,11 @@ sub erp_worker {
     $mech->stack_depth(0);    # no history to save memory
     $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
-    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
-    my $url_part2 = "&result=read_run&fields=secondary_study_accession,experiment_accession";
-    my $url       = $url_part1 . $term . $url_part2;
-    print $url, "\n";
+    my $url_part1
+        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part2
+        = "&result=read_run&fields=secondary_study_accession,experiment_accession";
+    my $url = $url_part1 . $term . $url_part2;
 
     $mech->get($url);
     my @lines = split /\n/, $mech->content;
@@ -59,7 +60,6 @@ sub erp_worker {
         }
     }
     @srx = uniq(@srx);
-    printf "OK, get %d SRX\n", scalar @srx;
 
     return \@srx;
 }
@@ -76,10 +76,6 @@ sub srs_worker {
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/biosample/?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
     my $url       = $url_part1 . $term . $url_part2;
-    print $url, "\n";
-
-    my @srx;
-
     $mech->get($url);
 
     # this link exists in both summary and detailed pages
@@ -88,15 +84,11 @@ sub srs_worker {
         url_regex  => => qr{sample},
     );
 
-    {
-        my @links = $mech->find_all_links(
-            text_regex => qr{[DES]RX\d+},
-            url_regex  => qr{report},
-        );
-
-        printf "OK, get %d SRX\n", scalar @links;
-        @srx = map { $_->text } @links;
-    }
+    my @links = $mech->find_all_links(
+        text_regex => qr{[DES]RX\d+},
+        url_regex  => qr{report},
+    );
+    my @srx = map { $_->text } @links;
 
     return \@srx;
 }
@@ -109,7 +101,8 @@ sub erx_worker {
     $mech->stack_depth(0);    # no history to save memory
     $mech->proxy( [ 'http', 'ftp' ], $self->proxy ) if $self->proxy;
 
-    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part1
+        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
     my $url_part2
         = "&result=read_run&fields=secondary_study_accession,secondary_sample_accession,"
         . "experiment_accession,run_accession,scientific_name,"
@@ -126,11 +119,8 @@ sub erx_worker {
 
     # prompt SRR
     chomp for @lines;
-    if ( scalar @lines ) {
-        printf "OK, get %d SRR\n", scalar @lines;
-    }
-    else {
-        print "Can't get any SRR, please check.\n";
+    if ( !scalar @lines ) {
+        warn "Can't get any SRR, please check.\n";
         return;
     }
 
@@ -160,7 +150,7 @@ sub erx_worker {
     my ( @srr, @downloads );
     for my $line (@lines) {
         my @f = split /\t/, $line;
-        print " " x 4, "$f[3]\n";
+        warn " " x 4 . "$f[3]\n";
         push @srr,       $f[3];
         push @downloads, "ftp://" . $f[15];
         $info->{srr_info}{ $f[3] } = {
