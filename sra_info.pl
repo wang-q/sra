@@ -23,7 +23,7 @@ use MySRA;
     "Grab information from sra/ena.\n\n"
         . "Usage: perl %c <infile.csv> [options] > <outfile.yml>\n"
         . "\t<infile> == stdin means read from STDIN"
-        . "\tfirst column should be SRA object ID, /[DES]R\w\d+/"
+        . "\tfirst column should be SRA object ID, /[DES]R\\w\\d+/"
         . "\tsecond column should be the name of one group",
     [ 'help|h', 'display this message' ],
     [],

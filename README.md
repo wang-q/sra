@@ -166,6 +166,36 @@ md5sum --check chickpea_rnaseq.md5.txt
 
 ## Reference based rna-seq projects
 
+### ath example
+
+http://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP003951
+
+Grab information.
+
+```bash
+mkdir -p ~/data/rna-seq/ath_example/sra
+cd ~/data/rna-seq/ath_example/sra
+
+cat << EOF |
+SRS118358,WT,
+SRS118359,hy5_215,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > ath_example.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/rna-seq/ath_example/sra
+perl ~/Scripts/sra/sra_prep.pl ath_example.yml --md5
+
+aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
+
+md5sum --check ath_example.md5.txt
+```
+
 ### Human bodymap2
 
 * http://www.ebi.ac.uk/ena/data/view/ERP000546
