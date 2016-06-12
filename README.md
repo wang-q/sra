@@ -7,7 +7,8 @@
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/rna-seq/medfood/sra
+cd ~/data/rna-seq/medfood/sra
 
 cat << EOF |
 SRX305204,Crataegus_pinnatifida,山楂
@@ -62,7 +63,7 @@ SRX712834,Glycine_max_2,
 SRX477950,Oryza_sativa_Japonica,粳稻
 SRX1418190,Arabidopsis_thaliana,拟南芥
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > medfood.yml
 
 ```
@@ -70,13 +71,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl medfood.yml --md5
-
-mkdir -p ~/data/rna-seq/medfood/sra
 cd ~/data/rna-seq/medfood/sra
-cp ~/Scripts/sra/medfood.ftp.txt .
-cp ~/Scripts/sra/medfood.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl medfood.yml --md5
 
 aria2c -x 9 -s 3 -c -i medfood.ftp.txt
 
@@ -130,7 +126,8 @@ screen -L -dmS tri_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/rna-seq/chickpea/sra
+cd ~/data/rna-seq/chickpea/sra
 
 cat << EOF |
 SRX402846,ShootCold,
@@ -143,7 +140,7 @@ SRX402844,ShootDesiccation,
 SRX402845,ShootSalinity,
 SRX402846,ShootCold,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > chickpea_rnaseq.yml
 
 ```
@@ -151,13 +148,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl chickpea_rnaseq.yml --md5
-
-mkdir -p ~/data/rna-seq/chickpea/sra
 cd ~/data/rna-seq/chickpea/sra
-cp ~/Scripts/sra/chickpea_rnaseq.ftp.txt .
-cp ~/Scripts/sra/chickpea_rnaseq.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl chickpea_rnaseq.yml --md5
 
 aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 
@@ -204,7 +196,8 @@ md5sum --check ath_example.md5.txt
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/rna-seq/bodymap2/sra
+cd ~/data/rna-seq/bodymap2/sra
 
 cat << EOF |
 ERS025081,kidney,
@@ -227,7 +220,7 @@ ERS025084,16_tissues_mixture_1,
 ERS025087,16_tissues_mixture_2,
 ERS025093,16_tissues_mixture_3,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > bodymap2.yml
 
 ```
@@ -235,13 +228,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl bodymap2.yml --md5
-
-mkdir -p ~/data/rna-seq/bodymap2/sra
 cd ~/data/rna-seq/bodymap2/sra
-cp ~/Scripts/sra/bodymap2.ftp.txt .
-cp ~/Scripts/sra/bodymap2.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl bodymap2.yml --md5
 
 aria2c -x 9 -s 3 -c -i bodymap2.ftp.txt
 
@@ -255,7 +243,8 @@ http://www.ebi.ac.uk/ena/data/view/SRP012040
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/rna-seq/mouse_trans/sra
+cd ~/data/rna-seq/mouse_trans/sra
 
 cat << EOF |
 SRX135150,Ovary,
@@ -276,7 +265,7 @@ SRX135164,Spleen,
 SRX135165,Colon,
 SRX135166,Heart,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > mouse_transcriptome.yml
 
 ```
@@ -284,13 +273,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl mouse_transcriptome.yml --md5
-
-mkdir -p ~/data/rna-seq/mouse_trans/sra
 cd ~/data/rna-seq/mouse_trans/sra
-cp ~/Scripts/sra/mouse_transcriptome.ftp.txt .
-cp ~/Scripts/sra/mouse_transcriptome.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl mouse_transcriptome.yml --md5
 
 aria2c -x 9 -s 3 -c -i mouse_transcriptome.ftp.txt
 
@@ -373,7 +357,8 @@ http://genome.cshlp.org/content/suppl/2013/08/20/gr.157651.113.DC2/Supplemental_
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/dna-seq/cele_mmp/sra
+cd ~/data/dna-seq/cele_mmp/sra
 
 cat << EOF |
 SRX218993,AB1,
@@ -417,7 +402,7 @@ SRX218998,MY2,
 SRX218968,MY6,
 SRX219154,PX174,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > cele_mmp.yml
 
 ```
@@ -425,13 +410,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl -i cele_mmp.yml --md5
-
-mkdir -p ~/data/dna-seq/cele_mmp/sra
 cd ~/data/dna-seq/cele_mmp/sra
-cp ~/Scripts/sra/cele_mmp.ftp.txt .
-cp ~/Scripts/sra/cele_mmp.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl -i cele_mmp.yml --md5
 
 aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
 
@@ -476,7 +456,8 @@ SRA012238, SRP002085
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/dna-seq/dicty/sra
+cd ~/data/dna-seq/dicty/sra
 
 cat << EOF |
 SRX017832,QS1,
@@ -503,7 +484,7 @@ SRX017441,TW5A,
 SRX017440,MA12C1,
 SRX017439,MA12C1,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > dicty.yml
 
 ```
@@ -511,13 +492,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl dicty.yml --md5
-
-mkdir -p ~/data/dna-seq/dicty/sra
 cd ~/data/dna-seq/dicty/sra
-cp ~/Scripts/sra/dicty.ftp.txt .
-cp ~/Scripts/sra/dicty.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl dicty.yml --md5
 
 aria2c -x 9 -s 3 -c -i dicty.ftp.txt
 
@@ -533,7 +509,8 @@ sf-2 is missing, use downloaded bam file.
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/dna-seq/ath19/sra
+cd ~/data/dna-seq/ath19/sra
 
 cat << EOF |
 ERS025622,Bur_0,
@@ -556,7 +533,7 @@ ERS025638,Ws_0,
 ERS025639,Wu_0,
 ERS025640,Zu_0,
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > ath19.yml
 
 ```
@@ -564,13 +541,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl ath19.yml --md5
-
-mkdir -p ~/data/dna-seq/ath19/sra
 cd ~/data/dna-seq/ath19/sra
-cp ~/Scripts/sra/ath19.ftp.txt .
-cp ~/Scripts/sra/ath19.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl ath19.yml --md5
 
 aria2c -x 9 -s 3 -c -i ath19.ftp.txt
 
@@ -582,7 +554,8 @@ md5sum --check ath19.md5.txt
 Grab information.
 
 ```bash
-cd ~/Scripts/sra
+mkdir -p ~/data/dna-seq/japonica24/sra
+cd ~/data/dna-seq/japonica24/sra
 
 cat << EOF |
 #TEJ
@@ -618,7 +591,7 @@ SRS086340,IRGC31856,
 # IRGC43397 is admixed
 # So there are 23 japonica accessions
 EOF
-    perl sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin \
     > japonica24.yml
 
 ```
@@ -626,13 +599,8 @@ EOF
 Download.
 
 ```bash
-cd ~/Scripts/sra
-perl sra_prep.pl japonica24.yml --md5
-
-mkdir -p ~/data/dna-seq/japonica24/sra
 cd ~/data/dna-seq/japonica24/sra
-cp ~/Scripts/sra/japonica24.ftp.txt .
-cp ~/Scripts/sra/japonica24.md5.txt .
+perl ~/Scripts/sra/sra_prep.pl japonica24.yml --md5
 
 aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
 
