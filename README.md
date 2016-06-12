@@ -62,33 +62,8 @@ SRX712834,Glycine_max_2,
 SRX477950,Oryza_sativa_Japonica,粳稻
 SRX1418190,Arabidopsis_thaliana,拟南芥
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="medfood.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > medfood.yml
 
 ```
 
