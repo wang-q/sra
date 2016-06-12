@@ -281,6 +281,64 @@ aria2c -x 9 -s 3 -c -i mouse_transcriptome.ftp.txt
 md5sum --check mouse_transcriptome.md5.txt
 ```
 
+### Dmel transcriptome
+
+* http://intermine.modencode.org/query/experiment.do?experiment=Tissue-specific+Transcriptional+Profiling+of+D.+melanogaster+using+Illumina+poly%28A%29%2B+RNA-Seq
+* http://www.ebi.ac.uk/ena/data/view/SRP003905
+
+Grab information.
+
+```bash
+mkdir -p ~/data/rna-seq/dmel_trans/sra
+cd ~/data/rna-seq/dmel_trans/sra
+
+cat << EOF |
+SRS118258,mated_female_eclosion_1d_heads,
+SRS118259,mated_female_eclosion_20d_heads,
+SRS118260,mated_female_eclosion_4d_heads,
+SRS118261,mated_female_eclosion_4d_ovaries,
+SRS118262,mated_male_eclosion_1d_heads,
+SRS118263,mated_male_eclosion_20d_heads,
+SRS118264,mated_male_eclosion_4d_accessory_glands,
+SRS118265,mated_male_eclosion_4d_heads,
+SRS118266,mated_male_eclosion_4d_testes,
+SRS118267,mixed_males_females_eclosion_1d_carcass,
+SRS118268,mixed_males_females_eclosion_1d_digestive_system,
+SRS118269,mixed_males_females_eclosion_20d_carcass,
+SRS118270,mixed_males_females_eclosion_20d_digestive_system,
+SRS118271,mixed_males_females_eclosion_4d_carcass,
+SRS118272,mixed_males_females_eclosion_4d_digestive_system,
+SRS118273,virgin_female_eclosion_1d_heads,
+SRS118274,virgin_female_eclosion_20d_heads,
+SRS118275,virgin_female_eclosion_4d_heads,
+SRS118276,virgin_female_eclosion_4d_ovaries,
+SRS118277,third_instar_larvae_wandering_stage_carcass,
+SRS118278,third_instar_larvae_wandering_stage_CNS,
+SRS118279,third_instar_larvae_wandering_stage_digestive_system,
+SRS118280,third_instar_larvae_wandering_stage_fat_body,
+SRS118281,third_instar_larvae_wandering_stage_imaginal_discs,
+SRS118282,third_instar_larvae_wandering_stage_salivary_glands,
+SRS118283,WPP_2d_CNS,
+SRS118284,WPP_2d_fat_body,
+SRS118285,WPP_fat_body,
+SRS118286,WPP_salivary_glands,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > dmel_transcriptome.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/rna-seq/dmel_trans/sra
+perl ~/Scripts/sra/sra_prep.pl dmel_transcriptome.yml --md5
+
+aria2c -x 9 -s 3 -c -i dmel_transcriptome.ftp.txt
+
+md5sum --check dmel_transcriptome.md5.txt
+```
+
 ### Rat hypertension
 
 Information.
@@ -547,6 +605,53 @@ perl ~/Scripts/sra/sra_prep.pl ath19.yml --md5
 aria2c -x 9 -s 3 -c -i ath19.ftp.txt
 
 md5sum --check ath19.md5.txt
+```
+
+### dpgp
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/dpgp/sra
+cd ~/data/dna-seq/dpgp/sra
+
+cat << EOF |
+SRX058145,CK1,
+SRX058153,CO15N,
+SRX058161,ED10N,
+SRX058178,EZ5N,
+SRX058186,FR217,
+SRX058199,GA185,
+SRX058205,GU10,
+SRX058260,KN6,
+SRX058267,KR39,
+SRX058273,KT1,
+SRX058378,NG3N,
+SRX058281,RC1,
+SRX058341,RG15,
+SRX058291,SP254,
+SRX058285,TZ8,
+SRX058380,UG7,
+SRX058383,UM526,
+SRX058389,ZI268,
+SRX058391,ZL130,
+SRX058293,ZO12,
+SRX058373,ZS37,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > dpgp.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/dpgp/sra
+perl ~/Scripts/sra/sra_prep.pl dpgp.yml --md5
+
+aria2c -x 9 -s 3 -c -i dpgp.ftp.txt
+
+md5sum --check dpgp.md5.txt
 ```
 
 ### japonica24
