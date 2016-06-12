@@ -71,7 +71,6 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl medfood.yml --md5
 
 mkdir -p ~/data/rna-seq/medfood/sra
@@ -144,33 +143,8 @@ SRX402844,ShootDesiccation,
 SRX402845,ShootSalinity,
 SRX402846,ShootCold,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="chickpea_rnaseq.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > chickpea_rnaseq.yml
 
 ```
 
@@ -178,16 +152,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl chickpea_rnaseq.yml --md5
 
 mkdir -p ~/data/rna-seq/chickpea/sra
 cd ~/data/rna-seq/chickpea/sra
 cp ~/Scripts/sra/chickpea_rnaseq.ftp.txt .
+cp ~/Scripts/sra/chickpea_rnaseq.md5.txt .
+
 aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 
-cd ~/data/rna-seq/chickpea/sra
-cp ~/Scripts/sra/chickpea_rnaseq.md5.txt .
 md5sum --check chickpea_rnaseq.md5.txt
 ```
 
@@ -224,33 +197,8 @@ ERS025084,16_tissues_mixture_1,
 ERS025087,16_tissues_mixture_2,
 ERS025093,16_tissues_mixture_3,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="bodymap2.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > bodymap2.yml
 
 ```
 
@@ -258,16 +206,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl bodymap2.yml --md5
 
 mkdir -p ~/data/rna-seq/bodymap2/sra
 cd ~/data/rna-seq/bodymap2/sra
 cp ~/Scripts/sra/bodymap2.ftp.txt .
+cp ~/Scripts/sra/bodymap2.md5.txt .
+
 aria2c -x 9 -s 3 -c -i bodymap2.ftp.txt
 
-cd ~/data/rna-seq/bodymap2/sra
-cp ~/Scripts/sra/bodymap2.md5.txt .
 md5sum --check bodymap2.md5.txt
 ```
 
@@ -299,33 +246,8 @@ SRX135164,Spleen,
 SRX135165,Colon,
 SRX135166,Heart,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="mouse_transcriptome.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > mouse_transcriptome.yml
 
 ```
 
@@ -333,16 +255,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl mouse_transcriptome.yml --md5
 
 mkdir -p ~/data/rna-seq/mouse_trans/sra
 cd ~/data/rna-seq/mouse_trans/sra
 cp ~/Scripts/sra/mouse_transcriptome.ftp.txt .
+cp ~/Scripts/sra/mouse_transcriptome.md5.txt .
+
 aria2c -x 9 -s 3 -c -i mouse_transcriptome.ftp.txt
 
-cd ~/data/rna-seq/mouse_trans/sra
-cp ~/Scripts/sra/mouse_transcriptome.md5.txt .
 md5sum --check mouse_transcriptome.md5.txt
 ```
 
@@ -466,33 +387,8 @@ SRX218998,MY2,
 SRX218968,MY6,
 SRX219154,PX174,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="cele_mmp.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > cele_mmp.yml
 
 ```
 
@@ -505,13 +401,11 @@ perl sra_prep.pl -i cele_mmp.yml --md5
 mkdir -p ~/data/dna-seq/cele_mmp/sra
 cd ~/data/dna-seq/cele_mmp/sra
 cp ~/Scripts/sra/cele_mmp.ftp.txt .
+cp ~/Scripts/sra/cele_mmp.md5.txt .
+
 aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
 
-cd ~/data/dna-seq/cele_mmp/sra
-cp ~/Scripts/sra/cele_mmp.md5.txt .
 md5sum --check cele_mmp.md5.txt
-
-# rsync -avP wangq@45.79.80.100:data/dna-seq/ ~/data/dna-seq
 ```
 
 Prepare reference genome.
@@ -579,33 +473,8 @@ SRX017441,TW5A,
 SRX017440,MA12C1,
 SRX017439,MA12C1,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="dicty.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > dicty.yml
 
 ```
 
@@ -613,16 +482,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl dicty.yml --md5
 
 mkdir -p ~/data/dna-seq/dicty/sra
 cd ~/data/dna-seq/dicty/sra
 cp ~/Scripts/sra/dicty.ftp.txt .
+cp ~/Scripts/sra/dicty.md5.txt .
+
 aria2c -x 9 -s 3 -c -i dicty.ftp.txt
 
-cd ~/data/dna-seq/dicty/sra
-cp ~/Scripts/sra/dicty.md5.txt .
 md5sum --check dicty.md5.txt
 ```
 
@@ -658,33 +526,8 @@ ERS025638,Ws_0,
 ERS025639,Wu_0,
 ERS025640,Zu_0,
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="ath19.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > ath19.yml
 
 ```
 
@@ -692,16 +535,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl ath19.yml --md5
 
 mkdir -p ~/data/dna-seq/ath19/sra
 cd ~/data/dna-seq/ath19/sra
 cp ~/Scripts/sra/ath19.ftp.txt .
+cp ~/Scripts/sra/ath19.md5.txt .
+
 aria2c -x 9 -s 3 -c -i ath19.ftp.txt
 
-cd ~/data/dna-seq/ath19/sra
-cp ~/Scripts/sra/ath19.md5.txt .
 md5sum --check ath19.md5.txt
 ```
 
@@ -746,33 +588,8 @@ SRS086340,IRGC31856,
 # IRGC43397 is admixed
 # So there are 23 japonica accessions
 EOF
-    grep . \
-    | grep -v "^#" \
-    | YML_FILE="japonica24.yml" perl -nla -F"," -I lib -MMySRA -MYAML::Syck -e '
-        BEGIN {
-            $mysra = MySRA->new;
-            $master = {};
-        }
-
-        my ($key, $name) = ($F[0], $F[1]);
-        print "$key\t$name";
-
-        my @srx = @{ $mysra->srp_worker($key) };
-        print "@srx";
-
-        my $sample = exists $master->{$name} 
-            ? $master->{$name}
-            : {};
-        for (@srx) {
-            $sample->{$_} = $mysra->erx_worker($_);
-        }
-        $master->{$name} = $sample;
-        print "";
-
-        END {
-            YAML::Syck::DumpFile( $ENV{YML_FILE}, $master );
-        }
-    '
+    perl sra_info.pl stdin \
+    > japonica24.yml
 
 ```
 
@@ -780,16 +597,15 @@ Download.
 
 ```bash
 cd ~/Scripts/sra
-
 perl sra_prep.pl japonica24.yml --md5
 
 mkdir -p ~/data/dna-seq/japonica24/sra
 cd ~/data/dna-seq/japonica24/sra
 cp ~/Scripts/sra/japonica24.ftp.txt .
+cp ~/Scripts/sra/japonica24.md5.txt .
+
 aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
 
-cd ~/data/dna-seq/japonica24/sra
-cp ~/Scripts/sra/japonica24.md5.txt .
 md5sum --check japonica24.md5.txt
 ```
 
