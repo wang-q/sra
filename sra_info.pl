@@ -22,7 +22,9 @@ use MySRA;
     = Getopt::Long::Descriptive::describe_options(
     "Grab information from sra/ena.\n\n"
         . "Usage: perl %c <infile.csv> [options] > <outfile.yml>\n"
-        . "\t<infile> == stdin means read from STDIN",
+        . "\t<infile> == stdin means read from STDIN"
+        . "\tfirst column should be SRA object ID, /[DES]R\w\d+/"
+        . "\tsecond column should be the name of one group",
     [ 'help|h', 'display this message' ],
     [],
     [   'erp',
@@ -64,7 +66,7 @@ my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
 while ( my $row = $csv->getline($csv_fh) ) {
     next if $row->[0] =~ /^#/;
-    next unless $row->[0] =~ /[DES]RX\d+/;
+    next unless $row->[0] =~ /[DES]R\w\d+/;
 
     my ( $key, $name ) = ( $row->[0], $row->[1] );
     if ( !defined $name ) {
