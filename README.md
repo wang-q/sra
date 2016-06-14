@@ -128,7 +128,7 @@ Sat May 28 03:40:27 CST 2016 Malus_hupehensis [trinity] failed
 Tue Jun 14 10:36:46 CST 2016 Glycine_max_2 [trinity_rsem] failed
 ```
 
-### chickpea: de novo rna-seq.
+### chickpea
 
 Grab information.
 
@@ -161,6 +161,66 @@ perl ~/Scripts/sra/sra_prep.pl chickpea_rnaseq.yml --md5
 aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 
 md5sum --check chickpea_rnaseq.md5.txt
+```
+
+### Spartina alterniflora 互花米草
+
+Create information.
+
+```bash
+mkdir -p ~/data/rna-seq/spartina/sra
+cd ~/data/rna-seq/spartina/sra
+
+cat << EOF > spartina.csv
+name,srx,platform,layout,srr,spot,base
+spartina,LAN1_SA1,Illumina,PAIRED,LAN1_SA1,42426645,8.4G
+EOF
+
+```
+
+### Cercis gigantea 巨紫荆
+
+Create information.
+
+```bash
+mkdir -p ~/data/rna-seq/cercis_gigantea/sra
+cd ~/data/rna-seq/cercis_gigantea/sra
+
+cat << EOF > cercis_gigantea.csv
+name,srx,platform,layout,srr,spot,base
+cercis_gigantea,LAN8_SA4,Illumina,PAIRED,LAN8_SA4,42426645,6.9G
+EOF
+
+```
+
+### Gleditsia sinensis 皂荚树
+
+Create information.
+
+```bash
+mkdir -p ~/data/rna-seq/gleditsia_sinensis/sra
+cd ~/data/rna-seq/gleditsia_sinensis/sra
+
+cat << EOF > gleditsia_sinensis.csv
+name,srx,platform,layout,srr,spot,base
+gleditsia_sinensis,ZJ,Illumina,PAIRED,ZJ,37785244,7632619288
+EOF
+
+```
+
+### Sophora japonica 槐树
+
+Create information.
+
+```bash
+mkdir -p ~/data/rna-seq/sophora_japonica/sra
+cd ~/data/rna-seq/sophora_japonica/sra
+
+cat << EOF > sophora_japonica.csv
+name,srx,platform,layout,srr,spot,base
+sophora_japonica,HS,Illumina,PAIRED,HS,37785244,7.1G
+EOF
+
 ```
 
 ## De novo dna-seq projects
