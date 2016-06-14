@@ -121,6 +121,13 @@ screen -L -dmS tri_Cichorium_intybus bash /home/wangq/data/rna-seq/medfood/bash/
 # ...
 ```
 
+Failed.
+
+```text
+Sat May 28 03:40:27 CST 2016 Malus_hupehensis [trinity] failed
+Tue Jun 14 10:36:46 CST 2016 Glycine_max_2 [trinity_rsem] failed
+```
+
 ### chickpea: de novo rna-seq.
 
 Grab information.
@@ -154,6 +161,35 @@ perl ~/Scripts/sra/sra_prep.pl chickpea_rnaseq.yml --md5
 aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 
 md5sum --check chickpea_rnaseq.md5.txt
+```
+
+## De novo dna-seq projects
+
+### Setaria italica
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/setaria_italica/sra
+cd ~/data/dna-seq/setaria_italica/sra
+
+cat << EOF |
+SRP011164,setaria_italica,小米
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > setaria_italica.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/setaria_italica/sra
+perl ~/Scripts/sra/sra_prep.pl setaria_italica.yml --md5
+
+#aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
+
+#md5sum --check ath_example.md5.txt
 ```
 
 ## Reference based rna-seq projects
@@ -712,6 +748,33 @@ aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
 md5sum --check japonica24.md5.txt
 ```
 
+### Glycine soja
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/glycine_soja/sra
+cd ~/data/dna-seq/glycine_soja/sra
+
+cat << EOF |
+SRP000993,glycine_soja,野生大豆
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > glycine_soja.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/glycine_soja/sra
+perl ~/Scripts/sra/sra_prep.pl glycine_soja.yml --md5 -p illumina
+
+#aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
+
+#md5sum --check ath_example.md5.txt
+```
+
 ## Unused projects
 
 * Glycine max Genome sequencing: SRP015830, PRJNA175477
@@ -719,3 +782,9 @@ md5sum --check japonica24.md5.txt
 * Arabidopsis thaliana recombinant tetrads and DH lines: ERP003793, PRJEB4500
 * Resequencing of 50 rice individuals: SRP003189
 * rice_omachi: DRX000450
+* Botryococcus braunii Showa library: SRX127228
+* Two monkeys
+    * SRS117874 => cynomolgus_bgi
+    * SRS300124 => cynomolgus_wugsc
+    * SRS115022 => rhesus_bgi
+    * SRS282749 => rhesus_un_nhpgc
