@@ -269,7 +269,7 @@ cd ~/data/dna-seq/setaria_italica/sra
 cat << EOF |
 SRP011164,setaria_italica,小米
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
     > setaria_italica.yml
 
 ```
@@ -297,12 +297,13 @@ Grab information.
 mkdir -p ~/data/rna-seq/ath_example/sra
 cd ~/data/rna-seq/ath_example/sra
 
-cat << EOF |
+cat << EOF >  ath_example.source.csv 
 SRS118358,WT,
 SRS118359,hy5_215,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > ath_example.yml
+
+perl ~/Scripts/sra/sra_info.pl ath_example.source.csv  \
+> ath_example.yml
 
 ```
 
@@ -849,41 +850,54 @@ Grab information.
 mkdir -p ~/data/dna-seq/dgrp/sra
 cd ~/data/dna-seq/dgrp/sra
 
-cat << EOF |
-DGRP-38
-DGRP-40
-DGRP-57
-DGRP-138
-DGRP-176
-DGRP-177
-DGRP-181
-DGRP-208
-DGRP-320
-DGRP-321
-DGRP-332
-DGRP-357
-DGRP-375
-DGRP-377
-DGRP-380
-DGRP-381
-DGRP-391
-DGRP-392
-DGRP-406
-DGRP-443
-DGRP-492
-DGRP-502
-DGRP-508
-DGRP-517
-DGRP-727
-DGRP-737
-DGRP-738
-DGRP-757
-DGRP-852
-DGRP-897
+cat << EOF > dgrp.source.csv
+strain DGRP-38,DGRP-38
+strain DGRP-40,DGRP-40
+strain DGRP-57,DGRP-57
+strain DGRP-138,DGRP-138
+strain DGRP-176,DGRP-176
+strain DGRP-177,DGRP-177
+strain DGRP-181,DGRP-181
+strain DGRP-208,DGRP-208
+strain DGRP-320,DGRP-320
+strain DGRP-321,DGRP-321
+strain DGRP-332,DGRP-332
+strain DGRP-357,DGRP-357
+strain DGRP-375,DGRP-375
+strain DGRP-377,DGRP-377
+strain DGRP-380,DGRP-380
+strain DGRP-381,DGRP-381
+strain DGRP-391,DGRP-391
+strain DGRP-392,DGRP-392
+strain DGRP-406,DGRP-406
+strain DGRP-443,DGRP-443
+strain DGRP-492,DGRP-492
+strain DGRP-502,DGRP-502
+strain DGRP-508,DGRP-508
+strain DGRP-517,DGRP-517
+strain DGRP-727,DGRP-727
+strain DGRP-737,DGRP-737
+strain DGRP-738,DGRP-738
+strain DGRP-757,DGRP-757
+strain DGRP-852,DGRP-852
+strain DGRP-897,DGRP-897
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin --source srs \
+
+perl ~/Scripts/sra/sra_info.pl dgrp.source.csv \
+    -v --source srs \
     > dgrp.yml
 
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/dgrp/sra
+perl ~/Scripts/sra/sra_prep.pl dgrp.yml --md5
+
+#aria2c -x 9 -s 3 -c -i dgrp.ftp.txt
+
+#md5sum --check dgrp.md5.txt
 ```
 
 ### Glycine soja

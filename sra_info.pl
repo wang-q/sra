@@ -8,6 +8,7 @@ use YAML::Syck;
 
 use Number::Format;
 use List::MoreUtils::PP;
+use Path::Tiny;
 use Text::CSV_XS;
 use WWW::Mechanize;
 
@@ -26,8 +27,9 @@ use WWW::Mechanize;
         . "\tsource list:\n"
         . "\tsrp: SRA objects, SRP, SRS, SRX\n"
         . "\tsrs: arbitrary strings in sample names\n"
-        . "\terp: for sra objects containing more than 200 srx (not working)\n",
-    [ 'help|h', 'display this message' ],
+        . "\terp: only wotks with SRP, can retrive more than 200 srx\n",
+    [ 'help|h',    'display this message' ],
+    [ 'verbose|v', 'verbose mode' ],
     [],
     [ 'source|s=s', "srp, srs or erp", { default => 'srp' } ],
     { show_defaults => 1, }
@@ -73,17 +75,17 @@ while ( my $row = $csv->getline($csv_fh) ) {
     if ( !defined $name ) {
         $name = $key;
     }
-    warn "$key\t$name\n";
+    warn "key: [$key]\tname: [$name]\n";
 
     my @srx;
     if ( $opt->{source} eq "srp" ) {
-        @srx = srp_worker($key);
+        @srx = srp_worker( $key, $opt->{verbose} );
     }
     elsif ( $opt->{source} eq "erp" ) {
-        @srx = erp_worker($key);
+        @srx = erp_worker( $key, $opt->{verbose} );
     }
     elsif ( $opt->{source} eq "srs" ) {
-        @srx = srs_worker($key);
+        @srx = srs_worker( $key, $opt->{verbose} );
     }
     else {
         my $message = sprintf "Unkown --sources [%s]\n", $opt->{source};
@@ -112,7 +114,8 @@ exit;
 
 # if the srp contains more than 200 srx, use erp_worker
 sub srp_worker {
-    my $term = shift;
+    my $term    = shift;
+    my $verbose = shift;
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
@@ -120,6 +123,7 @@ sub srp_worker {
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/sra?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
     my $url       = $url_part1 . $term . $url_part2;
+    warn "$url\n" if $verbose;
     $mech->get($url);
 
     my @links = $mech->find_all_links( url_regex => qr{sra\/[DES]RX\d+}, );
@@ -129,7 +133,8 @@ sub srp_worker {
 }
 
 sub erp_worker {
-    my $term = shift;
+    my $term    = shift;
+    my $verbose = shift;
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
@@ -139,7 +144,7 @@ sub erp_worker {
     my $url_part2
         = "&result=read_run&fields=secondary_study_accession,experiment_accession";
     my $url = $url_part1 . $term . $url_part2;
-
+    warn "$url\n" if $verbose;
     $mech->get($url);
     my @lines = split /\n/, $mech->content;
 
@@ -156,7 +161,10 @@ sub erp_worker {
 
 # query sample name, not srs
 sub srs_worker {
-    my $term = shift;
+    my $term    = shift;
+    my $verbose = shift;
+
+    $term =~ s/\s+/+/;
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
@@ -164,19 +172,18 @@ sub srs_worker {
     my $url_part1 = "http://www.ncbi.nlm.nih.gov/biosample/?term=";
     my $url_part2 = "&from=begin&to=end&dispmax=200";
     my $url       = $url_part1 . $term . $url_part2;
+    warn "$url\n" if $verbose;
     $mech->get($url);
 
     # this link exists in both summary and detailed pages
     $mech->follow_link(
-        text_regex => qr{[DES]RS\d+},
-        url_regex  => => qr{sample},
+        text_regex => qr{SRA},
+        url_regex  => qr{biosample_sra},
     );
 
-    my @links = $mech->find_all_links(
-        text_regex => qr{[DES]RX\d+},
-        url_regex  => qr{report},
-    );
-    my @srx = map { $_->text } @links;
+    my @links = $mech->find_all_links( url_regex => qr{sra/[DES]RX}, );
+    my @srx = grep {/./} map { $_->url =~ /([DES]RX\d+)/ ? $1 : undef } @links;
+    @srx = List::MoreUtils::PP::uniq(@srx);
 
     return @srx;
 }
