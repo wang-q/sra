@@ -1,6 +1,6 @@
 # Processing NCBI sra/EBI ena data
 
-## De novo rna-seq projects
+## De novo rna-seq projects (dn_rna_*.pl)
 
 ### medfood: medicine food homology. Rna-seq survey.
 
@@ -163,6 +163,39 @@ aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 md5sum --check chickpea_rnaseq.md5.txt
 ```
 
+### Dioscorea villosa 长柔毛薯蓣
+
+SRP006697
+
+Grab information.
+
+```bash
+mkdir -p ~/data/rna-seq/dioscorea_villosa/sra
+cd ~/data/rna-seq/dioscorea_villosa/sra
+
+cat << EOF |
+SRX060310,mature_leaf,
+SRX060311,stem,
+SRX060329,root,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > dioscorea_villosa.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/rna-seq/dioscorea_villosa/sra
+perl ~/Scripts/sra/sra_prep.pl dioscorea_villosa.yml --md5
+
+aria2c -x 9 -s 3 -c -i dioscorea_villosa.ftp.txt
+
+md5sum --check dioscorea_villosa.md5.txt
+```
+
+## De novo rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)
+
 ### Spartina alterniflora 互花米草
 
 Create information.
@@ -223,7 +256,7 @@ EOF
 
 ```
 
-## De novo dna-seq projects
+## De novo dna-seq projects (dn_dna_*.pl)
 
 ### Setaria italica
 
@@ -252,7 +285,7 @@ perl ~/Scripts/sra/sra_prep.pl setaria_italica.yml --md5
 #md5sum --check ath_example.md5.txt
 ```
 
-## Reference based rna-seq projects
+## Reference based rna-seq projects (rb_rna_*.pl)
 
 ### ath example
 
@@ -501,7 +534,7 @@ bash bash/sra.Control.sh
 
 ```
 
-## Reference based dna-seq projects
+## Reference based dna-seq projects (rb_dna_*.pl)
 
 ### cele_mmp: 40 wild strains from *C. elegans* million mutation project
 
