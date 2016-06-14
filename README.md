@@ -394,7 +394,7 @@ SRX135164,Spleen,
 SRX135165,Colon,
 SRX135166,Heart,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
+    perl ~/Scripts/sra/sra_info.pl stdin -s erp \
     > mouse_transcriptome.yml
 
 ```
@@ -839,6 +839,51 @@ perl ~/Scripts/sra/sra_prep.pl japonica24.yml --md5
 aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
 
 md5sum --check japonica24.md5.txt
+```
+
+### dgrp
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/dgrp/sra
+cd ~/data/dna-seq/dgrp/sra
+
+cat << EOF |
+DGRP-38
+DGRP-40
+DGRP-57
+DGRP-138
+DGRP-176
+DGRP-177
+DGRP-181
+DGRP-208
+DGRP-320
+DGRP-321
+DGRP-332
+DGRP-357
+DGRP-375
+DGRP-377
+DGRP-380
+DGRP-381
+DGRP-391
+DGRP-392
+DGRP-406
+DGRP-443
+DGRP-492
+DGRP-502
+DGRP-508
+DGRP-517
+DGRP-727
+DGRP-737
+DGRP-738
+DGRP-757
+DGRP-852
+DGRP-897
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin --source srs \
+    > dgrp.yml
+
 ```
 
 ### Glycine soja
