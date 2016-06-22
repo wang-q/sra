@@ -62,6 +62,25 @@ SRX712834,Glycine_max_2,
 
 SRX477950,Oryza_sativa_Japonica,粳稻
 SRX1418190,Arabidopsis_thaliana,拟南芥
+
+SRX474947,Coelastrum_microporum,空星藻
+SRX474946,Coelastrum_pulchrum,
+SRX474949,Cosmarium_turpinii,鼓藻
+SRX474948,Cosmarium_botrytis,
+ERX337145,Cosmarium_ochthodes,
+SRX474945,Closterium_acerosum,新月藻
+SRX718727,Klebsormidium flaccidum,克里藻
+SRX691225,Klebsormidium crenulatum,
+ERX337139,Klebsormidium subtile,
+#NONE,Micrasterias,微星鼓藻属
+SRX474960,Mougeotia_1,转板藻
+ERX337143,Mougeotia_2,
+SRX718258,Spirogyra_pratensis,水绵
+ERX337144,Spirogyra_sp
+SRX474976,Staurastrum_cingulum,角星鼓藻
+SRX474977,Staurastrum_ophiura,
+SRX474978,Staurastrum_punctulatum,
+SRX474979,Staurastrum_tetracerum,
 EOF
     perl ~/Scripts/sra/sra_info.pl stdin \
     > medfood.yml
