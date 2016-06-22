@@ -81,6 +81,7 @@ SRX474976,Staurastrum_cingulum,角星鼓藻
 SRX474977,Staurastrum_ophiura,
 SRX474978,Staurastrum_punctulatum,
 SRX474979,Staurastrum_tetracerum,
+SRX474985,Zygnema_cylindricum,亚小双星藻
 EOF
     perl ~/Scripts/sra/sra_info.pl stdin \
     > medfood.yml
