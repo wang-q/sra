@@ -63,6 +63,19 @@ SRX712834,Glycine_max_2,
 SRX477950,Oryza_sativa_Japonica,粳稻
 SRX1418190,Arabidopsis_thaliana,拟南芥
 
+SRX912524,Arabidopsis_lyrata,深山南芥
+SRX1037948,Brassica_oleracea,甘蓝
+SRX1532416,Brassica_rapa,大白菜
+ERX1320225,Hordeum_vulgare,大麦
+SRX472726,Populus_trichocarpa,杨树
+SRX173254,Prunus_persica,桃
+SRX1182185,Solanum_lycopersicum,番茄
+SRX1121732,Solanum_tuberosum,马铃薯
+ERX1189411,Sorghum_bicolor,高粱
+SRX150765,Triticum_aestivum,小麦
+SRX1496848,Vitis_vinifera,葡萄
+SRX155039_Zea_mays,玉米
+
 SRX474947,Coelastrum_microporum,空星藻
 SRX474946,Coelastrum_pulchrum,
 SRX474949,Cosmarium_turpinii,鼓藻
