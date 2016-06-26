@@ -82,9 +82,9 @@ SRX474949,Cosmarium_turpinii,鼓藻
 SRX474948,Cosmarium_botrytis,
 ERX337145,Cosmarium_ochthodes,
 SRX474945,Closterium_acerosum,新月藻
-SRX718727,Klebsormidium flaccidum,克里藻
-SRX691225,Klebsormidium crenulatum,
-ERX337139,Klebsormidium subtile,
+SRX718727,Klebsormidium_flaccidum,克里藻
+SRX691225,Klebsormidium_crenulatum,
+ERX337139,Klebsormidium_subtile,
 #NONE,Micrasterias,微星鼓藻属
 SRX474960,Mougeotia_1,转板藻
 ERX337143,Mougeotia_2,
@@ -316,6 +316,31 @@ perl ~/Scripts/sra/sra_prep.pl setaria_italica.yml --md5
 #aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
 
 #md5sum --check ath_example.md5.txt
+```
+
+### Oropetium thomaeum
+
+```bash
+mkdir -p ~/data/dna-seq/oropetium_thomaeum/sra
+cd ~/data/dna-seq/oropetium_thomaeum/sra
+
+cat << EOF |
+SRP059326,Oropetium_thomaeum,复活草
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
+    > oropetium_thomaeum.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/oropetium_thomaeum/sra
+perl ~/Scripts/sra/sra_prep.pl oropetium_thomaeum.yml --md5
+
+aria2c -x 9 -s 3 -c -i oropetium_thomaeum.ftp.txt
+
+md5sum --check oropetium_thomaeum.md5.txt
 ```
 
 ## Reference based rna-seq projects (rb_rna_*.pl)
