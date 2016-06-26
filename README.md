@@ -11,57 +11,57 @@ mkdir -p ~/data/rna-seq/medfood/sra
 cd ~/data/rna-seq/medfood/sra
 
 cat << EOF |
-SRX305204,Crataegus_pinnatifida,山楂
-SRX800799,Portulaca_oleracea,马齿苋
-ERX651070,Glycyrrhiza_glabra,光果甘草
-
-SRX852542,Dolichos_lablab,扁豆
-SRX479329,Dimocarpus_longan,龙眼
-
-SRX365197,Cassia_obtusifolia,决明
-SRX467333,Prunus_armeniaca,杏
-SRX131618,Hippophae_rhamnoides,沙棘
-SRX064894,Siraitia_grosvenorii,罗汉果
-SRX096106,Lonicera_japonica,忍冬
-
-SRX287501,Houttuynia_cordata,蕺菜
-SRX392897,Zingiber_officinale,姜
-SRX360220,Gardenia_jasminoides,栀子
-SRX246913,Poria_cocos,茯苓
-SRX320098,Morus_alba,桑
-
-SRX977888,Citrus_reticulata,橘
-SRX314622,Chrysanthemum_morifolium,菊
-SRX255211,Cichorium_intybus,菊苣
-SRX814013,Brassica_juncea,芥
-DRX026628,Perilla_frutescens,紫苏
-
-DRX014826,Pueraria_lobata,野葛
-SRX890122,Piper_nigrum,胡椒
-SRX533468,Mentha_arvensis,薄荷
-SRX848973,Pogostemon_cablin,广藿香
-SRX803910,Coriandrum_sativum,芫荽
-
-SRX173215,Rose_rugosa,玫瑰
-SRX096128,Prunella_vulgaris,夏枯草
-SRX447081,Crocus_sativus,藏红花
-SRX146981,Curcuma_Longa,姜黄
-
-SRX761199,Malus_hupehensis,湖北海棠
-SRX1023176,Osmanthus_fragrans_Semperflorens,四季桂
-SRX1023177,Osmanthus_fragrans_Thunbergii,金桂
-SRX1023178,Osmanthus_fragrans_Latifolius,银桂
-
-SRX868796,Jasminum_sambac,茉莉
-SRX858389,Fraxinus_pennsylvanica_Leaf,美国红梣
-SRX858390,Fraxinus_pennsylvanica_Petiole,
-SRX823915,Fraxinus_velutina,绒毛白蜡
-SRX661505,Olea_europaea,油橄榄
-SRX1821033,Glycine_max_1,大豆
-SRX712834,Glycine_max_2,
-
-SRX477950,Oryza_sativa_Japonica,粳稻
-SRX1418190,Arabidopsis_thaliana,拟南芥
+#SRX305204,Crataegus_pinnatifida,山楂
+#SRX800799,Portulaca_oleracea,马齿苋
+#ERX651070,Glycyrrhiza_glabra,光果甘草
+#
+#SRX852542,Dolichos_lablab,扁豆
+#SRX479329,Dimocarpus_longan,龙眼
+#
+#SRX365197,Cassia_obtusifolia,决明
+#SRX467333,Prunus_armeniaca,杏
+#SRX131618,Hippophae_rhamnoides,沙棘
+#SRX064894,Siraitia_grosvenorii,罗汉果
+#SRX096106,Lonicera_japonica,忍冬
+#
+#SRX287501,Houttuynia_cordata,蕺菜
+#SRX392897,Zingiber_officinale,姜
+#SRX360220,Gardenia_jasminoides,栀子
+#SRX246913,Poria_cocos,茯苓
+#SRX320098,Morus_alba,桑
+#
+#SRX977888,Citrus_reticulata,橘
+#SRX314622,Chrysanthemum_morifolium,菊
+#SRX255211,Cichorium_intybus,菊苣
+#SRX814013,Brassica_juncea,芥
+#DRX026628,Perilla_frutescens,紫苏
+#
+#DRX014826,Pueraria_lobata,野葛
+#SRX890122,Piper_nigrum,胡椒
+#SRX533468,Mentha_arvensis,薄荷
+#SRX848973,Pogostemon_cablin,广藿香
+#SRX803910,Coriandrum_sativum,芫荽
+#
+#SRX173215,Rose_rugosa,玫瑰
+#SRX096128,Prunella_vulgaris,夏枯草
+#SRX447081,Crocus_sativus,藏红花
+#SRX146981,Curcuma_Longa,姜黄
+#
+#SRX761199,Malus_hupehensis,湖北海棠
+#SRX1023176,Osmanthus_fragrans_Semperflorens,四季桂
+#SRX1023177,Osmanthus_fragrans_Thunbergii,金桂
+#SRX1023178,Osmanthus_fragrans_Latifolius,银桂
+#
+#SRX868796,Jasminum_sambac,茉莉
+#SRX858389,Fraxinus_pennsylvanica_Leaf,美国红梣
+#SRX858390,Fraxinus_pennsylvanica_Petiole,
+#SRX823915,Fraxinus_velutina,绒毛白蜡
+#SRX661505,Olea_europaea,油橄榄
+#SRX1821033,Glycine_max_1,大豆
+#SRX712834,Glycine_max_2,
+#
+#SRX477950,Oryza_sativa_Japonica,粳稻
+#SRX1418190,Arabidopsis_thaliana,拟南芥
 
 SRX912524,Arabidopsis_lyrata,深山南芥
 SRX1037948,Brassica_oleracea,甘蓝
@@ -74,7 +74,7 @@ SRX1121732,Solanum_tuberosum,马铃薯
 ERX1189411,Sorghum_bicolor,高粱
 SRX150765,Triticum_aestivum,小麦
 SRX1496848,Vitis_vinifera,葡萄
-SRX155039_Zea_mays,玉米
+SRX155038,Zea_mays,玉米
 
 SRX474947,Coelastrum_microporum,空星藻
 SRX474946,Coelastrum_pulchrum,
@@ -115,7 +115,7 @@ md5sum --check medfood.md5.txt
 Metainfo of Pueraria_lobata in NCBI is wrong.
 
 ```bash
-cd ~/Scripts/sra
+cd ~/data/rna-seq/medfood/sra
 cat medfood.csv \
     | grep -v "Pueraria_lobata" \
     > medfood_all.csv
@@ -126,10 +126,10 @@ echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.19G \
 Generate bash files and run a sample.
 
 ```bash
-cd ~/data/rna-seq/medfood
-perl ~/Scripts/sra/medfood_seq.pl
+cd ~/data/rna-seq/medfood/sra
+perl ~/Scripts/sra/dn_rna_medfood.pl
 
-bash bash/sra.Cichorium_intybus.sh
+#bash bash/sra.Cichorium_intybus.sh
 
 ```
 

@@ -47,7 +47,6 @@ for my $key ( keys %{$data_dir} ) {
 #----------------------------------------------------------#
 # read csv
 #----------------------------------------------------------#
-$csv_file = path( $FindBin::RealBin, $csv_file )->stringify;
 my @rows;
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
