@@ -3,41 +3,55 @@ use strict;
 use warnings;
 use autodie;
 
-use Path::Tiny;
-use Text::CSV_XS;
-use List::MoreUtils qw(uniq);
+use Getopt::Long::Descriptive;
+use FindBin;
 use YAML::Syck;
 
-use FindBin;
+use Path::Tiny;
+use Text::CSV_XS;
+use List::MoreUtils::PP;
+
 use lib "$FindBin::RealBin/lib";
 use MyBAM;
 
 #----------------------------------------------------------#
+# GetOpt section
+#----------------------------------------------------------#
+
+(   my Getopt::Long::Descriptive::Opts $opt,
+    my Getopt::Long::Descriptive::Usage $usage,
+    )
+    = Getopt::Long::Descriptive::describe_options(
+    "Create bash files for de novo rna-seq projects\n"
+        . "Usage: perl %c [options]",
+    [ 'help|h', 'display this message' ],
+    [],
+    [ 'base|b=s',     'Base directory',                  { required => 1, }, ],
+    [ 'csv|c=s',      'CSV file of project information', { required => 1, }, ],
+    [ 'parallel|p=i', 'Parallel mode',                   { default  => 8, }, ],
+    [ 'memory|m=i',   'Memory size for JVM',             { default  => 64, }, ],
+    { show_defaults => 1, }
+    );
+
+$usage->die if $opt->{help};
+
+#----------------------------------------------------------#
 # parameters
 #----------------------------------------------------------#
-my $base_dir = path( $ENV{HOME}, "data", "rna-seq", "medfood" )->stringify;
-my $csv_file = "medfood_all.csv";
-
-my $parallel = 8;
-my $memory   = 64;
-
-#----------------------------#
-# directories
-#----------------------------#
-my $brew_home = `brew --prefix`;
-my $bin_dir   = {
+my $bin_dir = {
     script  => $FindBin::RealBin,
     trinity => path( $ENV{HOME}, "share/trinityrnaseq-2.0.6" )->stringify,
 };
 my $data_dir = {
-    sra  => path( $base_dir, "sra" )->stringify,
-    proc => path( $base_dir, "process" )->stringify,
-    bash => path( $base_dir, "bash" )->stringify,
-    log  => path( $base_dir, "log" )->stringify,
-    ref  => path( $base_dir, "ref" )->stringify,
+    sra  => path( $opt->{base}, "sra" )->stringify,
+    proc => path( $opt->{base}, "process" )->stringify,
+    bash => path( $opt->{base}, "bash" )->stringify,
+    log  => path( $opt->{base}, "log" )->stringify,
+    ref  => path( $opt->{base}, "ref" )->stringify,
 };
 my $ref_file
-    = { adapters => path( $base_dir, "ref", "illumina_adapters.fa" )->stringify,
+    = {
+    adapters => path( $opt->{base}, "ref", "illumina_adapters.fa" )->stringify,
     };
 
 for my $key ( keys %{$data_dir} ) {
@@ -50,7 +64,7 @@ for my $key ( keys %{$data_dir} ) {
 my @rows;
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
-open my $fh, "<", $csv_file;
+open my $fh, "<", $opt->{csv};
 $csv->getline($fh);    # skip headers
 while ( my $row = $csv->getline($fh) ) {
     push @rows, $row;
@@ -58,7 +72,7 @@ while ( my $row = $csv->getline($fh) ) {
 close $fh;
 
 my @data;
-my @names = uniq( map { $_->[0] } @rows );
+my @names = List::MoreUtils::PP::uniq( map { $_->[0] } @rows );
 ITEM: for my $name (@names) {
 
     my $item = { name => $name };
@@ -109,12 +123,12 @@ ITEM: for my $name (@names) {
 #----------------------------------------------------------#
 for my $item (@data) {
     my $mybam = MyBAM->new(
-        base_dir => $base_dir,
+        base_dir => $opt->{base},
         bin_dir  => $bin_dir,
         data_dir => $data_dir,
         ref_file => $ref_file,
-        parallel => $parallel,
-        memory   => $memory,
+        parallel => $opt->{parallel},
+        memory   => $opt->{memory},
     );
 
     $mybam->head($item);
@@ -122,6 +136,7 @@ for my $item (@data) {
     $mybam->fastqc($item);
     $mybam->scythe_sickle($item);
     $mybam->fastqc($item);
+    $mybam->tail($item);
 
     $mybam->write( $item,
         path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify );
@@ -129,18 +144,19 @@ for my $item (@data) {
 
 for my $item (@data) {
     my $mybam = MyBAM->new(
-        base_dir => $base_dir,
+        base_dir => $opt->{base},
         bin_dir  => $bin_dir,
         data_dir => $data_dir,
         ref_file => $ref_file,
-        parallel => $parallel,
-        memory   => $memory,
+        parallel => $opt->{parallel},
+        memory   => $opt->{memory},
         sickle   => 1,
     );
 
     $mybam->head_trinity($item);
     $mybam->trinity($item);
     $mybam->trinity_rsem($item);
+    $mybam->tail($item);
 
     $mybam->write( $item,
         path( $data_dir->{bash}, "tri." . $item->{name} . ".sh" )->stringify );
@@ -151,19 +167,19 @@ for my $item (@data) {
 #----------------------------------------------------------#
 {
     my $mybam = MyBAM->new(
-        base_dir => $base_dir,
+        base_dir => $opt->{base},
         bin_dir  => $bin_dir,
         data_dir => $data_dir,
         ref_file => $ref_file,
-        parallel => $parallel,
-        memory   => $memory,
+        parallel => $opt->{parallel},
+        memory   => $opt->{memory},
         sickle   => 1,
     );
 
     $mybam->screen_sra( \@data );
     $mybam->screen_trinity( \@data );
 
-    $mybam->write( undef, path( $base_dir, "screen.sh.txt" )->stringify );
+    $mybam->write( undef, path( $opt->{base}, "screen.sh.txt" )->stringify );
 }
 
 {    # for Scythe

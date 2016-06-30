@@ -54,11 +54,11 @@ start_time=`date +%s`
 ### ; ( exit ${PIPESTATUS} )    correct program exitting status
 ### Only run parallel when you're sure that there are no errors.
 
-cd [% base_dir %]
-
 ### index reference genome
 # bwa index -a bwtsw [% ref_file.seq %]
 # samtools faidx [% ref_file.seq %]
+
+cd [% base_dir %]
 
 mkdir -p [% item.dir %]
 cd [% item.dir %]
@@ -69,6 +69,35 @@ EOF
         \$text,
         {   base_dir => $self->base_dir,
             ref_file => $self->ref_file,
+            item     => $item,
+        },
+        \$output
+    ) or die Template->error;
+
+    $self->{bash} .= $output;
+    return;
+}
+
+sub tail {
+    my $self = shift;
+    my $item = shift;
+
+    my $tt = Template->new;
+
+    my $text = <<'EOF';
+
+end_time=`date +%s`
+runtime=$((end_time-start_time))
+echo "$(($runtime / 3600)) hours"
+
+echo `date` "[% item.name %] successed. Runtime $(($runtime / 3600)) hours" \
+    >> [% base_dir %]/success.log && exit 0
+
+EOF
+    my $output;
+    $tt->process(
+        \$text,
+        {   base_dir => $self->base_dir,
             item     => $item,
         },
         \$output

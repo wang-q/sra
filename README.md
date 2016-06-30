@@ -127,7 +127,7 @@ Generate bash files and run a sample.
 
 ```bash
 cd ~/data/rna-seq/medfood/sra
-perl ~/Scripts/sra/dn_rna_medfood.pl
+perl ~/Scripts/sra/dn_rna_medfood.pl -b ~/data/rna-seq/medfood -c medfood_all.csv
 
 #bash bash/sra.Cichorium_intybus.sh
 
