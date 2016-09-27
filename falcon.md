@@ -2,7 +2,7 @@
 
 ## 安装Linuxbrew
 
-```
+```bash
 echo "==> Install dependencies"
 sudo apt-get install build-essential curl git python-setuptools ruby
 
@@ -28,20 +28,19 @@ else
     eval $LB_MAN
     eval $LB_INFO
 fi
-
 ```
 
 ## 用Linuxbrew安装python和其它程序
 
 falcon编译过程中需要`python.h`，为了方便起见，使用Linuxbrew从源码编译安装。
 
-```
+```bash
 brew install python
 ```
 
 其它可能有用的程序。
 
-```
+```bash
 echo "==> Add tap science"
 brew tap homebrew/science
 brew tap wang-q/tap
@@ -51,7 +50,6 @@ brew install clustal-w mafft
 
 echo "==> Install wang-q/tap"
 brew install faops
-
 ```
 
 ## 安装falcon-integrate
@@ -179,7 +177,7 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 
 * 运行目录
 
-```
+```bash
 mkdir -p $HOME/share/FALCON-integrate/ecoli_test/data
 cd $HOME/share/FALCON-integrate/ecoli_test/data
 ```
@@ -194,20 +192,59 @@ wget https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42139_c10071365240
 
 * 准备配置文件
 
-```
+```bash
 cd $HOME/share/FALCON-integrate/ecoli_test
 find data -name "*.fasta" > input.fofn
-cp $HOME/share/FALCON-integrate/FALCON/examples/fc_run_ecoli.cfg .
+
+# $HOME/share/FALCON-integrate/FALCON/examples/fc_run_ecoli.cfg
+cat <<EOF > fc_run_ecoli.cfg
+[General]
+job_type = local
+
+# list of files of the initial bas.h5 files
+input_fofn = input.fofn
+
+input_type = raw
+#input_type = preads
+
+# The length cutoff used for seed reads used for initial mapping
+length_cutoff = 12000
+
+# The length cutoff used for seed reads used for pre-assembly
+length_cutoff_pr = 12000
+
+# Cluster queue setting
+sge_option_da = -pe smp 8 -q jobqueue
+sge_option_la = -pe smp 2 -q jobqueue
+sge_option_pda = -pe smp 8 -q jobqueue
+sge_option_pla = -pe smp 2 -q jobqueue
+sge_option_fc = -pe smp 24 -q jobqueue
+sge_option_cns = -pe smp 8 -q jobqueue
+
+pa_concurrent_jobs = 32
+ovlp_concurrent_jobs = 32
+
+pa_HPCdaligner_option =  -v -dal4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+
+pa_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50
+
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
+
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 24
+
+EOF
 ```
 
 * 运行
 
-```
+```bash
 cd $HOME/share/FALCON-integrate
 source env.sh
 
 cd ecoli_test
-fc_run fc_run_ecoli.cfg
+time fc_run fc_run_ecoli.cfg
 ```
 
 ### 其它模式生物
