@@ -46,7 +46,7 @@ brew tap homebrew/science
 brew tap wang-q/tap
 
 echo "==> Install bioinfomatics softwares"
-brew install clustal-w mafft
+brew install clustal-w mafft seqtk
 
 echo "==> Install wang-q/tap"
 brew install faops
@@ -56,7 +56,7 @@ brew install faops
 
 [wiki page](https://github.com/PacificBiosciences/FALCON-integrate/wiki/Installation)
 
-```
+```bash
 mkdir -p $HOME/share
 cd $HOME/share
 
@@ -75,7 +75,7 @@ make -j all
 
 编译完成后，会生成`fc_env`目录，里面是可执行文件，`tree -L 2 fc_env`。
 
-```
+```text
 fc_env
 ├── bin
 │   ├── Catrack -> /home/wangq/share/FALCON-integrate/DAZZ_DB/Catrack
@@ -184,7 +184,7 @@ cd $HOME/share/FALCON-integrate/ecoli_test/data
 
 * 过墙下载以下三个文件
 
-```
+```bash
 wget https://www.dropbox.com/s/tb78i5i3nrvm6rg/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.1.subreads.fasta
 wget https://www.dropbox.com/s/v6wwpn40gedj470/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.2.subreads.fasta
 wget https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.3.subreads.fasta
