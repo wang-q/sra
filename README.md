@@ -318,6 +318,33 @@ perl ~/Scripts/sra/sra_prep.pl setaria_italica.yml --md5
 #md5sum --check ath_example.md5.txt
 ```
 
+### Glycine max cultivar Williams 82
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/glycine_max/sra
+cd ~/data/dna-seq/glycine_max/sra
+
+cat << EOF |
+SRP062333,glycine_max,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
+    > glycine_max.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/glycine_max/sra
+perl ~/Scripts/sra/sra_prep.pl glycine_max.yml --md5
+
+aria2c -x 9 -s 3 -c -i glycine_max.ftp.txt
+
+md5sum --check glycine_max.md5.txt
+```
+
 ### Oropetium thomaeum
 
 ```bash
