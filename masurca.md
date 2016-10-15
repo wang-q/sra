@@ -1,5 +1,31 @@
 # [MaSuRCA](http://www.genome.umd.edu/masurca.html)安装与样例
 
+doi:10.1093/bioinformatics/btt476
+
+## 特点
+
+de novo 基因组序列的拼接有以下几种主流的策略:
+
+1. Overlap–layout–consensus (OLC) assembly
+    * 主要用于长reads, 在Sanger测序时代就基本发展完备
+    * 代表: Celera Assembler, PCAP
+
+2. de Bruijn graph (德布鲁因图)
+    * 二代测序的主流
+    * 代表: Velvet, SOAPdenovo, Allpaths-LG
+
+3. String graph
+    * 与 de Bruijn graph 类似, 但较为节省内存
+    * 代表: SGA
+
+MaSuRCA提出了一种新的策略, Super-reads. 主要思想是将多个短reads按 1 bp 延伸,
+合并得到数量少得多的长reads. 在单倍体基因组的情况下, 无论覆盖度是多少 (50, 100),
+最终的 super-reads 覆盖度都趋向于 2x. 高杂合基因组则趋向于 4x.
+
+合并后的 super-reads 的N50约为 2-4 kbp.
+
+## 版本
+
 version 3.1.3.
 
 homebrew-science 里的版本是2.3.2b, 3.1.3的
@@ -26,7 +52,8 @@ homebrew-science 里的版本是2.3.2b, 3.1.3的
 * samtools
 * SOAPdenovo2
 * SuperReads: masurca的主程序. 这个是我们所需要的, 合并reads的功能就在这里.
-* ufasta: UMD的操作fasta的工具, 未发现其它信息. 里面的tests写得不错, 值得借鉴.
+* ufasta: UMD的操作fasta的工具, 未在其它地方发现相关信息. 里面的tests写得不错,
+  值得借鉴.
 
 ## 安装
 
@@ -49,7 +76,7 @@ sh install.sh
 
 ```
 
-编译完成后, 会生成`bin`目录, 里面是可执行文件, `tree -L 2 bin`.
+编译完成后, 会生成`bin`目录, 里面是可执行文件, `tree bin`.
 
 ```text
 bin
@@ -155,17 +182,15 @@ bin
 └── ufasta
 
 0 directories, 100 files
-wangq@wq:~/share/MaSuRCA$ 
 ```
 
 同时还生成一个配置文件样例, `sr_config_example.txt`.
 
 ## 样例数据
 
-MaSuRCA发表在 Bioinformatics 上时自带的测试数据,
-doi:10.1093/bioinformatics/btt476
+MaSuRCA发表在 Bioinformatics 上时自带的测试数据.
 
-### rhodobacter
+### Rhodobacter sphaeroides (球形红细菌)
 
 `ftp://ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter/`
 
