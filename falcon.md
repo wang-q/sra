@@ -32,13 +32,13 @@ fi
 
 ## 用Linuxbrew安装python和其它程序
 
-falcon编译过程中需要`python.h`，为了方便起见，使用Linuxbrew从源码编译安装。
+falcon编译过程中需要`python.h`, 为了方便起见, 使用Linuxbrew从源码编译安装.
 
 ```bash
 brew install python
 ```
 
-其它可能有用的程序。
+其它可能有用的程序.
 
 ```bash
 echo "==> Add tap science"
@@ -72,8 +72,7 @@ make -j all
 # make test
 ```
 
-
-编译完成后，会生成`fc_env`目录，里面是可执行文件，`tree -L 2 fc_env`。
+编译完成后, 会生成`fc_env`目录, 里面是可执行文件, `tree -L 2 fc_env`.
 
 ```text
 fc_env
@@ -169,11 +168,11 @@ fc_env
 
 ## 样例数据
 
-falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载的，在墙内无法按说明文件里的提示来使用。
+falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载的, 在墙内无法按说明文件里的提示来使用.
 
-同时其内的很多设置都是写死的集群路径，以及sge配置，大大增加了复杂度，并让人无法理解。
+同时其内的很多设置都是写死的集群路径, 以及sge配置, 大大增加了复杂度, 并让人无法理解.
 
-### `falcon/example`里的[Ecoli样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example)。
+### `falcon/example`里的[Ecoli样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 运行目录
 
@@ -249,5 +248,4 @@ time fc_run fc_run_ecoli.cfg
 
 ### 其它模式生物
 
-用这篇文章里提供的样例，doi:10.1038/sdata.2014.45。
-
+用这篇文章里提供的样例, doi:10.1038/sdata.2014.45.
