@@ -2,13 +2,15 @@
 
 doi:10.1093/bioinformatics/btt476
 
+[MaSuRCA_QuickStartGuide](ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA_QuickStartGuide.pdf)
+
 ## 特点
 
 de novo 基因组序列的拼接有以下几种主流的策略:
 
 1. Overlap–layout–consensus (OLC) assembly
-    * 主要用于长reads, 在Sanger测序时代就基本发展完备
-    * 代表: Celera Assembler, PCAP
+    * 主要用于长reads, 在Sanger测序时代就基本发展完备, 三代时代又重新发展
+    * 代表: Celera Assembler, PCAP, Canu
 
 2. de Bruijn graph (德布鲁因图)
     * 二代测序的主流
@@ -34,6 +36,11 @@ homebrew-science 里的版本是2.3.2b, 3.1.3的
 
 九月UMD的ftp上有了3.2.1版, 多了CA8, MUMmer和PacBio三个目录, 还末详细研究.
 
+http://ccb.jhu.edu/software.shtml
+
+> New modules coming soon include methods to create hybrid assemblies
+> using both Illumina and PacBio data.
+
 ## 依赖
 
 外部
@@ -52,6 +59,7 @@ homebrew-science 里的版本是2.3.2b, 3.1.3的
 * samtools
 * SOAPdenovo2
 * SuperReads: masurca的主程序. 这个是我们所需要的, 合并reads的功能就在这里.
+  源码约五万行.
 * ufasta: UMD的操作fasta的工具, 未在其它地方发现相关信息. 里面的tests写得不错,
   值得借鉴.
 
@@ -188,9 +196,194 @@ bin
 
 ## 样例数据
 
-MaSuRCA发表在 Bioinformatics 上时自带的测试数据.
+MaSuRCA发表在 Bioinformatics 时自带的测试数据.
+
+> IMPORTANT! Do not pre‐process Illumina data before providing it to
+> MaSuRCA. Do not do any trimming, cleaning or error correction. This
+> WILL deteriorate the assembly
+
+Super-reads在 `work1/superReadSequences.fasta`, `work2/` 和 `work2.1/` 是
+short jump 的处理, 不用管.
+
+> Assembly result. The final assembly files are under CA/10-gapclose and
+> named 'genome.ctg.fasta' for the contig sequences and
+> 'genome.scf.fasta' for the scaffold sequences.
 
 ### Rhodobacter sphaeroides (球形红细菌)
 
-`ftp://ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter/`
+高GC原核生物(68%), 基因组4.5 Mbp.
+
+* 数据
+
+```bash
+mkdir -p ~/data/test
+cd ~/data/test
+
+wget -m ftp://ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter .
+
+mv ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter .
+rm -fr ftp.genome.umd.edu
+find . -name ".listing" | xargs rm
+
+```
+
+#### Illumina PE, Short Jump and Sanger4
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger4
+cd ~/data/test/rhodobacter_PE_SJ_Sanger4
+
+cat <<EOF > config_PE_SJ_Sanger_4x.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
+END
+
+EOF
+
+cd ~/data/test/rhodobacter_PE_SJ_Sanger4
+
+$HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_4x.txt
+
+#real    19m47.737s
+#user    79m13.602s
+#sys     60m45.557s
+time bash assemble.sh
+```
+
+#### Illumina PE, Short Jump and Sanger
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger
+cd ~/data/test/rhodobacter_PE_SJ_Sanger
+
+cat <<EOF > config_PE_SJ_Sanger_1x.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
+END
+
+EOF
+
+cd ~/data/test/rhodobacter_PE_SJ_Sanger
+
+$HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_1x.txt
+
+#real    15m2.065s
+#user    73m5.869s
+#sys     49m29.684s
+time bash assemble.sh
+```
+
+#### Illumina PE and Short Jump
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE_SJ
+cd ~/data/test/rhodobacter_PE_SJ
+
+cat <<EOF > config_PE_SJ.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+END
+
+EOF
+
+cd ~/data/test/rhodobacter_PE_SJ
+
+$HOME/share/MaSuRCA/bin/masurca config_PE_SJ.txt
+
+#real    13m32.175s
+#user    71m48.583s
+#sys     29m41.092s
+time bash assemble.sh
+```
+
+#### Illumina PE
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE
+cd ~/data/test/rhodobacter_PE
+
+cat <<EOF > config_PE.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+END
+
+EOF
+
+$HOME/share/MaSuRCA/bin/masurca config_PE.txt
+
+#real    5m46.738s
+#user    20m58.316s
+#sys     4m21.681s
+time bash assemble.sh
+```
+
+#### 结果比较
+
+```bash
+cd ~/data/test/
+
+printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" > stat.tsv
+
+for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE;
+do
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        ${d} \
+        $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/work1/superReadSequences.fasta ) \
+        $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/CA/10-gapclose/genome.ctg.fasta ) \
+        $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/CA/10-gapclose/genome.scf.fasta ) \
+        $( faops size ${d}/work1/superReadSequences.fasta | wc -l ) \
+        $( faops size ${d}/CA/10-gapclose/genome.ctg.fasta | wc -l ) \
+        $( faops size ${d}/CA/10-gapclose/genome.scf.fasta | wc -l )
+done >> stat.tsv
+
+cat stat.tsv
+```
+
+| name                      | N50 SR | N50 Contig | N50 Scaffold | #SR  | #Contig | #Scaffold |
+|:--------------------------|:-------|:-----------|:-------------|:-----|:--------|:----------|
+| rhodobacter_PE_SJ_Sanger4 | 4586   | 205225     | 3196849      | 4187 | 69      | 35        |
+| rhodobacter_PE_SJ_Sanger  | 4586   | 63274      | 3070846      | 4187 | 141     | 28        |
+| rhodobacter_PE_SJ         | 4586   | 43125      | 3058404      | 4187 | 219     | 59        |
+| rhodobacter_PE            | 4705   | 20826      | 34421        | 4042 | 409     | 280       |
 
