@@ -243,6 +243,10 @@ cd $HOME/share/FALCON-integrate
 source env.sh
 
 cd ecoli_test
+
+#real    60m55.723s
+#user    970m9.815s
+#sys     408m37.644s
 time fc_run fc_run_ecoli.cfg
 ```
 
