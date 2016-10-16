@@ -370,6 +370,31 @@ aria2c -x 9 -s 3 -c -i oropetium_thomaeum.ftp.txt
 md5sum --check oropetium_thomaeum.md5.txt
 ```
 
+### Quercus lobata 加州峡谷栎树
+
+```bash
+mkdir -p ~/data/dna-seq/quercus_lobata/sra
+cd ~/data/dna-seq/quercus_lobata/sra
+
+cat << EOF |
+SRP072046,Quercus_lobata,加州峡谷栎树
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
+    > quercus_lobata.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/quercus_lobata/sra
+perl ~/Scripts/sra/sra_prep.pl quercus_lobata.yml --md5
+
+aria2c -x 9 -s 3 -c -i quercus_lobata.ftp.txt
+
+md5sum --check quercus_lobata.md5.txt
+```
+
 ## Reference based rna-seq projects (rb_rna_*.pl)
 
 ### ath example
