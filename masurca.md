@@ -203,7 +203,8 @@ MaSuRCA发表在 Bioinformatics 时自带的测试数据.
 > WILL deteriorate the assembly
 
 Super-reads在 `work1/superReadSequences.fasta`, `work2/` 和 `work2.1/` 是
-short jump 的处理, 不用管.
+short jump 的处理, 不用管. `superReadSequences_shr.frg` 里面的 super-reads
+是作过截断处理的, 数量不对.
 
 > Assembly result. The final assembly files are under CA/10-gapclose and
 > named 'genome.ctg.fasta' for the contig sequences and
@@ -363,27 +364,31 @@ time bash assemble.sh
 ```bash
 cd ~/data/test/
 
-printf "| %s | %s | %s | %s | %s | %s | %s |\n" "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" > stat.md
-printf "|---|---|---|---|---|---|---|\n" >> stat.md
+printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+    "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" "E(G)" \
+    > stat.md
+printf "|---|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
 
 for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE;
 do
-    printf "| %s | %s | %s | %s | %s | %s | %s |\n" \
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
         ${d} \
         $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/work1/superReadSequences.fasta ) \
         $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/CA/10-gapclose/genome.ctg.fasta ) \
         $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/CA/10-gapclose/genome.scf.fasta ) \
         $( faops size ${d}/work1/superReadSequences.fasta | wc -l ) \
         $( faops size ${d}/CA/10-gapclose/genome.ctg.fasta | wc -l ) \
-        $( faops size ${d}/CA/10-gapclose/genome.scf.fasta | wc -l )
+        $( faops size ${d}/CA/10-gapclose/genome.scf.fasta | wc -l ) \
+        $( cat ${d}/environment.sh \
+            | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
 done >> stat.md
 
 cat stat.md
 ```
 
-| name                      | N50 SR | N50 Contig | N50 Scaffold | #SR  | #Contig | #Scaffold |
-|:--------------------------|:-------|:-----------|:-------------|:-----|:--------|:----------|
-| rhodobacter_PE_SJ_Sanger4 | 4586   | 205225     | 3196849      | 4187 | 69      | 35        |
-| rhodobacter_PE_SJ_Sanger  | 4586   | 63274      | 3070846      | 4187 | 141     | 28        |
-| rhodobacter_PE_SJ         | 4586   | 43125      | 3058404      | 4187 | 219     | 59        |
-| rhodobacter_PE            | 4705   | 20826      | 34421        | 4042 | 409     | 280       |
+| name          | N50 SR | N50 Contig | N50 Scaffold |  #SR | #Contig | #Scaffold |    E(G) |
+|:--------------|-------:|-----------:|-------------:|-----:|--------:|----------:|--------:|
+| PE_SJ_Sanger4 |   4586 |     205225 |      3196849 | 4187 |      69 |        35 | 4602968 |
+| PE_SJ_Sanger  |   4586 |      63274 |      3070846 | 4187 |     141 |        28 | 4602968 |
+| PE_SJ         |   4586 |      43125 |      3058404 | 4187 |     219 |        59 | 4602968 |
+| PE            |   4705 |      20826 |        34421 | 4042 |     409 |       280 | 4595684 |
