@@ -363,11 +363,12 @@ time bash assemble.sh
 ```bash
 cd ~/data/test/
 
-printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" > stat.tsv
+printf "| %s | %s | %s | %s | %s | %s | %s |\n" "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" > stat.md
+printf "|---|---|---|---|---|---|---|\n" >> stat.md
 
 for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE;
 do
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "| %s | %s | %s | %s | %s | %s | %s |\n" \
         ${d} \
         $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/work1/superReadSequences.fasta ) \
         $( $HOME/share/MaSuRCA/bin/ufasta n50 -N50 -H ${d}/CA/10-gapclose/genome.ctg.fasta ) \
@@ -375,9 +376,9 @@ do
         $( faops size ${d}/work1/superReadSequences.fasta | wc -l ) \
         $( faops size ${d}/CA/10-gapclose/genome.ctg.fasta | wc -l ) \
         $( faops size ${d}/CA/10-gapclose/genome.scf.fasta | wc -l )
-done >> stat.tsv
+done >> stat.md
 
-cat stat.tsv
+cat stat.md
 ```
 
 | name                      | N50 SR | N50 Contig | N50 Scaffold | #SR  | #Contig | #Scaffold |
@@ -386,4 +387,3 @@ cat stat.tsv
 | rhodobacter_PE_SJ_Sanger  | 4586   | 63274      | 3070846      | 4187 | 141     | 28        |
 | rhodobacter_PE_SJ         | 4586   | 43125      | 3058404      | 4187 | 219     | 59        |
 | rhodobacter_PE            | 4705   | 20826      | 34421        | 4042 | 409     | 280       |
-
