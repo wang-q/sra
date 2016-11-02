@@ -172,6 +172,12 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 
 同时其内的很多设置都是写死的集群路径, 以及sge配置, 大大增加了复杂度, 并让人无法理解.
 
+注意:
+
+* fasta文件**必须**以`.fasta`为扩展名
+* fasta文件中的序列名称, 必须符合falcon的要求, 即sra默认名称**不符合要求**, 错误提示为`Pacbio header line format error`
+* [这里](https://github.com/PacificBiosciences/FALCON/issues/251) 有个脚本帮助解决这个问题
+
 ### `falcon/example`里的[Ecoli样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 运行目录
@@ -253,3 +259,84 @@ time fc_run fc_run_ecoli.cfg
 ### 其它模式生物
 
 用这篇文章里提供的样例, doi:10.1038/sdata.2014.45.
+
+### 复活草
+
+* 预处理
+
+```text
+$ ls -al ~/zlc/Oropetium_thomaeum/pacbio/data/
+total 2517104
+drwxrwxr-x 2 wangq wangq       4096 Nov  2 15:03 .
+drwxrwxr-x 4 wangq wangq       4096 Nov  2 15:04 ..
+-rw-rw-r-- 1 wangq wangq 2577500677 Nov  2 15:36 head80.fa
+
+$ head -n 1 ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa
+>SRR2058409.1 1 length=5249
+
+$ perl ~/Scripts/sra/falcon_name_fasta.pl -i data/head80.fa
+
+$ head -n 1 ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa.outfile
+>falcon_read/000001/0_5249
+
+$ mv ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa.outfile ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fasta
+```
+
+* 配置文件及运行
+
+```bash
+cd $HOME/share/FALCON-integrate
+source env.sh
+
+if [ -d ~/zlc/Oropetium_thomaeum/pacbio/falcon ];
+then
+    rm -fr ~/zlc/Oropetium_thomaeum/pacbio/falcon
+fi
+mkdir -p ~/zlc/Oropetium_thomaeum/pacbio/falcon
+cd ~/zlc/Oropetium_thomaeum/pacbio/falcon
+find ~/zlc/Oropetium_thomaeum/pacbio/data/ -name "*.fasta" > input.fofn
+
+cat <<EOF > fc_run.cfg
+[General]
+job_type = local
+
+# list of files of the initial bas.h5 files
+input_fofn = input.fofn
+
+input_type = raw
+#input_type = preads
+
+# The length cutoff used for seed reads used for initial mapping
+length_cutoff = 12000
+
+# The length cutoff used for seed reads used for pre-assembly
+length_cutoff_pr = 12000
+
+# Cluster queue setting
+sge_option_da =
+sge_option_la =
+sge_option_pda =
+sge_option_pla =
+sge_option_fc =
+sge_option_cns =
+
+pa_concurrent_jobs = 16
+ovlp_concurrent_jobs = 16
+
+pa_HPCdaligner_option =  -v -dal4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+
+pa_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50
+
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
+
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 24
+
+EOF
+
+#real    60m55.723s
+#user    970m9.815s
+#sys     408m37.644s
+time fc_run fc_run.cfg
+```
