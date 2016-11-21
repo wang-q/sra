@@ -3,6 +3,8 @@
 现在主流的两种 PacBio 平台
 [RS II 与 Sequel 对比](http://allseq.com/knowledge-bank/sequencing-platforms/pacific-biosciences/)
 
+P 指得是聚合酶, C 是化学试剂.
+
 |                          | RS II (P6-C4) |  Sequel  |
 |:-------------------------|:-------------:|:--------:|
 | Run time                 |    240 min    | 240 min  |
@@ -15,16 +17,16 @@
 | Instrument price         |     $700k     |  $350k   |
 | Run price                |     $400      |   $850   |
 
-|                    |  Sequel   |                              原因                               |
-|:-------------------|:---------:|:--------------------------------------------------------------:|
-| Human Whole Genome |  Ok/Good  | 低偏向, 长读长的特点, 利于鉴定结构变异及组装; 但比起 HiSeq X Ten 要贵很多 |
-| Small Genome       |   Good    |                      长读长, 只需要较低的通量                      |
-| Targeted           |   Good    |                      长读长, 只需要较低的通量                      |
-| Transcriptome      | Poor/Good |                    贵, 但二代没法得到全长的转录本                    |
-| Metagenomics       |  Poor/Ok  |                     贵, 但利于 de novo 组装                      |
-| Exome              |   Poor    |                     贵, 长读长对外显子没有用处                      |
-| RNA Profiling      |   Poor    |                               贵                               |
-| ChIP-Seq           |   Poor    |                               贵                               |
+|                    |  Sequel   |                 原因                 |
+|:-------------------|:---------:|:-----------------------------------:|
+| Human Whole Genome |  Ok/Good  | 贵; 低偏向, 长读长, 利于鉴定结构变异及组装 |
+| Small Genome       |   Good    |        长读长, 只需要较低的通量         |
+| Targeted           |   Good    |        长读长, 只需要较低的通量         |
+| Transcriptome      | Poor/Good |      贵; 但二代没法得到全长的转录本       |
+| Metagenomics       |  Poor/Ok  |        贵; 但利于 de novo 组装        |
+| Exome              |   Poor    |        贵; 长读长对外显子没有用处        |
+| RNA Profiling      |   Poor    |                 贵                  |
+| ChIP-Seq           |   Poor    |                 贵                  |
 
 ## 分析平台的历史
 
@@ -33,24 +35,7 @@ PacBio 在 github 上的[首页](https://github.com/PacificBiosciences).
 GenomicConsensus 是 PacBio 的组合程序包, 是 SMRT Analysis Software 的一部分. 用于 consensus 和 variant
 calling. 当前版本为 v2.3.0, 发表时间为2014年.
 
-在版本更替过程中, 出现过多个程序, 有些已经死了, 有的正在死.
-
-* Quiver - 基于条件随机场 (conditional random field), 计算拟极大似然值 (maximum quasi-likelihood), 以降低
-  consensus 的错误率, 最近版本中已经被放弃, 只用于 PacBio RS.
-* Arrow - 基于隐马模型, 适用于 PacBio Sequel and RS.
-* Plurality - 用于variant calling, 忽略.
-* EviCons - v1.3.1 中移除.
-
-[GenomicConsensus](https://github.com/PacificBiosciences/GenomicConsensus) 背后的库叫
-[ConsensusCore](https://github.com/PacificBiosciences/ConsensusCore), 这是安装 Quiver 所需要的.
-
-但是, ConsensusCore 也死了, 后继者叫做
-[ConsensusCore2](https://github.com/PacificBiosciences/ConsensusCore2), 这个后继者也未能幸免.
-
-ConsensusCore2 的后继者叫 [unanimity](https://github.com/PacificBiosciences/unanimity). 这个家伙已经与
-Quiver 没关系了. 因此, 我们不能从最新的代码中得到可以运行的 Quiver.
-
-SMRT Analysis Software 还包括了一些其它程序:
+SMRT Analysis Software 还包括了一些其它第三方程序:
 
 * 编程语言
     * Java 7
@@ -68,7 +53,27 @@ SMRT Analysis Software 还包括了一些其它程序:
     * HMMER 3.1
     * SAMtools
 
-## 其它程序
+在版本更替过程中, 出现过多个程序, 有些已经死了, 有的正在死.
+
+* Quiver - 基于条件随机场 (conditional random field, CRF), 计算拟极大似然值 (maximum quasi-likelihood),
+  以降低 consensus 的错误率, 最近版本中已经被放弃, 只用于 PacBio RS.
+* Arrow - 基于隐马模型 (HMM), 适用于 PacBio Sequel and RS.
+* Plurality - 用于variant calling, 忽略.
+* EviCons - v1.3.1 中移除.
+
+[GenomicConsensus](https://github.com/PacificBiosciences/GenomicConsensus) 背后的库叫
+[ConsensusCore](https://github.com/PacificBiosciences/ConsensusCore), 这是安装 Quiver 所需要的.
+
+但是, ConsensusCore 也死了, 后继者叫做
+[ConsensusCore2](https://github.com/PacificBiosciences/ConsensusCore2), 这个后继者也未能幸免.
+
+ConsensusCore2 的后继者叫 [unanimity](https://github.com/PacificBiosciences/unanimity). 这个家伙已经与
+Quiver 没关系了. 因此, 我们不能直接从最新的代码中得到可以运行的 Quiver.
+
+PacBio 也知道它的程序是一团乱麻, 给了一个从源码安装的方法,
+[pitchfork](https://github.com/PacificBiosciences/pitchfork), 还很酷地表示, 这是 unsupported.
+
+## 其它与 PacBio 有关的程序
 
 * HGAP: Hierarchical Genome Assembly Process，层次基因组组装, 以相对较长的读长数据为种子 (Seeding Reads),
   以相对较短的读长数据用于内部纠错. 这个时候得到的读长数据足够长也足够准确, 完全可以用于 de novo 组装,
