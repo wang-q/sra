@@ -73,6 +73,68 @@ Quiver 没关系了. 因此, 我们不能直接从最新的代码中得到可以
 PacBio 也知道它的程序是一团乱麻, 给了一个从源码安装的方法,
 [pitchfork](https://github.com/PacificBiosciences/pitchfork), 还很酷地表示, 这是 unsupported.
 
+## 安装 GenomicConsensus
+
+安装最新的第三方依赖.
+
+```bash
+brew install md5sha1sum
+brew install zlib boost openblas
+brew install python cmake ccache hdf5
+brew install samtools
+brew cleanup # only keep the latest version
+
+pip install --upgrade pip
+pip install virtualenv
+```
+
+下载其它第三方依赖.
+
+```bash
+mkdir -p ~/share/thirdparty
+cd ~/share/thirdparty
+
+proxychains4 wget -N https://prdownloads.sourceforge.net/swig/swig-3.0.8.tar.gz
+proxychains4 wget -N https://prdownloads.sourceforge.net/pcre/pcre-8.38.tar.gz 
+proxychains4 wget -N http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2.tar.gz
+
+```
+
+通过 pitchfork 编译 GenomicConsensus.
+
+```bash
+mkdir -p ~/share
+cd ~/share
+git clone git@github.com:PacificBiosciences/pitchfork.git
+cd ~/share/pitchfork
+
+cat <<EOF > settings.mk
+HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib | sed 's/ /\//')
+HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost | sed 's/ /\//')
+HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
+
+HAVE_PYTHON   = $(brew --prefix)/bin/python
+HAVE_CMAKE    = $(brew --prefix)/bin/cmake
+HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
+HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\//')
+
+EOF
+
+
+sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
+    
+cd ~/share/pitchfork/ports/thirdparty/swig/
+cp -f ~/share/thirdparty/swig-3.0.8.tar.gz .
+cp -f ~/share/thirdparty/pcre-8.38.tar.gz .
+
+cd ~/share/pitchfork
+make GenomicConsensus
+```
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+```
+
 ## 其它与 PacBio 有关的程序
 
 * HGAP: Hierarchical Genome Assembly Process，层次基因组组装, 以相对较长的读长数据为种子 (Seeding Reads),
