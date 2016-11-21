@@ -28,12 +28,28 @@ P 指得是聚合酶, C 是化学试剂.
 | RNA Profiling      |   Poor    |                 贵                  |
 | ChIP-Seq           |   Poor    |                 贵                  |
 
+## 文档
+
+* PacBio 在 github 上的[首页](https://github.com/PacificBiosciences)
+* [Quiver HowTo](https://github.com/PacificBiosciences/GenomicConsensus/blob/master/doc/HowTo.rst)
+* [Quiver FAQ](https://github.com/PacificBiosciences/GenomicConsensus/blob/master/doc/FAQ.rst) 
+* [Falcon Manual](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
+* [PacBio 的 slides](https://speakerdeck.com/pacbio)
+* HDF5 即将成为历史, PacBio 正在向 BAM 转移
+* Falcon 问题合集
+    * [Trace assembled and unassembled reads in FALCON](https://github.com/PacificBiosciences/FALCON/issues/472)
+    * [Is there any need to polish the assembly result with quiver?](https://github.com/PacificBiosciences/FALCON/issues/304) 
+    * [minimum sequencing depth requirement for FALCON](https://github.com/PacificBiosciences/FALCON/issues/256) 
+    * [Hybrid Assembly using falcon](https://github.com/PacificBiosciences/FALCON/issues/282) 
+    * 调整 falcon 参数
+        * [Falcon assembly](https://github.com/PacificBiosciences/FALCON/issues/308) 
+        * [how to set the appropriate config file for larger genome using local mode](https://github.com/PacificBiosciences/FALCON/issues/466) 
+
 ## 分析平台的历史
 
-PacBio 在 github 上的[首页](https://github.com/PacificBiosciences).
-
-GenomicConsensus 是 PacBio 的组合程序包, 是 SMRT Analysis Software 的一部分. 用于 consensus 和 variant
-calling. 当前版本为 v2.3.0, 发表时间为2014年.
+GenomicConsensus 是 PacBio 的组合程序包 SMRT Analysis Software (SMRTanalysis) 的一部分. 用于 consensus 和
+variant calling. SMRTanalysis 的当前版本为 v2.3.0, 发表时间为2014年. v3.0 好像已经跳票, v3.2
+不知道什么时候出来.
 
 SMRT Analysis Software 还包括了一些其它第三方程序:
 
@@ -105,7 +121,7 @@ proxychains4 wget -N http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2.tar.gz
 ```bash
 mkdir -p ~/share
 cd ~/share
-git clone git@github.com:PacificBiosciences/pitchfork.git
+git clone https://github.com/PacificBiosciences/pitchfork
 cd ~/share/pitchfork
 
 cat <<EOF > settings.mk
@@ -120,7 +136,6 @@ HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\
 
 EOF
 
-
 sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
     
 cd ~/share/pitchfork/ports/thirdparty/swig/
@@ -133,6 +148,8 @@ make GenomicConsensus
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
+
+quiver --help
 ```
 
 ## 其它与 PacBio 有关的程序
