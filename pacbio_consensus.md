@@ -1,12 +1,11 @@
 # PacBio consensus
 
 现在主流的两种 PacBio 平台
+[RS II 与 Sequel 对比](http://allseq.com/knowledge-bank/sequencing-platforms/pacific-biosciences/)
 
-: RS II 与 Sequel 对比
-
-| Items                    | RS II (P6-C4) |  Sequel  |
+|                          | RS II (P6-C4) |  Sequel  |
 |:-------------------------|:-------------:|:--------:|
-| Run time                 |    240 min    |  40 min  |
+| Run time                 |    240 min    | 240 min  |
 | Total output             |   0.5-1 Gb    | 5-10 Gb  |
 | Output/day               |     2 Gb      |  20 Gb   |
 | Mean read length         |   10-15 kb    | 10-15 kb |
@@ -16,17 +15,20 @@
 | Instrument price         |     $700k     |  $350k   |
 | Run price                |     $400      |   $850   |
 
+|                    |  Sequel   |                              原因                               |
+|:-------------------|:---------:|:--------------------------------------------------------------:|
+| Human Whole Genome |  Ok/Good  | 低偏向, 长读长的特点, 利于鉴定结构变异及组装; 但比起 HiSeq X Ten 要贵很多 |
+| Small Genome       |   Good    |                      长读长, 只需要较低的通量                      |
+| Targeted           |   Good    |                      长读长, 只需要较低的通量                      |
+| Transcriptome      | Poor/Good |                    贵, 但二代没法得到全长的转录本                    |
+| Metagenomics       |  Poor/Ok  |                     贵, 但利于 de novo 组装                      |
+| Exome              |   Poor    |                     贵, 长读长对外显子没有用处                      |
+| RNA Profiling      |   Poor    |                               贵                               |
+| ChIP-Seq           |   Poor    |                               贵                               |
+
+## 分析平台的历史
+
 PacBio 在 github 上的[首页](https://github.com/PacificBiosciences).
-
-[生物通上有个专题](http://www.ebiotrade.com/custom/ebiotrade/zt/130503/index.htm), 有点老,
-但基本的内容还是不错的.
-
-生物通上近期还有两篇文章也挺好
-
-* [韩国人基因组](http://www.ebiotrade.com/newsf/2016-10/2016108164502500.htm)
-* [Atha Ler-0](http://www.ebiotrade.com/newsf/2016-9/201693094511949.htm)
-
-## 历史
 
 GenomicConsensus 是 PacBio 的组合程序包, 是 SMRT Analysis Software 的一部分. 用于 consensus 和 variant
 calling. 当前版本为 v2.3.0, 发表时间为2014年.
@@ -79,3 +81,13 @@ SMRT Analysis Software 还包括了一些其它程序:
     * `brew install PacificBiosciences/tools/*tool-name*`
     * bam2fasta
     * bam2fastq
+
+## 中文资料
+
+[生物通上有个专题](http://www.ebiotrade.com/custom/ebiotrade/zt/130503/index.htm), 有点老,
+但基本的内容还是不错的.
+
+生物通上近期还有两篇文章也挺好
+
+* [韩国人基因组](http://www.ebiotrade.com/newsf/2016-10/2016108164502500.htm)
+* [Atha Ler-0](http://www.ebiotrade.com/newsf/2016-9/201693094511949.htm)
