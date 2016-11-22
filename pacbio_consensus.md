@@ -33,7 +33,8 @@ P 指得是聚合酶, C 是化学试剂.
 * PacBio 在 github 上的[首页](https://github.com/PacificBiosciences)
 * [Quiver HowTo](https://github.com/PacificBiosciences/GenomicConsensus/blob/master/doc/HowTo.rst)
 * [Quiver FAQ](https://github.com/PacificBiosciences/GenomicConsensus/blob/master/doc/FAQ.rst)
-* [Falcon Manual](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
+* [FALCON Manual](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
+* [FALCON Tips](https://github.com/PacificBiosciences/FALCON/wiki/Tips)
 * [PacBio 的 slides](https://speakerdeck.com/pacbio)
 * HDF5 即将成为历史, PacBio 正在向 BAM 转移
 * Falcon 问题合集
@@ -258,12 +259,14 @@ proxychains4 wget -c https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42
         * 每进程两线程
     * `fc_consensus`
         * `0-rawreads/m_*`
-        * 由 `falcon_sense_option` 里的 `--n_core` 指定线程数 
+        * 由 `falcon_sense_option` 里的 `--n_core` 指定线程数. 内部会竞争 CPU, 超出 CPU 数量会极大地降低性能
     * `FA4Falcon`
         * `0-rawreads/preads/cns_*`
         * 前面合并的 rawreads 生成 preads, 高 I/O. 耗时最长.
 
 ```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
 if [ -d $HOME/data/pacbio/ecoli_test ];
 then
     rm -fr $HOME/data/pacbio/ecoli_test
@@ -300,19 +303,17 @@ sge_option_cns =
 pa_concurrent_jobs = 4
 ovlp_concurrent_jobs = 4
 
-pa_HPCdaligner_option =  -v -dal4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
 
 pa_DBsplit_option = -x500 -s50
 ovlp_DBsplit_option = -x500 -s50
 
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 2
 
-overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 4
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 2
 
 EOF
-
-source ~/share/pitchfork/deployment/setup-env.sh
 
 # macOS, i7-6700k, 32G RAM, SSD
 # Unfinished
@@ -324,11 +325,15 @@ source ~/share/pitchfork/deployment/setup-env.sh
 time fc_run fc_run.cfg
 ```
 
-* 结果文件位于 `ecoli_test/2-asm-falcon/`
-    * `p_ctg.fa` - primary contigs, 组装好的 draft genome
-    * `a_ctg.fa` - alternative contigs, 无法区分的 contigs, 可能是二倍体, 也可能是重复序列
-    * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads 映射回
-      contigs
+* 结果文件
+    * `ecoli_test/0-rawreads/`
+        * `0-rawreads/preads/` - the error corrected reads
+    * `ecoli_test/1-preads_ovl/` - pread overlaps
+    * `ecoli_test/2-asm-falcon/`
+        * `p_ctg.fa` - primary contigs, 组装好的 draft genome
+        * `a_ctg.fa` - alternative contigs, 无法区分的 contigs, 可能是二倍体, 也可能是重复序列
+        * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads
+          映射回 contigs
 
 ### 复活草
 
@@ -393,8 +398,8 @@ sge_option_cns =
 pa_concurrent_jobs = 16
 ovlp_concurrent_jobs = 16
 
-pa_HPCdaligner_option =  -v -dal4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
 
 pa_DBsplit_option = -x500 -s50
 ovlp_DBsplit_option = -x500 -s50
