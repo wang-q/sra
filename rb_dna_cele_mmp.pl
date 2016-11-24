@@ -25,7 +25,6 @@ my $memory   = 16;    # It's enough for picard and gatk
 #----------------------------#
 # directories
 #----------------------------#
-my $brew_home = `brew --prefix`;
 my $bin_dir   = {
     script => $FindBin::Bin,
     gatk   => path( $ENV{HOME}, "share/gatk" )->stringify,

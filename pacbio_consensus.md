@@ -183,8 +183,12 @@ HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\
 
 EOF
 
+# fix bugs in several Makefile
 sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
-    
+
+sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+
 cd ~/share/pitchfork/ports/thirdparty/swig/
 cp -f ~/share/thirdparty/swig-3.0.8.tar.gz .
 cp -f ~/share/thirdparty/pcre-8.38.tar.gz .
