@@ -240,7 +240,7 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 * [这里](https://github.com/PacificBiosciences/FALCON/issues/251)有个脚本帮助解决这个问题. 已经放到本地,
   `falcon_name_fasta.pl`
 
-### `falcon/example`里的[*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
+### `falcon/example`里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 过墙下载以下三个文件
 
@@ -412,6 +412,22 @@ EOF
 
 fc_run fc_run.cfg
 ```
+
+### Atha Ler-0
+
+* 三代原始数据
+
+```bash
+cd ~/data/pacbio/rawdata/
+perl ~/Scripts/download/list.pl -u https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/
+perl ~/Scripts/download/download.pl -a -i public_SequelData_ArabidopsisDemoData.yml
+
+aria2c -x 12 -s 4 -i /home/wangq/data/pacbio/rawdata/public_SequelData_ArabidopsisDemoData.yml.txt
+```
+
+* 二代数据
+
+    之前在 ERA 下载的数据, 方法在[这里](README.md#ath19).
 
 ### 其它模式生物
 
