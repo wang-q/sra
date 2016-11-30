@@ -426,7 +426,7 @@ cd ~/data/pacbio/rawdata/
 perl ~/Scripts/download/list.pl -u https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/
 perl ~/Scripts/download/download.pl -a -i public_SequelData_ArabidopsisDemoData.yml
 
-aria2c -x 12 -s 4 -i /home/wangq/data/pacbio/rawdata/public_SequelData_ArabidopsisDemoData.yml.txt
+aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_ArabidopsisDemoData.yml.txt
 ```
 
 * 二代数据
