@@ -718,29 +718,31 @@ md5sum --check cele_mmp.md5.txt
 
 Prepare reference genome.
 
-`~/data/alignment/Ensembl/Cele` should contain [C. elegans genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#caenorhabditis-elegans) from ensembl.
+`~/data/alignment/Ensembl/Cele` should contain
+[C. elegans genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#caenorhabditis-elegans)
+from ensembl.
 
 ```bash
 mkdir -p ~/data/dna-seq/cele_mmp/ref
 cd ~/data/dna-seq/cele_mmp/ref
 
-cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa > Cele_82.fa
-faops size Cele_82.fa > chr.sizes
+cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa > genome.fa
+faops size genome.fa > chr.sizes
 
-samtools faidx Cele_82.fa
-bwa index -a bwtsw Cele_82.fa
+samtools faidx genome.fa
+bwa index -a bwtsw genome.fa
 
 java -jar ~/share/picard-tools-1.128/picard.jar \
     CreateSequenceDictionary \
-    R=Cele_82.fa O=Cele_82.dict
+    R=genome.fa O=genome.dict
 ```
 
 Generate bash files and run a sample.
 
 ```bash
-cd ~/data/dna-seq/cele_mmp
-perl ~/Scripts/sra/cele_mmp_seq.pl
+perl ~/Scripts/sra/rb_dna.pl -b ~/data/dna-seq/cele_mmp -c ~/data/dna-seq/cele_mmp/sra/cele_mmp.csv
 
+cd ~/data/dna-seq/cele_mmp
 bash bash/sra.AB1.sh
 
 ```
@@ -871,11 +873,10 @@ java -jar ~/share/picard-tools-1.128/picard.jar \
 Generate bash files and run a sample.
 
 ```bash
+perl ~/Scripts/sra/rb_dna.pl -b ~/data/dna-seq/ath19 -c ~/data/dna-seq/ath19/sra/ath19.csv
+
 cd ~/data/dna-seq/ath19
-perl ~/Scripts/sra/rb_dna.pl -b ~/data/dna-seq/ath19 -c sra/ath19.csv
-
 bash bash/sra.Ler_0.sh
-
 ```
 
 Open `~/data/dna-seq/ath19/screen.sh.txt` and paste bash lines to terminal.

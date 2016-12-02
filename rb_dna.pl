@@ -140,7 +140,7 @@ for my $item (@data) {
     $mybam->tail($item);
 
     my $sh_file = path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify;
-    print "Create [$sh_file].\n";
+    print "Create [$sh_file]\n";
     $mybam->write( $item, $sh_file );
 }
 
@@ -169,7 +169,7 @@ for my $item (@data) {
     $mybam->tail($item);
 
     my $sh_file = path( $data_dir->{bash}, "bwa." . $item->{name} . ".sh" )->stringify;
-    print "Create [$sh_file].\n";
+    print "Create [$sh_file]\n";
     $mybam->write( $item, $sh_file );
 }
 
@@ -191,7 +191,7 @@ for my $item (@data) {
     $mybam->screen_bwa( \@data );
 
     my $sh_file = path( $opt->{base}, "screen.sh.txt" )->stringify;
-    print "Create [$sh_file].\n";
+    print "Create [$sh_file]\n";
     $mybam->write( undef, $sh_file );
 }
 

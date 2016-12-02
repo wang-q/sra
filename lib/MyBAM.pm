@@ -4,9 +4,8 @@ use Moose;
 use Carp;
 
 use Template;
-use File::Remove qw(remove);
 
-use YAML qw(Dump Load DumpFile LoadFile);
+use YAML::Syck;
 
 has base_dir => ( is => 'rw', isa => 'Str' );
 has bin_dir  => ( is => 'rw', isa => 'HashRef', default => sub { {} }, );
@@ -20,7 +19,8 @@ has tmpdir   => ( is => 'rw', isa => 'Str', default => "/tmp", );
 has bash => ( is => 'ro', isa => 'Str' );
 
 sub BUILD {
-    my $self = shift;
+
+    #    my $self = shift;
 
     return;
 }
