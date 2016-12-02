@@ -14,8 +14,11 @@ use URI;
 # GetOpt section
 #----------------------------------------------------------#
 
-(   my Getopt::Long::Descriptive::Opts $opt,
-    my Getopt::Long::Descriptive::Usage $usage
+(    #@type Getopt::Long::Descriptive::Opts
+    my $opt,
+
+    #@type Getopt::Long::Descriptive::Usage
+    my $usage,
     )
     = Getopt::Long::Descriptive::describe_options(
     "Prepare for sra.\n\n"
@@ -95,12 +98,8 @@ for my $name ( sort keys %{$yml} ) {
             my $spot = $info->{srr_info}{$srr}{spot};
             my $base = $info->{srr_info}{$srr}{base};
 
-            $csv->print(
-                $csv_fh,
-                [   $name,    $srx, $platform, $layout,
-                    $ilength, $srr, $spot,     $base,
-                ]
-            );
+            $csv->print( $csv_fh,
+                [ $name, $srx, $platform, $layout, $ilength, $srr, $spot, $base, ] );
             print {$ftp_fh} $url, "\n";
 
             if ( $opt->{md5} ) {

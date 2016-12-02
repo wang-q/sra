@@ -15,8 +15,12 @@ use WWW::Mechanize;
 #----------------------------------------------------------#
 # GetOpt section
 #----------------------------------------------------------#
-(   my Getopt::Long::Descriptive::Opts $opt,
-    my Getopt::Long::Descriptive::Usage $usage
+(
+    #@type Getopt::Long::Descriptive::Opts
+    my $opt,
+
+    #@type Getopt::Long::Descriptive::Usage
+    my $usage,
     )
     = Getopt::Long::Descriptive::describe_options(
     "Grab information from sra/ena.\n\n"
@@ -139,11 +143,9 @@ sub erp_worker {
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
 
-    my $url_part1
-        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
-    my $url_part2
-        = "&result=read_run&fields=secondary_study_accession,experiment_accession";
-    my $url = $url_part1 . $term . $url_part2;
+    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part2 = "&result=read_run&fields=secondary_study_accession,experiment_accession";
+    my $url       = $url_part1 . $term . $url_part2;
     warn "$url\n" if $verbose;
     $mech->get($url);
     my @lines = split /\n/, $mech->content;
@@ -194,8 +196,7 @@ sub erx_worker {
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
 
-    my $url_part1
-        = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
+    my $url_part1 = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=";
     my $url_part2
         = "&result=read_run&fields=secondary_study_accession,secondary_sample_accession,"
         . "experiment_accession,run_accession,scientific_name,"
