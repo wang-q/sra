@@ -126,9 +126,9 @@ echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.19G \
 Generate bash files and run a sample.
 
 ```bash
-cd ~/data/rna-seq/medfood/sra
-perl ~/Scripts/sra/dn_rna_medfood.pl -b ~/data/rna-seq/medfood -c medfood_all.csv
+perl ~/Scripts/sra/dn_rna.pl -b ~/data/rna-seq/medfood -c ~/data/rna-seq/medfood/sra/medfood_all.csv
 
+#cd ~/data/rna-seq/medfood/sra
 #bash bash/sra.Cichorium_intybus.sh
 
 ```

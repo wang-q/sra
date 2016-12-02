@@ -18,12 +18,15 @@ use MyBAM;
 # GetOpt section
 #----------------------------------------------------------#
 
-(   my Getopt::Long::Descriptive::Opts $opt,
-    my Getopt::Long::Descriptive::Usage $usage,
+(
+    #@type Getopt::Long::Descriptive::Opts
+    my $opt,
+
+    #@type Getopt::Long::Descriptive::Usage
+    my $usage,
     )
     = Getopt::Long::Descriptive::describe_options(
-    "Create bash files for de novo rna-seq projects\n"
-        . "Usage: perl %c [options]",
+    "Create bash files for de novo rna-seq projects\n" . "Usage: perl %c [options]",
     [ 'help|h', 'display this message' ],
     [],
     [ 'base|b=s',     'Base directory',                  { required => 1, }, ],
@@ -49,10 +52,7 @@ my $data_dir = {
     log  => path( $opt->{base}, "log" )->stringify,
     ref  => path( $opt->{base}, "ref" )->stringify,
 };
-my $ref_file
-    = {
-    adapters => path( $opt->{base}, "ref", "illumina_adapters.fa" )->stringify,
-    };
+my $ref_file = { adapters => path( $opt->{base}, "ref", "illumina_adapters.fa" )->stringify, };
 
 for my $key ( keys %{$data_dir} ) {
     path( $data_dir->{$key} )->mkpath;
@@ -98,13 +98,8 @@ ITEM: for my $name (@names) {
             next ITEM;
         }
 
-        my $rg_str
-            = '@RG'
-            . "\\tID:$srr"
-            . "\\tLB:$srx"
-            . "\\tPL:$platform"
-            . "\\tSM:$name";
-        my $lane = {
+        my $rg_str = '@RG' . "\\tID:$srr" . "\\tLB:$srx" . "\\tPL:$platform" . "\\tSM:$name";
+        my $lane   = {
             file     => $file,
             srx      => $srx,
             platform => $platform,
@@ -138,8 +133,9 @@ for my $item (@data) {
     $mybam->fastqc($item);
     $mybam->tail($item);
 
-    $mybam->write( $item,
-        path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify );
+    my $sh_file = path( $data_dir->{bash}, "sra." . $item->{name} . ".sh" )->stringify;
+    print "Create [$sh_file]\n";
+    $mybam->write( $item, $sh_file );
 }
 
 for my $item (@data) {
@@ -158,8 +154,9 @@ for my $item (@data) {
     $mybam->trinity_rsem($item);
     $mybam->tail($item);
 
-    $mybam->write( $item,
-        path( $data_dir->{bash}, "tri." . $item->{name} . ".sh" )->stringify );
+    my $sh_file = path( $data_dir->{bash}, "tri." . $item->{name} . ".sh" )->stringify;
+    print "Create [$sh_file]\n";
+    $mybam->write( $item, $sh_file );
 }
 
 #----------------------------------------------------------#
@@ -179,7 +176,9 @@ for my $item (@data) {
     $mybam->screen_sra( \@data );
     $mybam->screen_trinity( \@data );
 
-    $mybam->write( undef, path( $opt->{base}, "screen.sh.txt" )->stringify );
+    my $sh_file = path( $opt->{base}, "screen.sh.txt" )->stringify;
+    print "Create [$sh_file]\n";
+    $mybam->write( undef, $sh_file );
 }
 
 {    # for Scythe
@@ -201,7 +200,6 @@ AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
 
 EOF
     my $tt = Template->new;
-    $tt->process( \$text, {},
-        path( $data_dir->{ref}, "illumina_adapters.fa" )->stringify )
+    $tt->process( \$text, {}, path( $data_dir->{ref}, "illumina_adapters.fa" )->stringify )
         or die Template->error;
 }
