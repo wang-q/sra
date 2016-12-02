@@ -138,23 +138,6 @@ EOF
 # Subroutines
 #----------------------------------------------------------#
 
-sub get_filename_prefix {
-    my ($filename) = @_;
-
-    my @b = split( /\//, $filename );
-    my @a = split( /\./, $b[-1] );
-
-    if ( ( $a[-1] =~ m/\.bzi?p?2$/ ) || ( $a[-1] =~ m/.g?zi?p?$/ ) ) {
-        pop(@a);
-    }
-
-    if ( ( $a[-1] eq 'fq' ) || ( $a[-1] eq 'fastq' ) ) { pop(@a); }
-
-    my $newname = join( '.', @a );
-
-    return ($newname);
-}
-
 sub update_assemble_script {
     my $filename = shift;
 
