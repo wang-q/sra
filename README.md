@@ -802,7 +802,7 @@ md5sum --check dicty.md5.txt
 
 ERP000565 ERA023479
 
-sf-2 is missing, use downloaded bam file.
+sf-2 is missing, although we can download the bam file from the 19genomes site.
 
 Grab information.
 
@@ -845,6 +845,51 @@ perl ~/Scripts/sra/sra_prep.pl ath19.yml --md5
 aria2c -x 9 -s 3 -c -i ath19.ftp.txt
 
 md5sum --check ath19.md5.txt
+```
+
+Prepare reference genome.
+
+`~/data/alignment/Ensembl/Atha` should contain
+[A. thaliana genome files](https://github.com/wang-q/withncbi/blob/master/pop/OPs-download.md#arabidopsis-19-genomes)
+from ensembl.
+
+```bash
+mkdir -p ~/data/dna-seq/ath19/ref
+cd ~/data/dna-seq/ath19/ref
+
+cat ~/data/alignment/Ensembl/Atha/{1,2,3,4,5}.fa > genome.fa
+faops size genome.fa > chr.sizes
+
+samtools faidx genome.fa
+bwa index -a bwtsw genome.fa
+
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CreateSequenceDictionary \
+    R=genome.fa O=genome.dict
+```
+
+Generate bash files and run a sample.
+
+```bash
+cd ~/data/dna-seq/ath19
+perl ~/Scripts/sra/rb_dna.pl -b ~/data/dna-seq/ath19 -c sra/ath19.csv
+
+bash bash/sra.Ler_0.sh
+
+```
+
+Open `~/data/dna-seq/ath19/screen.sh.txt` and paste bash lines to terminal.
+
+```bash
+cd /home/wangq/data/dna-seq/ath19/log
+screen -L -dmS sra_Ler_0 bash /home/wangq/data/dna-seq/ath19/bash/sra.Ler_0.sh
+
+# ...
+
+cd /home/wangq/data/dna-seq/ath19/log
+screen -L -dmS bwa_Ler_0 bash /home/wangq/data/dna-seq/ath19/bash/bwa.Ler_0.sh
+
+# ...
 ```
 
 ### dpgp
