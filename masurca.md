@@ -202,6 +202,8 @@ Super-reads在 `work1/superReadSequences.fasta`, `work2/` 和 `work2.1/` 是 sho
 > Assembly result. The final assembly files are under CA/10-gapclose and named 'genome.ctg.fasta'
 > for the contig sequences and 'genome.scf.fasta' for the scaffold sequences.
 
+MaSuRCA-3.1.3 supports gzipped fastq files while MaSuRCA-2.1.0 doesn't.
+
 ### Rhodobacter sphaeroides (球形红细菌)
 
 高 GC 原核生物 (68%), 基因组 4.5 Mbp.
@@ -384,3 +386,20 @@ cat stat.md
 | PE_SJ_Sanger  |   4586 |      63274 |      3070846 | 4187 |     141 |        28 | 4602968 |
 | PE_SJ         |   4586 |      43125 |      3058404 | 4187 |     219 |        59 | 4602968 |
 | PE            |   4705 |      20826 |        34421 | 4042 |     409 |       280 | 4595684 |
+
+### Rhodobacter sphaeroides with `superreads.pl`
+
+```bash
+# gzip original fastq
+mkdir -p ~/data/test/rhodobacter/PEgz
+gzip -c ~/data/test/rhodobacter/PE/frag_1.fastq > ~/data/test/rhodobacter/PEgz/frag_1.fq.gz
+gzip -c ~/data/test/rhodobacter/PE/frag_2.fastq > ~/data/test/rhodobacter/PEgz/frag_2.fq.gz
+
+mkdir -p ~/data/test/rhodobacter_superreads
+cd ~/data/test/rhodobacter_superreads
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/test/rhodobacter/PEgz/frag_1.fq.gz \
+    ~/data/test/rhodobacter/PEgz/frag_2.fq.gz
+
+```
