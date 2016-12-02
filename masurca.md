@@ -329,9 +329,9 @@ time bash assemble.sh
 mkdir -p ~/data/test/rhodobacter_PE
 cd ~/data/test/rhodobacter_PE
 
-cat <<EOF > config_PE.txt
+cat <<EOF > sr_config.txt
 PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB
 LIMIT_JUMP_COVERAGE = 60
 KMER_COUNT_THRESHOLD = 1
 EXTEND_JUMP_READS=0
@@ -345,7 +345,7 @@ END
 
 EOF
 
-$HOME/share/MaSuRCA/bin/masurca config_PE.txt
+$HOME/share/MaSuRCA/bin/masurca sr_config.txt
 
 #real    5m46.738s
 #user    20m58.316s
@@ -400,6 +400,7 @@ cd ~/data/test/rhodobacter_superreads
 
 perl ~/Scripts/sra/superreads.pl \
     ~/data/test/rhodobacter/PEgz/frag_1.fq.gz \
-    ~/data/test/rhodobacter/PEgz/frag_2.fq.gz
+    ~/data/test/rhodobacter/PEgz/frag_2.fq.gz \
+    -s 180 -d 20
 
 ```

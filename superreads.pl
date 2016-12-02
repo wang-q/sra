@@ -22,7 +22,7 @@ use Path::Tiny;
     [ 'help|h', 'display this message' ],
     [],
     [ 'prefix|r=s',   'prefix for paired-reads',          { default => 'pe', }, ],
-    [ 'size|f=i',     'fragment size',                    { default => 300, }, ],
+    [ 'size|s=i',     'fragment size',                    { default => 300, }, ],
     [ 'std|d=i',      'fragment size standard deviation', { default => 20, }, ],
     [ 'parallel|p=i', 'number of threads to use',         { default => 8, }, ],
     [ 'jf|j=i',       'jellyfish hash size',              { default => 500_000_000, }, ],
@@ -72,28 +72,12 @@ PE= [% prefix %] [% size %] [% std %] [% r1file %] [% r2file %]
 END
 
 PARAMETERS
-# this is k-mer size for deBruijn graph values between 25 and 101 are supported,
-# auto will compute the optimal size based on the read data and GC content.
-GRAPH_KMER_SIZE = auto
-# set this to 1 for Illumina-only assemblies and to 0 if you have 1x or more long (Sanger, 454) reads,
-# you can also set this to 0 for large data sets with high jumping clone coverage, e.g. >50x
-USE_LINKING_MATES = 0
-# this parameter is useful if you have too many jumping library mates.
-# Typically set it to 60 for bacteria and 300 for the other organisms
-LIMIT_JUMP_COVERAGE = 300
-# these are the additional parameters to Celera Assembler.
-# do not worry about performance, number or processors or batch sizes -- these are computed automatically.
-# set cgwErrorRate=0.25 for bacteria and 0.1<=cgwErrorRate<=0.15 for other organisms.
-CA_PARAMETERS = cgwErrorRate=0.15 ovlMemory=4GB
-# minimum count k-mers used in error correction 1 means all k-mers are used.
-# one can increase to 2 if coverage >100
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB
+LIMIT_JUMP_COVERAGE = 60
 KMER_COUNT_THRESHOLD = 1
-# auto-detected number of cpus to use
+EXTEND_JUMP_READS=0
 NUM_THREADS = [% parallel %]
-# this is mandatory jellyfish hash size -- a safe value is estimated_genome_size*estimated_coverage
 JF_SIZE = [% jf %]
-# this specifies if we do (1) or do not (0) want to trim long runs of homopolymers (e.g. GGGGGGGG) from 3' read ends, use it for high GC genomes
-DO_HOMOPOLYMER_TRIM = 0
 END
 
 EOF
@@ -241,7 +225,7 @@ sub get_long_reads {
         open( F, $pair1file );
     }
 
-    open( O, "| gzip -c > notAssembled_1.fa.gz" );
+    open( O, "| gzip -c > notAssembled_1.fq.gz" );
     $n = 0;
     while (<F>) {
         chomp;
@@ -272,7 +256,7 @@ sub get_long_reads {
         open( F, $pair2file );
     }
 
-    open( O, "| gzip -c > notAssembled_2.fa.gz" );
+    open( O, "| gzip -c > notAssembled_2.fq.gz" );
     $n = 0;
     while (<F>) {
         chomp;
