@@ -1,4 +1,4 @@
-# [MaSuRCA](http://www.genome.umd.edu/masurca.html)安装与样例
+# [MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
 
 doi:10.1093/bioinformatics/btt476
 
@@ -20,19 +20,19 @@ de novo 基因组序列的拼接有以下几种主流的策略:
     * 与 de Bruijn graph 类似, 但较为节省内存
     * 代表: SGA
 
-MaSuRCA提出了一种新的策略, Super-reads. 主要思想是将多个短reads按 1 bp 延伸, 合并得到数量少得多的长reads.
+MaSuRCA 提出了一种新的策略, Super-reads. 主要思想是将多个短 reads 按 1 bp 延伸, 合并得到数量少得多的长 reads.
 在单倍体基因组的情况下, 无论覆盖度是多少 (50, 100), 最终的 super-reads 覆盖度都趋向于 2x. 高杂合基因组则趋向于 4x.
 
-合并后的 super-reads 的N50约为 2-4 kbp.
+合并后的 super-reads 的 N50 约为 2-4 kbp.
 
 ## 版本
 
 version 3.1.3.
 
-homebrew-science 里的版本是2.3.2b, 3.1.3的
+homebrew-science 里的版本是 2.3.2b, 3.1.3 的
 [PR](https://github.com/Homebrew/homebrew-science/pull/3802) 也有了, 但没合并.
 
-九月UMD的ftp上有了3.2.1版, 多了CA8, MUMmer和PacBio三个目录, 还末详细研究.
+九月 UMD 的 ftp 上有了 3.2.1 版, 多了 CA8, MUMmer 和 PacBio 三个目录, 还末详细研究.
 
 http://ccb.jhu.edu/software.shtml
 
@@ -43,7 +43,7 @@ http://ccb.jhu.edu/software.shtml
 
 外部
 
-* gcc-4: macOS下的clang无法编译
+* gcc-4: macOS 下的 clang 无法编译
 * m4: 宏语言, 远离
 * swig: for Perl binding of jellyfish
 
@@ -55,8 +55,8 @@ http://ccb.jhu.edu/software.shtml
 * [Quorum](https://github.com/gmarcais/Quorum): Error correction for Illumina reads.
 * samtools
 * SOAPdenovo2
-* SuperReads: masurca的主程序. 这个是我们所需要的, 合并reads的功能就在这里. 源码约五万行.
-* ufasta: UMD的操作fasta的工具, 未在其它地方发现相关信息. 里面的tests写得不错, 值得借鉴.
+* SuperReads: masurca 的主程序. 这个是我们所需要的, 合并 reads 的功能就在这里. 源码约五万行.
+* ufasta: UMD 的操作 fasta 的工具, 未在其它地方发现相关信息. 里面的 tests 写得不错, 值得借鉴.
 
 ## 安装
 
@@ -79,7 +79,7 @@ sh install.sh
 
 ```
 
-编译完成后, 会生成`bin`目录, 里面是可执行文件, `tree bin`.
+编译完成后, 会生成 `bin` 目录, 里面是可执行文件, `tree bin`.
 
 ```text
 bin
@@ -191,7 +191,7 @@ bin
 
 ## 样例数据
 
-MaSuRCA发表在 Bioinformatics 时自带的测试数据.
+MaSuRCA 发表在 Bioinformatics 时自带的测试数据.
 
 > IMPORTANT! Do not pre‐process Illumina data before providing it to MaSuRCA. Do not do any
 > trimming, cleaning or error correction. This WILL deteriorate the assembly
@@ -204,7 +204,7 @@ Super-reads在 `work1/superReadSequences.fasta`, `work2/` 和 `work2.1/` 是 sho
 
 ### Rhodobacter sphaeroides (球形红细菌)
 
-高GC原核生物(68%), 基因组4.5 Mbp.
+高 GC 原核生物 (68%), 基因组 4.5 Mbp.
 
 * 数据
 
