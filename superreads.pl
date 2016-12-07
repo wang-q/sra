@@ -1,14 +1,24 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use autodie;
 
 use Getopt::Long::Descriptive;
 use Template;
 use Path::Tiny;
+use IO::Zlib;
 
 #----------------------------------------------------------#
 # GetOpt section
 #----------------------------------------------------------#
+
+my $description = <<'EOF';
+This script runs MaSuRCA and prepares the long reads and unassembled reads files.
+
+Modified from superreads.pl in StringTie.
+
+Usage: perl %c <pair_read_1> <pair_read_2> [options]
+EOF
 
 (    #@type Getopt::Long::Descriptive::Opts
     my $opt,
@@ -17,15 +27,15 @@ use Path::Tiny;
     my $usage,
     )
     = Getopt::Long::Descriptive::describe_options(
-    "This script runs MaSuRCA and prepares the super-reads and unassembled reads files.\n\n"
-        . "Usage: perl %c <pair_read_1> <pair_read_2> [options]",
+    $description,
     [ 'help|h', 'display this message' ],
     [],
-    [ 'prefix|r=s',   'prefix for paired-reads',          { default => 'pe', }, ],
     [ 'size|s=i',     'fragment size',                    { default => 300, }, ],
     [ 'std|d=i',      'fragment size standard deviation', { default => 20, }, ],
     [ 'parallel|p=i', 'number of threads to use',         { default => 8, }, ],
     [ 'jf|j=i',       'jellyfish hash size',              { default => 500_000_000, }, ],
+    [ 'prefix|r=s',   'prefix for paired-reads',          { default => 'pe', }, ],
+    [ 'long|l',       'create long reads', ],
     [   'masurca|m=s',
         'masurca directory',
         { default => path( $ENV{HOME}, "share", "MaSuRCA" )->stringify, },
@@ -56,7 +66,7 @@ if ( !Path::Tiny::path( $opt->{masurca} )->is_dir ) {
 #----------------------------------------------------------#
 
 {
-    print STDERR "==> Starting step 1: run masurca...\n";
+    print STDERR "==> Starting masurca\n";
 
     my $text = <<'EOF';
 # PE and 5 fields:
@@ -82,6 +92,7 @@ END
 
 EOF
 
+    #@type Template
     my $tt = Template->new;
     $tt->process(
         \$text,
@@ -109,13 +120,13 @@ EOF
     print STDERR "==> Running assemble.sh\n";
     my $run_assembly = "bash " . $assemble_script;
     die "Assembly script did not finish running!\n" if system($run_assembly);
-    print STDERR "==> Done step 1.\n";
+    print STDERR "==> Done.\n";
 }
 
-{
-    print STDERR "==> Starting step 2: prepare super-reads for spliced alignment....\n";
+if ( $opt->{long} ) {
+    print STDERR "==> Starting creating long reads\n";
     get_long_reads( $ARGV[0], $ARGV[1], $opt->{prefix}, $opt->{size} );
-    print STDERR "==> Done step 2.\n";
+    print STDERR "==> Done.\n";
 }
 
 #----------------------------------------------------------#
@@ -140,13 +151,13 @@ sub update_assemble_script {
 sub get_long_reads {
     my ( $pair1file, $pair2file, $read_prefix, $fragment_length, ) = @_;
 
-    my $readplacement = "work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt";
-    die "MaSuRCA file $readplacement could not be found!\n"
-        if ( !( -e $readplacement ) );
+    my $read_placement = "work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt";
+    die "MaSuRCA file $read_placement could not be found!\n"
+        if ( !( -e $read_placement ) );
 
-    my $superreadfasta = "work1/superReadSequences.fasta";
-    die "MaSuRCA file $superreadfasta could not be found!\n"
-        if ( !( -e $superreadfasta ) );
+    my $super_read_fasta = "work1/superReadSequences.fasta";
+    die "MaSuRCA file $super_read_fasta could not be found!\n"
+        if ( !( -e $super_read_fasta ) );
 
     # stores the supereads info:
     # 0=first read pair position;
@@ -155,165 +166,166 @@ sub get_long_reads {
     # 3=position of read in fastq file
     my @read;
 
-    my $n             = 0;
-    my $prev_read_num = -1;
-    my $prev_orient;
-    my $prev_pos;
-    my $prev_superread;
-
     my %longread;
     my %isname;
 
-    open( F, $readplacement );
-    while (<F>) {
-        chomp;
-        my ( $read_id, $super_read, $position, $orientation ) = split(/\s+/);
-        if ( $read_id =~ /^$read_prefix(\d+)/ ) {
-            my $read_num = $1;
+    {
+        my $n             = 0;
+        my $prev_read_num = -1;
+        my $prev_orient;
+        my $prev_pos;
+        my $prev_superread;
 
-            # if we have two reads in a row, the first one being an even number,
-            # then check paired end constraints
-            if (   $read_num == $prev_read_num + 1
-                && $read_num % 2 == 1 )
-            {
-                # then we have a pair of reads
-                if ( $super_read eq $prev_superread ) {    # then they are in the same unitig
-                    if (( $orientation eq "F" && $prev_orient eq "R" )
-                        || (   $orientation eq "R"
-                            && $prev_orient eq "F" )
-                        )
-                    {
-                        if ( $prev_pos < 0 ) { $prev_pos = 0; }
-                        if ( $position < 0 ) { $position = 0; }
-                        my $distance = $prev_pos - $position;
-                        if ( $orientation eq "R" && $prev_orient eq "F" ) {
-                            $distance = $position - $prev_pos;
-                        }
+        my $in_fh = IO::Zlib->new( $read_placement, "rb" );
+        while ( my $line = $in_fh->getline ) {
+            chomp $line;
+            my ( $read_id, $super_read, $position, $orientation ) = split /\s+/, $line;
+            if ( $read_id =~ /^$read_prefix(\d+)/ ) {
+                my $read_num = $1;
 
-                        # if reads are placed the right way,
-                        # and they are within a factor of 2 of the right dist apart
-                        if (   $distance > 50
-                            && $distance < $fragment_length * 2
-                            && $distance > 0 )
+                # if we have two reads in a row, the first one being an even number,
+                # then check paired end constraints
+                if (   $read_num == $prev_read_num + 1
+                    && $read_num % 2 == 1 )
+                {
+                    # then we have a pair of reads
+                    if ( $super_read eq $prev_superread ) {    # then they are in the same unitig
+                        if (   ( $orientation eq "F" && $prev_orient eq "R" )
+                            || ( $orientation eq "R" && $prev_orient eq "F" ) )
                         {
-                            push(
-                                @{ $read[$n] },
-                                ( $prev_pos, $position, $prev_orient, $prev_read_num / 2 )
-                            );
-                            $longread{ $prev_read_num / 2 } = 1;
-                            push( @{ $isname{$super_read} }, $n );
-                            $n++;
+                            $prev_pos = 0 if $prev_pos < 0;
+                            $position = 0 if $position < 0;
+                            my $distance = $prev_pos - $position;
+
+                            if ( $orientation eq "R" && $prev_orient eq "F" ) {
+                                $distance = $position - $prev_pos;
+                            }
+
+                            # if reads are placed the right way,
+                            # and they are within a factor of 2 of the right dist apart
+                            if (   $distance > 50
+                                && $distance < $fragment_length * 2
+                                && $distance > 0 )
+                            {
+                                push(
+                                    @{ $read[$n] },
+                                    ( $prev_pos, $position, $prev_orient, $prev_read_num / 2 )
+                                );
+                                $longread{ $prev_read_num / 2 } = 1;
+                                push( @{ $isname{$super_read} }, $n );
+                                $n++;
+                            }
                         }
                     }
                 }
+
+                # always save the ID and compare to the next one
+                $prev_read_num  = $read_num;
+                $prev_orient    = $orientation;
+                $prev_pos       = $position;
+                $prev_superread = $super_read;
             }
-
-            # always save the ID and compare to the next one
-            $prev_read_num  = $read_num;
-            $prev_orient    = $orientation;
-            $prev_pos       = $position;
-            $prev_superread = $super_read;
+            else {
+                $prev_read_num = -1;
+            }
         }
-        else { $prev_read_num = -1; }
-    }
-    close(F);
-
-    if ( $pair1file =~ /\.gz$/ ) {
-        open( F, "zcat $pair1file|" );
-    }
-    else {
-        open( F, $pair1file );
+        $in_fh->close;
     }
 
-    open( O, "| gzip -c > notAssembled_1.fq.gz" );
-    $n = 0;
-    while (<F>) {
-        chomp;
-        if ( $longread{$n} ) {
-            $longread{$n} = $_;
-            <F>;
-            <F>;
-            <F>;
+    {
+        my $in_fh  = IO::Zlib->new( $pair1file,             "rb" );
+        my $out_fh = IO::Zlib->new( "notAssembled_1.fq.gz", "wb" );
+        my $n      = 0;
+        while ( my $line = $in_fh->getline ) {
+            chomp $line;
+            if ( $longread{$n} ) {
+                $longread{$n} = $line;
+                <$in_fh>;
+                <$in_fh>;
+                <$in_fh>;
+            }
+            else {
+                print {$out_fh} $line, "\n";
+                print {$out_fh} <$in_fh>;
+                print {$out_fh} <$in_fh>;
+                print {$out_fh} <$in_fh>;
+            }
+            $n++;
         }
-        else {
-            print O $_, "\n";
-            my $line = <F>;
-            print O $line;
-            $line = <F>;
-            print O $line;
-            $line = <F>;
-            print O $line;
+        $in_fh->close;
+        $out_fh->close;
+    }
+
+    {
+        my $in_fh  = IO::Zlib->new( $pair2file,             "rb" );
+        my $out_fh = IO::Zlib->new( "notAssembled_2.fq.gz", "wb" );
+        my $n      = 0;
+        while ( my $line = $in_fh->getline ) {
+            chomp $line;
+            if ( !$longread{$n} ) {
+                print {$out_fh} $line, "\n";
+                print {$out_fh} <$in_fh>;
+                print {$out_fh} <$in_fh>;
+                print {$out_fh} <$in_fh>;
+            }
+            else {
+                <$in_fh>;
+                <$in_fh>;
+                <$in_fh>;
+            }
+            $n++;
         }
-        $n++;
-    }
-    close(F);
-    close(O);
-
-    if ( $pair2file =~ /\.gz$/ ) {
-        open( F, "zcat $pair2file|" );
-    }
-    else {
-        open( F, $pair2file );
+        $in_fh->close;
+        $out_fh->close;
     }
 
-    open( O, "| gzip -c > notAssembled_2.fq.gz" );
-    $n = 0;
-    while (<F>) {
-        chomp;
-        if ( !$longread{$n} ) {
-            print O $_, "\n";
-            my $line = <F>;
-            print O $line;
-            $line = <F>;
-            print O $line;
-            $line = <F>;
-            print O $line;
-        }
-        else { <F>; <F>; <F>; }
-        $n++;
-    }
-    close(F);
-    close(O);
+    {
+        my $in_fh  = IO::Zlib->new( $super_read_fasta, "rb" );
+        my $out_fh = IO::Zlib->new( "LongReads.fq.gz", "wb" );
 
-    open( O, "| gzip -c > LongReads.fq.gz" );
+        my $name;
+        while ( my $line = $in_fh->getline ) {
+            chomp $line;
+            if ( $line eq '' or substr( $line, 0, 1 ) eq " " ) {
+                next;
+            }
+            elsif ( substr( $line, 0, 1 ) eq "#" ) {
+                next;
+            }
+            elsif ( substr( $line, 0, 1 ) eq ">" ) {
+                ($name) = split /\s+/, $line;
+                $name =~ s/^>//;
+            }
+            else {
+                my $seq = $line;
+                if ( $isname{$name} ) {
+                    for ( my $i = 0; $i < scalar( @{ $isname{$name} } ); $i++ ) {
+                        my $j    = $isname{$name}[$i];
+                        my $end5 = $read[$j][0];
+                        my $end3 = $read[$j][1];
+                        if ( $end5 > $end3 ) {
+                            $end5 = $read[$j][1];
+                            $end3 = $read[$j][0];
+                        }
 
-    $/ = ">";
-    open( F, $superreadfasta );
-    while (<F>) {
-        chomp;
-        if ($_) {
-            my ($name) = /^(\S+)\s+/;
-            if ( $isname{$name} ) {
-                my $pos = index( $_, "\n" );
-                my $seq = substr( $_, $pos + 1 );
-                local $/ = "\n";
-                chomp($seq);
-                for ( my $i = 0; $i < scalar( @{ $isname{$name} } ); $i++ ) {
-                    my $n    = $isname{$name}[$i];
-                    my $end5 = $read[$n][0];
-                    my $end3 = $read[$n][1];
-                    if ( $end5 > $end3 ) {
-                        $end5 = $read[$n][1];
-                        $end3 = $read[$n][0];
+                        my $len = $end3 - $end5;
+                        my $longread_seq = substr( $seq, $end5, $len );
+                        if ( $read[$j][2] eq 'R' ) {
+                            $longread_seq = reverse $longread_seq;
+                            $longread_seq =~ tr/ACGTacgt/TGCAtgca/;
+                        }
+
+                        # now print it in fastq format
+                        print {$out_fh} $longread{ $read[$j][3] }, "\n";
+                        print {$out_fh} $longread_seq, "\n";
+                        print {$out_fh} "+\n";
+
+                        # use quality value "J" which is 41, I think
+                        print {$out_fh} 'J' x length($longread_seq), "\n";
                     }
-
-                    my $len = $end3 - $end5;
-                    my $longread_seq = substr( $seq, $end5, $len );
-                    if ( $read[$n][2] eq 'R' ) {
-                        $longread_seq = reverse $longread_seq;
-                        $longread_seq =~ tr/ACGTacgt/TGCAtgca/;
-                    }
-
-                    # now print it in fastq format
-                    print O $longread{ $read[$n][3] }, "\n";
-                    print O $longread_seq, "\n";
-                    print O "+\n";
-
-                    # use quality value "J" which is 41, I think
-                    print O 'J' x length($longread_seq), "\n";
                 }
             }
         }
     }
-    close(F);
+
 }
