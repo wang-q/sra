@@ -1,66 +1,67 @@
-#!/usr/bin/env perl
-
-=head1 NAME
-
-filter_fasta_by_rsem_values.pl - Use RSEM relative abundance values to filter a
-transcript assembly FASTA file
-
-=head1 SYNOPSIS
-
-USAGE: filter_fasta_by_rsem_values.pl 
-            --rsem_output=/path/to/RSEM.isoforms.results[,...]
-            --fasta=/path/to/Trinity.fasta
-            --output=/path/to/output.fasta
-
-=cut
-
-use warnings;
+#!/usr/bin/perl
 use strict;
+use warnings;
 use autodie;
 
-use Getopt::Long qw(:config no_ignore_case no_auto_abbrev pass_through);
-use Pod::Usage;
-use YAML qw(Dump Load DumpFile LoadFile);
+use Getopt::Long::Descriptive;
+use Path::Tiny;
 
-use File::Slurp;
+#----------------------------------------------------------#
+# GetOpt section
+#----------------------------------------------------------#
 
-my %options;
-my $results = GetOptions(
-    \%options,           'rsem_output|r=s',
-    'fasta|f=s',         'output|o=s',
-    'tpm_cutoff|t=s',    'fpkm_cutoff|c=s',
-    'isopct_cutoff|i=s', 'unigene|u',
-    'log|l=s',           'help|h',
-) or pod2usage();
+my $description = <<'EOF';
+Use RSEM relative abundance values to filter a transcript assembly FASTA file.
 
-## display documentation
-pod2usage( -exitstatus => 0, -verbose => 2, -output => \*STDERR, )
-    if $options{help};
+Modified from filter_fasta_by_rsem_values.pl in Trinity.
 
-## make sure everything passed was peachy
-check_parameters( \%options );
+Usage: perl %c -r <RSEM.isoforms.results> -f <Trinity.fasta> -o <output.fasta> [options]
+EOF
+
+(    #@type Getopt::Long::Descriptive::Opts
+    my $opt,
+
+    #@type Getopt::Long::Descriptive::Usage
+    my $usage,
+    )
+    = Getopt::Long::Descriptive::describe_options(
+    $description,
+    [ 'help|h', 'display this message' ],
+    [],
+    [ 'rsem_output|r=s',   '', { required => 1, }, ],
+    [ 'fasta|f=s',         '', { required => 1, }, ],
+    [ 'output|o=s',        '', { required => 1, }, ],
+    [ 'tpm_cutoff|t=s',    '', ],
+    [ 'fpkm_cutoff|c=s',   '', ],
+    [ 'isopct_cutoff|i=s', '', ],
+    [ 'unigene|u',         '', ],
+    [ 'log|l=s',           '', ],
+    { show_defaults => 1, }
+    );
+
+$usage->die if $opt->{help};
 
 #----------------------------------------------------------#
 # Start
 #----------------------------------------------------------#
 
 ## open the log if requested
-my $logfh;
-if ( defined $options{log} ) {
-    open $logfh, ">", $options{log};
+my $log_fh;
+if ( defined $opt->{log} ) {
+    open $log_fh, ">", $opt->{log};
 }
 else {
-    $logfh = *STDOUT;
+    $log_fh = *STDOUT;
 }
 
-_log("INFO: Opening RSEM file ($options{rsem_output})");
-my $rsem = load_rsem_output( $options{rsem_output} );
+_log("INFO: Opening RSEM file ($opt->{rsem_output})");
+my $rsem = load_rsem_output( $opt->{rsem_output} );
 
-_log("INFO: creating output file: ($options{output})");
-open my $ofh, ">", $options{output};
+_log("INFO: creating output file: ($opt->{output})");
+open my $out_fh, ">", $opt->{output};
 
-_log("INFO: reading input FASTA file: ($options{fasta})");
-my @lines = read_file( $options{fasta} );
+_log("INFO: reading input FASTA file: ($opt->{fasta})");
+my @lines = path( $opt->{fasta} )->lines;
 
 #----------------------------#
 # read fasta headers
@@ -77,22 +78,22 @@ print "Rsem: @{[scalar @trans_ids]} \n";
 #----------------------------#
 # three filters
 #----------------------------#
-if ( defined $options{fpkm_cutoff} ) {
-    @trans_ids = grep { $rsem->{$_}{fpkm} >= $options{fpkm_cutoff} } @trans_ids;
+if ( defined $opt->{fpkm_cutoff} ) {
+    @trans_ids = grep { $rsem->{$_}{fpkm} >= $opt->{fpkm_cutoff} } @trans_ids;
     print "fpkm: @{[scalar @trans_ids]} \n";
 }
 
-if ( defined $options{tpm_cutoff} ) {
-    @trans_ids = grep { $rsem->{$_}{tpm} >= $options{tpm_cutoff} } @trans_ids;
+if ( defined $opt->{tpm_cutoff} ) {
+    @trans_ids = grep { $rsem->{$_}{tpm} >= $opt->{tpm_cutoff} } @trans_ids;
     print "tpm: @{[scalar @trans_ids]} \n";
 }
 
-if ( defined $options{isopct_cutoff} ) {
+if ( defined $opt->{isopct_cutoff} ) {
     @trans_ids = grep {
         my $gene_id          = $rsem->{iso_to_gene}{$_};
         my $num_iso_per_gene = $rsem->{iso_count_per_gene}{$gene_id};
         $num_iso_per_gene == 1
-            or ( $rsem->{$_}{isopct} >= $options{isopct_cutoff}
+            or ( $rsem->{$_}{isopct} >= $opt->{isopct_cutoff}
             && $num_iso_per_gene > 1 );
     } @trans_ids;
     print "isopct: @{[scalar @trans_ids]} \n";
@@ -101,7 +102,7 @@ if ( defined $options{isopct_cutoff} ) {
 #----------------------------#
 # keep 1 trans per gene
 #----------------------------#
-if ( $options{unigene} ) {
+if ( $opt->{unigene} ) {
     my @out_trans_ids;
 
     my %iso_score;
@@ -122,11 +123,10 @@ if ( $options{unigene} ) {
     }
 
     for my $gene_id ( keys %gene_to_iso ) {
-        my @order = sort { $iso_score{$b} <=> $iso_score{$a} }
-            @{ $gene_to_iso{$gene_id} };
+        my @order = sort { $iso_score{$b} <=> $iso_score{$a} } @{ $gene_to_iso{$gene_id} };
         push @out_trans_ids, $order[0];
     }
-    
+
     @trans_ids = @out_trans_ids;
     print "unigene: @{[scalar @trans_ids]} \n";
 }
@@ -143,10 +143,10 @@ for my $line (@lines) {
         my $trans_id = $1;
         $keep = $seen{$trans_id} ? 1 : 0;
     }
-    print {$ofh} $line if $keep;
+    print {$out_fh} $line if $keep;
 }
 
-close $ofh;
+close $out_fh;
 
 exit;
 
@@ -163,9 +163,9 @@ sub load_rsem_output {
     #                              }
     my %rel = ();
 
-    open my $ifh, "<", $file;
+    open my $in_fh, "<", $file;
 
-    while ( my $line = <$ifh> ) {
+    while ( my $line = <$in_fh> ) {
         chomp $line;
 
         next if $line =~ /^\s*$/;
@@ -180,12 +180,10 @@ sub load_rsem_output {
             gene   => $cols[1],
             length => $cols[2],
         };
-
     }
+    close $in_fh;
 
-    _log(     "INFO: Loaded RSEM values for "
-            . scalar( keys %rel )
-            . " transcripts" );
+    _log( "INFO: Loaded RSEM values for " . scalar( keys %rel ) . " transcripts" );
 
     my %trans_to_gene;
     my %gene_to_iso;
@@ -213,27 +211,14 @@ sub load_rsem_output {
 sub _log {
     my $msg = shift;
 
-    print $logfh "$msg\n" if $logfh;
+    print $log_fh "$msg\n" if $log_fh;
 }
 
 sub logdie {
     my $msg = shift;
 
     print STDERR "$msg\n";
-    print $logfh "$msg\n" if $logfh;
+    print $log_fh "$msg\n" if $log_fh;
 
     exit(1);
-}
-
-sub check_parameters {
-    my $options = shift;
-
-    ## make sure required arguments were passed
-    my @required = qw( rsem_output fasta output );
-    for my $option (@required) {
-        unless ( defined $$options{$option} ) {
-            logdie("ERROR: --$option is a required option");
-        }
-    }
-
 }
