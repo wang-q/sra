@@ -13,7 +13,7 @@ use IO::Zlib;
 #----------------------------------------------------------#
 
 my $description = <<'EOF';
-This script runs MaSuRCA and prepares the long reads and unassembled reads files.
+This script runs MaSuRCA (3.1.3) and prepares the long reads and unassembled reads files.
 
 Modified from superreads.pl in StringTie.
 
@@ -159,74 +159,85 @@ sub get_long_reads {
     die "MaSuRCA file $super_read_fasta could not be found!\n"
         if ( !( -e $super_read_fasta ) );
 
-    # stores the supereads info:
-    # 0=first read pair position;
-    # 1=second read pair position;
-    # 2=orientation of first read;
-    # 3=position of read in fastq file
-    my @read;
+    # masurca renamed sequences in fq as the original orders
+    # $read_prefix as 'pe'
+    # the first pair in fq renamed to pe0 and pe1,  0 / 2 = 0
+    # the second pair in fq renamed to pe2 and pe3, 2 / 2 = 1
+    # the third pair in fq renamed to pe4 and pe5,  4 / 2 = 2
+    #
+    # 0, 1, 2... are indexes of read pairs in fq files. Use them to identify read pairs.
 
-    my %longread;
-    my %isname;
+    # stores the info of pair-end reads in super reads.
+    # key: pair index
+    # value: array ref
+    #   0 = first read position in super read;
+    #   1 = second read position;
+    #   2 = orientation of first read;
+    #   3 = original name in fq files
+    # unpaired reads are discarded
+    my $info_of = [];
+
+    # records all read pairs contained by a super-read
+    # key: sr id
+    # value: array ref of pair indexes
+    my $pairs_in_sr = {};
 
     {
-        my $n             = 0;
-        my $prev_read_num = -1;
-        my $prev_orient;
+        my $prev_idx = -1;
+        my $prev_ori;
         my $prev_pos;
-        my $prev_superread;
+        my $prev_sr_id;
 
         my $in_fh = IO::Zlib->new( $read_placement, "rb" );
         while ( my $line = $in_fh->getline ) {
             chomp $line;
-            my ( $read_id, $super_read, $position, $orientation ) = split /\s+/, $line;
+            my ( $read_id, $sr_id, $position, $orientation ) = split /\s+/, $line;
             if ( $read_id =~ /^$read_prefix(\d+)/ ) {
-                my $read_num = $1;
+                my $read_idx = $1;
 
                 # if we have two reads in a row, the first one being an even number,
                 # then check paired end constraints
-                if (   $read_num == $prev_read_num + 1
-                    && $read_num % 2 == 1 )
-                {
+                if ( $read_idx == $prev_idx + 1 && $read_idx % 2 == 1 ) {
+
                     # then we have a pair of reads
-                    if ( $super_read eq $prev_superread ) {    # then they are in the same unitig
-                        if (   ( $orientation eq "F" && $prev_orient eq "R" )
-                            || ( $orientation eq "R" && $prev_orient eq "F" ) )
+                    if ( $sr_id eq $prev_sr_id ) {    # then they are in the same unitig
+                        if (   ( $orientation eq "F" && $prev_ori eq "R" )
+                            || ( $orientation eq "R" && $prev_ori eq "F" ) )
                         {
                             $prev_pos = 0 if $prev_pos < 0;
                             $position = 0 if $position < 0;
                             my $distance = $prev_pos - $position;
 
-                            if ( $orientation eq "R" && $prev_orient eq "F" ) {
+                            if ( $orientation eq "R" && $prev_ori eq "F" ) {
                                 $distance = $position - $prev_pos;
                             }
 
                             # if reads are placed the right way,
                             # and they are within a factor of 2 of the right dist apart
-                            if (   $distance > 50
-                                && $distance < $fragment_length * 2
-                                && $distance > 0 )
-                            {
-                                push(
-                                    @{ $read[$n] },
-                                    ( $prev_pos, $position, $prev_orient, $prev_read_num / 2 )
-                                );
-                                $longread{ $prev_read_num / 2 } = 1;
-                                push( @{ $isname{$super_read} }, $n );
-                                $n++;
+                            if ( $distance > 50 && $distance < $fragment_length * 2 ) {
+                                my $pair_idx = $prev_idx / 2;
+
+                                # mark this read pair in sr, update original names later
+                                $info_of->[$pair_idx]
+                                    = [ $prev_pos, $position, $prev_ori, $pair_idx ];
+
+                                if ( !exists $pairs_in_sr->{$sr_id} ) {
+                                    $pairs_in_sr->{$sr_id} = [];
+                                }
+                                push @{ $pairs_in_sr->{$sr_id} }, $pair_idx;
                             }
                         }
                     }
                 }
 
                 # always save the ID and compare to the next one
-                $prev_read_num  = $read_num;
-                $prev_orient    = $orientation;
-                $prev_pos       = $position;
-                $prev_superread = $super_read;
+                $prev_idx   = $read_idx;
+                $prev_ori   = $orientation;
+                $prev_pos   = $position;
+                $prev_sr_id = $sr_id;
             }
             else {
-                $prev_read_num = -1;
+                $prev_idx = -1;
             }
         }
         $in_fh->close;
@@ -235,22 +246,22 @@ sub get_long_reads {
     {
         my $in_fh  = IO::Zlib->new( $pair1file,             "rb" );
         my $out_fh = IO::Zlib->new( "notAssembled_1.fq.gz", "wb" );
-        my $n      = 0;
+        my $pair_idx = 0;
         while ( my $line = $in_fh->getline ) {
             chomp $line;
-            if ( $longread{$n} ) {
-                $longread{$n} = $line;
-                <$in_fh>;
-                <$in_fh>;
-                <$in_fh>;
+            if ( ref $info_of->[$pair_idx] eq "ARRAY" ) {
+                $info_of->[$pair_idx][3] = $line;    # record original names
+                $in_fh->getline;
+                $in_fh->getline;
+                $in_fh->getline;
             }
             else {
                 print {$out_fh} $line, "\n";
-                print {$out_fh} <$in_fh>;
-                print {$out_fh} <$in_fh>;
-                print {$out_fh} <$in_fh>;
+                print {$out_fh} $in_fh->getline;
+                print {$out_fh} $in_fh->getline;
+                print {$out_fh} $in_fh->getline;
             }
-            $n++;
+            $pair_idx++;
         }
         $in_fh->close;
         $out_fh->close;
@@ -259,21 +270,21 @@ sub get_long_reads {
     {
         my $in_fh  = IO::Zlib->new( $pair2file,             "rb" );
         my $out_fh = IO::Zlib->new( "notAssembled_2.fq.gz", "wb" );
-        my $n      = 0;
+        my $pair_idx = 0;
         while ( my $line = $in_fh->getline ) {
             chomp $line;
-            if ( !$longread{$n} ) {
-                print {$out_fh} $line, "\n";
-                print {$out_fh} <$in_fh>;
-                print {$out_fh} <$in_fh>;
-                print {$out_fh} <$in_fh>;
+            if ( ref $info_of->[$pair_idx] eq "ARRAY" ) {
+                $in_fh->getline;
+                $in_fh->getline;
+                $in_fh->getline;
             }
             else {
-                <$in_fh>;
-                <$in_fh>;
-                <$in_fh>;
+                print {$out_fh} $line, "\n";
+                print {$out_fh} $in_fh->getline;
+                print {$out_fh} $in_fh->getline;
+                print {$out_fh} $in_fh->getline;
             }
-            $n++;
+            $pair_idx++;
         }
         $in_fh->close;
         $out_fh->close;
@@ -283,7 +294,7 @@ sub get_long_reads {
         my $in_fh  = IO::Zlib->new( $super_read_fasta, "rb" );
         my $out_fh = IO::Zlib->new( "LongReads.fq.gz", "wb" );
 
-        my $name;
+        my $sr_id;
         while ( my $line = $in_fh->getline ) {
             chomp $line;
             if ( $line eq '' or substr( $line, 0, 1 ) eq " " ) {
@@ -293,30 +304,29 @@ sub get_long_reads {
                 next;
             }
             elsif ( substr( $line, 0, 1 ) eq ">" ) {
-                ($name) = split /\s+/, $line;
-                $name =~ s/^>//;
+                ($sr_id) = split /\s+/, $line;
+                $sr_id =~ s/^>//;
             }
             else {
-                my $seq = $line;
-                if ( $isname{$name} ) {
-                    for ( my $i = 0; $i < scalar( @{ $isname{$name} } ); $i++ ) {
-                        my $j    = $isname{$name}[$i];
-                        my $end5 = $read[$j][0];
-                        my $end3 = $read[$j][1];
+                my $sr_seq = $line;
+                if ( exists $pairs_in_sr->{$sr_id} ) {
+                    for my $pair_idx ( @{ $pairs_in_sr->{$sr_id} } ) {
+                        my $end5 = $info_of->[$pair_idx][0];
+                        my $end3 = $info_of->[$pair_idx][1];
                         if ( $end5 > $end3 ) {
-                            $end5 = $read[$j][1];
-                            $end3 = $read[$j][0];
+                            $end5 = $info_of->[$pair_idx][1];
+                            $end3 = $info_of->[$pair_idx][0];
                         }
 
                         my $len = $end3 - $end5;
-                        my $longread_seq = substr( $seq, $end5, $len );
-                        if ( $read[$j][2] eq 'R' ) {
+                        my $longread_seq = substr( $sr_seq, $end5, $len );
+                        if ( $info_of->[$pair_idx][2] eq 'R' ) {
                             $longread_seq = reverse $longread_seq;
                             $longread_seq =~ tr/ACGTacgt/TGCAtgca/;
                         }
 
                         # now print it in fastq format
-                        print {$out_fh} $longread{ $read[$j][3] }, "\n";
+                        print {$out_fh} $info_of->[$pair_idx][3], "\n";
                         print {$out_fh} $longread_seq, "\n";
                         print {$out_fh} "+\n";
 
