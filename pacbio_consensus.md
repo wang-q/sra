@@ -431,7 +431,7 @@ aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_Arabido
 
 * 二代数据
 
-    之前在 ERA 下载的数据, 方法在[这里](README.md#ath19).
+    之前在 ERA 下载的数据, 方法在[这里](README.md#ath19). 这里用的是 GA IIx, 长度只有 50 bp, 放弃.
 
 ### 其它模式生物
 
