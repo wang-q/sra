@@ -371,6 +371,41 @@ perl ~/Scripts/sra/superreads.pl \
 
 ```
 
+Coverages on super-reads.
+
+```bash
+cd ~/data/test/rhodobacter_superreads
+
+mkdir sr
+
+# 0       1     2        3
+# read_id sr_id position orientation
+cat work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt \
+    | perl -nl -e '
+        my ( $read_id, $sr_id, $position, $orientation ) = split /\s+/, $_;
+        $orientation =~ /F|R/ or next;
+        my ($s, $e);
+        $orientation eq qq{F}
+            ? ($s = $position, $e = $s + 100 )
+            : ($e = $position, $s = $e - 100 );
+        print qq{$sr_id:$s-$e};
+    ' \
+    > sr/sr.pos.txt
+
+faops size work1/superReadSequences.fasta > sr/sr.chr.sizes
+head -n 100 sr/sr.chr.sizes  > sr/sr100.chr.sizes
+
+#cat sr/sr.chr.sizes | grep -nr "\b500$"
+
+runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 5 -o sr/sr.depth5.yml
+runlist stat sr/sr.depth5.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth5.csv
+
+runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 50 -o sr/sr.depth50.yml
+runlist stat sr/sr.depth50.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth50.csv
+
+```
+
+
 #### 结果比较
 
 ```bash
