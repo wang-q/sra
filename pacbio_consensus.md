@@ -188,10 +188,7 @@ sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
 
 sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
 sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-
-cd ~/share/pitchfork/ports/thirdparty/swig/
-cp -f ~/share/thirdparty/swig-3.0.8.tar.gz .
-cp -f ~/share/thirdparty/pcre-8.38.tar.gz .
+sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
 
 cd ~/share/pitchfork
 make GenomicConsensus
@@ -206,6 +203,23 @@ make pbfalcon
 source ~/share/pitchfork/deployment/setup-env.sh
 
 quiver --help
+```
+
+单独安装 dextractor, 稍稍修改了下.
+
+```bash
+cd ~/share
+git clone https://github.com/wang-q/DEXTRACTOR
+cd DEXTRACTOR
+
+cat <<EOF > settings.mk
+HAVE_ZLIB = $(brew --prefix)/Cellar/$(brew list --versions zlib | sed 's/ /\//')
+HAVE_HDF5 = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\//')
+
+EOF
+
+make
+
 ```
 
 ### 直接安装 falcon-integrate, 现在不推荐
@@ -432,6 +446,81 @@ aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_Arabido
 * 二代数据
 
     之前在 ERA 下载的数据, 方法在[这里](README.md#ath19). 这里用的是 GA IIx, 长度只有 50 bp, 放弃.
+
+
+```bash
+mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
+    -s 450 -d 50 --long
+
+```
+
+`.subreads.bam` to fasta
+
+```bash
+mkdir -p $HOME/data/pacbio/rawdata/ler0_test
+cd $HOME/data/pacbio/rawdata/ler0_test
+
+dextract ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam
+```
+
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+if [ -d $HOME/data/pacbio/ler0_test ];
+then
+    rm -fr $HOME/data/pacbio/ler0_test
+fi
+mkdir -p $HOME/data/pacbio/ler0_test
+cd $HOME/data/pacbio/ler0_test
+find $HOME/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData -name "*.subreads.bam" > input.fofn
+
+cat <<EOF > fc_run.cfg
+[General]
+job_type = local
+
+# list of files of the initial bas.h5 files
+input_fofn = input.fofn
+
+input_type = raw
+#input_type = preads
+
+# The length cutoff used for seed reads used for initial mapping
+length_cutoff = 12000
+
+# The length cutoff used for seed reads used for pre-assembly
+length_cutoff_pr = 12000
+
+# Cluster queue setting
+sge_option_da =
+sge_option_la =
+sge_option_pda =
+sge_option_pla =
+sge_option_fc =
+sge_option_cns =
+
+pa_concurrent_jobs = 16
+ovlp_concurrent_jobs = 16
+
+pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
+
+pa_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50
+
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
+
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 24
+
+EOF
+
+fc_run fc_run.cfg
+```
 
 ### 其它模式生物
 
