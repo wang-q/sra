@@ -37,6 +37,7 @@ P 指得是聚合酶, C 是化学试剂.
 * [FALCON Tips](https://github.com/PacificBiosciences/FALCON/wiki/Tips)
 * [PacBio 的 slides](https://speakerdeck.com/pacbio)
 * HDF5 即将成为历史, PacBio 正在向 BAM 转移
+* [UC DAVIS](http://dnatech.genomecenter.ucdavis.edu/2016/11/10/new-service-long-read-sequencing-on-the-pacbio-sequel/)
 * Falcon 问题合集
     * [Trace assembled and unassembled reads in FALCON](https://github.com/PacificBiosciences/FALCON/issues/472)
     * [Is there any need to polish the assembly result with quiver?](https://github.com/PacificBiosciences/FALCON/issues/304)
@@ -205,12 +206,12 @@ source ~/share/pitchfork/deployment/setup-env.sh
 quiver --help
 ```
 
-单独安装 dextractor, 稍稍修改了下.
+单独安装 dextractor, 稍稍修改了下. Falcon 自带的版本只编译了 `dexta` 和 `undexta`.
 
 ```bash
 cd ~/share
 git clone https://github.com/wang-q/DEXTRACTOR
-cd DEXTRACTOR
+cd ~/share/DEXTRACTOR
 
 cat <<EOF > settings.mk
 HAVE_ZLIB = $(brew --prefix)/Cellar/$(brew list --versions zlib | sed 's/ /\//')
@@ -353,6 +354,16 @@ time fc_run fc_run.cfg
         * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads
           映射回 contigs
 
+### E. coli Bacterial Assembly (P6C4)
+
+https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
+
+```bash
+mkdir -p $HOME/data/pacbio/rawdata/ecoli_p6c4
+cd $HOME/data/pacbio/rawdata/ecoli_p6c4
+curl -O https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+```
+
 ### 复活草
 
 * 预处理
@@ -445,7 +456,22 @@ aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_Arabido
 
 * 二代数据
 
-    之前在 ERA 下载的数据, 方法在[这里](README.md#ath19). 这里用的是 GA IIx, 长度只有 50 bp, 放弃.
+之前在 ERA 下载的数据, 方法在[这里](README.md#ath19). 这里用的是 GA IIx, 长度只有 50 bp, 放弃.
+用[这个](README.md#atha-ler-0).
+
+用 `superreads.pl` 运行 masurca
+
+```bash
+mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
+    -s 450 -d 50
+
+```
+`
 
 
 ```bash
