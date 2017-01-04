@@ -36,7 +36,9 @@ P 指得是聚合酶, C 是化学试剂.
 * [FALCON Manual](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
 * [FALCON Tips](https://github.com/PacificBiosciences/FALCON/wiki/Tips)
 * [PacBio 的 slides](https://speakerdeck.com/pacbio)
+* [一些基本定义, p24-28](https://speakerdeck.com/pacbio/specifics-of-smrt-sequencing-data)
 * HDF5 即将成为历史, PacBio 正在向 BAM 转移
+* [PacBio 的 BAM 格式](http://pacbiofileformats.readthedocs.io/en/3.0/BAM.html)
 * [UC DAVIS](http://dnatech.genomecenter.ucdavis.edu/2016/11/10/new-service-long-read-sequencing-on-the-pacbio-sequel/)
 * Falcon 问题合集
     * [Trace assembled and unassembled reads in FALCON](https://github.com/PacificBiosciences/FALCON/issues/472)
@@ -46,6 +48,14 @@ P 指得是聚合酶, C 是化学试剂.
     * 调整 falcon 参数
         * [Falcon assembly](https://github.com/PacificBiosciences/FALCON/issues/308)
         * [how to set the appropriate config file for larger genome using local mode](https://github.com/PacificBiosciences/FALCON/issues/466)
+
+几个名词:
+
+* Subreads - 测序仪直接输出的实时序列, SMRTbell 两个接头之间的序列.
+* CCS - 对于较短的模板, 聚合酶在会在环形的 SMRTbell 上环绕多次, 即对同一序列测序多次. 得到的保守序列即为 CCS.
+* Long reads - 模板较长, 聚合酶没有抵达 SMRTbell 另一端的接头.
+* `.subreads.bam` - 可直接用于分析的 subreads.
+* `.scraps.bam` - 接头, 标签和可能有问题的 subreads.
 
 ## 分析平台的历史
 
@@ -358,10 +368,24 @@ time fc_run fc_run.cfg
 
 https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
 
+下载 7 GB 的 E. coli (20 kb library) 数据, 转化为 `.subreads.bam` 格式.
+
 ```bash
-mkdir -p $HOME/data/pacbio/rawdata/ecoli_p6c4
-cd $HOME/data/pacbio/rawdata/ecoli_p6c4
+mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4
+cd ~/data/pacbio/rawdata/ecoli_p6c4
 curl -O https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+source ~/share/pitchfork/deployment/setup-env.sh
+
+tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4/bam
+cd ~/data/pacbio/rawdata/ecoli_p6c4/bam
+
+bax2bam ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/Analysis_Results/*.bax.h5
+
+xmllint --format ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
+    > m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml
 ```
 
 ### 复活草
