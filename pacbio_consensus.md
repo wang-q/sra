@@ -49,13 +49,61 @@ P 指得是聚合酶, C 是化学试剂.
         * [Falcon assembly](https://github.com/PacificBiosciences/FALCON/issues/308)
         * [how to set the appropriate config file for larger genome using local mode](https://github.com/PacificBiosciences/FALCON/issues/466)
 
-[几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf):
+### [几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)
 
 * Subreads - 测序仪直接输出的实时序列, SMRTbell 两个接头之间的序列.
 * CCS - 对于较短的模板, 聚合酶在会在环形的 SMRTbell 上环绕多次, 即对同一序列测序多次. 得到的保守序列即为 CCS.
 * Long reads - 模板较长, 聚合酶没有抵达 SMRTbell 另一端的接头.
 * `.subreads.bam` - 可直接用于分析的 subreads.
 * `.scraps.bam` - 接头, 标签和可能有问题的 subreads.
+
+### [Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
+
+* input_fofn - 输入的 fasta 文件路径
+* input_type - `raw` for subreads, `preads` for error corrected reads
+* length_cutoff - 用于纠错步骤的种子 reads 长度, 可设得稍小一点, 以达到 15x - 20x 覆盖量
+* length_cutoff_pr - 用于组装的 reads 长度. 这一步里 reads 多并不代表好, 可以多调整
+* pa_concurrent_jobs
+* falcon_sense_option - 用于 fc_consensus.py
+    * --min_cov - controls when a seed read gets trimmed or broken due to low coverage
+    * --max_n_read - puts a cap on the number of reads used for error correction. 对于高重复的基因组,
+      这个得设得小一点.
+* pa_* - 纠错步骤的参数
+* ovlp_* - 组装步骤的参数
+* overlap_filtering_setting - 简化 overlap graph 里的 edges.
+    * --bestn - "best n overlaps" in the 5' or 3' ends
+    * --max_cov, --min_cov, --max_diff - 简单的 reads 两端的 coverages 应该是平衡的, 如果其中包含了
+      repeats, 则两端会出现不平衡的状态, 即含有 repeats 的一端 coverages 会高很多. 如果一个 reads 的错误比例太高,
+      也可以通过这种方法把它排除出去.
+    * What is the right numbers used for these parameters? These parameters may the most tricky ones
+      to be set right. If the overall coverage of the error corrected reads longer than the length
+      cut off is known and reasonable high (e.g. greater than 20x), it might be safe to set min_cov
+      to be 5, max_cov to be three times of the average coverage and the max_diff to be twice of the
+      average coverage. However, in low coverage case, it might better to set min_cov to be one or
+      two. A helper script called fc_ovlp_stats.py can help to dump the number of the 3' and 5'
+      overlap of a given length cutoff, you can plot the distribution of the number of overlaps to
+      make a better decision.
+
+###  Falcon 结果文件
+
+* `daligner`
+    * `0-rawreads/job_*`
+    * 每进程两线程
+* `fc_consensus`
+    * `0-rawreads/m_*`
+    * 由 `falcon_sense_option` 里的 `--n_core` 指定线程数. 内部会竞争 CPU, 超出 CPU 数量会极大地降低性能
+* `FA4Falcon`
+    * `0-rawreads/preads/cns_*`
+    * 前面合并的 rawreads 生成 preads, 高 I/O. 耗时最长.
+
+* `0-rawreads/`
+    * `0-rawreads/preads/` - the error corrected reads
+* `1-preads_ovl/` - pread overlaps
+* `2-asm-falcon/`
+    * `p_ctg.fa` - primary contigs, 组装好的 draft genome
+    * `a_ctg.fa` - alternative contigs, 无法区分的 contigs, 可能是二倍体, 也可能是重复序列
+    * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads 映射回
+      contigs
 
 ## 分析平台的历史
 
@@ -142,8 +190,8 @@ brew install python cmake ccache hdf5
 brew install samtools
 brew cleanup # only keep the latest version
 
-pip install --upgrade pip
-pip install virtualenv
+pip install --upgrade pip setuptools wheel
+pip install --upgrade virtualenv
 ```
 
 其它可能有用的程序.
@@ -160,18 +208,6 @@ brew install quast              # assembly statistics
 
 echo "==> Install wang-q/tap"
 brew install faops
-```
-
-下载其它第三方依赖.
-
-```bash
-mkdir -p ~/share/thirdparty
-cd ~/share/thirdparty
-
-proxychains4 wget -N https://prdownloads.sourceforge.net/swig/swig-3.0.8.tar.gz
-proxychains4 wget -N https://prdownloads.sourceforge.net/pcre/pcre-8.38.tar.gz 
-proxychains4 wget -N http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2.tar.gz
-
 ```
 
 ### 通过 pitchfork 编译.
@@ -202,9 +238,10 @@ sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Ma
 sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
 
 cd ~/share/pitchfork
+make pip
+deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
 make GenomicConsensus
 make pbfalcon
-make falcon_kit
 ```
 
 编译好的可执行文件与库文件在 `~/share/pitchfork/deployment`.
@@ -283,20 +320,10 @@ proxychains4 wget -c https://www.dropbox.com/s/v6wwpn40gedj470/m140913_050931_42
 proxychains4 wget -c https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.3.subreads.fasta
 
 # N50 14124; 105451
-faops n50 *.subreads.fasta
-faops size *.subreads.fasta | wc -l
+faops n50 -C *.subreads.fasta
 ```
 
 * 配置文件及运行
-    * `daligner`
-        * `0-rawreads/job_*`
-        * 每进程两线程
-    * `fc_consensus`
-        * `0-rawreads/m_*`
-        * 由 `falcon_sense_option` 里的 `--n_core` 指定线程数. 内部会竞争 CPU, 超出 CPU 数量会极大地降低性能
-    * `FA4Falcon`
-        * `0-rawreads/preads/cns_*`
-        * 前面合并的 rawreads 生成 preads, 高 I/O. 耗时最长.
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
@@ -359,16 +386,6 @@ EOF
 time fc_run fc_run.cfg
 ```
 
-* 结果文件
-    * `ecoli_test/0-rawreads/`
-        * `0-rawreads/preads/` - the error corrected reads
-    * `ecoli_test/1-preads_ovl/` - pread overlaps
-    * `ecoli_test/2-asm-falcon/`
-        * `p_ctg.fa` - primary contigs, 组装好的 draft genome
-        * `a_ctg.fa` - alternative contigs, 无法区分的 contigs, 可能是二倍体, 也可能是重复序列
-        * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads
-          映射回 contigs
-
 ### E. coli Bacterial Assembly (P6C4)
 
 https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
@@ -402,8 +419,7 @@ bamtools convert -format fasta \
     -out m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.subreads.fasta
 
 # N50 13982; 87225
-faops n50 *.subreads.fasta
-faops size *.subreads.fasta | wc -l
+faops n50 -C *.subreads.fasta
 ```
 
 运行 falcon.
@@ -463,9 +479,9 @@ EOF
 #sys     501m49.603s
 time fc_run fc_run.cfg
 
-# N50 13982; 87225
-faops n50 2-asm-falcon/p_ctg.fa
-faops size 2-asm-falcon/p_ctg.fa | wc -l
+#N50     4641042
+#C       1
+faops n50 -C 2-asm-falcon/p_ctg.fa
 ```
 
 ### 复活草
@@ -575,6 +591,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 450 -d 50
 
 ```
+
 `
 
 
