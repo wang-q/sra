@@ -240,8 +240,10 @@ sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
 cd ~/share/pitchfork
 make pip
 deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
+
 make GenomicConsensus
 make pbfalcon
+make pbreports
 ```
 
 编译好的可执行文件与库文件在 `~/share/pitchfork/deployment`.
@@ -301,13 +303,13 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 
 注意:
 
-* fasta文件**必须**以`.fasta`为扩展名
-* fasta文件中的序列名称, 必须符合falcon的要求, 即sra默认名称**不符合要求**, 错误提示为`Pacbio header line format
-  error`
+* fasta 文件**必须**以 `.fasta` 为扩展名
+* fasta 文件中的序列名称, 必须符合 falcon 的要求, 即 sra 默认名称**不符合要求**, 错误提示为 `Pacbio header line
+  format error`
 * [这里](https://github.com/PacificBiosciences/FALCON/issues/251)有个脚本帮助解决这个问题. 已经放到本地,
   `falcon_name_fasta.pl`
 
-### `falcon/example`里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
+### `falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 过墙下载以下三个文件
 
@@ -319,7 +321,8 @@ proxychains4 wget -c https://www.dropbox.com/s/tb78i5i3nrvm6rg/m140913_050931_42
 proxychains4 wget -c https://www.dropbox.com/s/v6wwpn40gedj470/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.2.subreads.fasta
 proxychains4 wget -c https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.3.subreads.fasta
 
-# N50 14124; 105451
+# N50 14124
+# C   105451
 faops n50 -C *.subreads.fasta
 ```
 
@@ -591,9 +594,6 @@ perl ~/Scripts/sra/superreads.pl \
     -s 450 -d 50
 
 ```
-
-`
-
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
