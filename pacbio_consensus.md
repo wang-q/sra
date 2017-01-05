@@ -49,7 +49,7 @@ P 指得是聚合酶, C 是化学试剂.
         * [Falcon assembly](https://github.com/PacificBiosciences/FALCON/issues/308)
         * [how to set the appropriate config file for larger genome using local mode](https://github.com/PacificBiosciences/FALCON/issues/466)
 
-几个名词:
+[几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf):
 
 * Subreads - 测序仪直接输出的实时序列, SMRTbell 两个接头之间的序列.
 * CCS - 对于较短的模板, 聚合酶在会在环形的 SMRTbell 上环绕多次, 即对同一序列测序多次. 得到的保守序列即为 CCS.
@@ -204,6 +204,7 @@ sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
 cd ~/share/pitchfork
 make GenomicConsensus
 make pbfalcon
+make falcon_kit
 ```
 
 编译好的可执行文件与库文件在 `~/share/pitchfork/deployment`.
@@ -280,6 +281,10 @@ cd $HOME/data/pacbio/rawdata/ecoli_test
 proxychains4 wget -c https://www.dropbox.com/s/tb78i5i3nrvm6rg/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.1.subreads.fasta
 proxychains4 wget -c https://www.dropbox.com/s/v6wwpn40gedj470/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.2.subreads.fasta
 proxychains4 wget -c https://www.dropbox.com/s/j61j2cvdxn4dx4g/m140913_050931_42139_c100713652400000001823152404301535_s1_p0.3.subreads.fasta
+
+# N50 14124; 105451
+faops n50 *.subreads.fasta
+faops size *.subreads.fasta | wc -l
 ```
 
 * 配置文件及运行
@@ -368,7 +373,9 @@ time fc_run fc_run.cfg
 
 https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
 
-下载 7 GB 的 E. coli (20 kb library) 数据, 转化为 `.subreads.bam` 格式.
+下载 7 GB 的 E. coli (20 kb library) 数据, 它是 RS II 上 P6C4 的运行结果.
+
+先转化为 `.subreads.bam`, 再转化为 `fasta`.
 
 ```bash
 mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4
@@ -386,6 +393,79 @@ bax2bam ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/Analysis_Results/*.bax.h5
 
 xmllint --format ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
     > m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml
+
+mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4/fasta
+cd ~/data/pacbio/rawdata/ecoli_p6c4/fasta
+
+bamtools convert -format fasta \
+    -in ~/data/pacbio/rawdata/ecoli_p6c4/bam/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.subreads.bam \
+    -out m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.subreads.fasta
+
+# N50 13982; 87225
+faops n50 *.subreads.fasta
+faops size *.subreads.fasta | wc -l
+```
+
+运行 falcon.
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+if [ -d $HOME/data/pacbio/ecoli_p6c4 ];
+then
+    rm -fr $HOME/data/pacbio/ecoli_p6c4
+fi
+mkdir -p $HOME/data/pacbio/ecoli_p6c4
+cd $HOME/data/pacbio/ecoli_p6c4
+find $HOME/data/pacbio/rawdata/ecoli_p6c4/fasta -name "*.fasta" > input.fofn
+
+cat <<EOF > fc_run.cfg
+[General]
+job_type = local
+
+# list of files of the initial bas.h5 files
+input_fofn = input.fofn
+
+input_type = raw
+#input_type = preads
+
+# The length cutoff used for seed reads used for initial mapping
+length_cutoff = 12000
+
+# The length cutoff used for seed reads used for pre-assembly
+length_cutoff_pr = 12000
+
+# Cluster queue setting
+sge_option_da =
+sge_option_la =
+sge_option_pda =
+sge_option_pla =
+sge_option_fc =
+sge_option_cns =
+
+pa_concurrent_jobs = 4
+ovlp_concurrent_jobs = 4
+
+pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
+
+pa_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50
+
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 2
+
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 2
+
+EOF
+
+#real    104m51.013s
+#user    450m44.099s
+#sys     501m49.603s
+time fc_run fc_run.cfg
+
+# N50 13982; 87225
+faops n50 2-asm-falcon/p_ctg.fa
+faops size 2-asm-falcon/p_ctg.fa | wc -l
 ```
 
 ### 复活草
@@ -515,7 +595,8 @@ perl ~/Scripts/sra/superreads.pl \
 mkdir -p $HOME/data/pacbio/rawdata/ler0_test
 cd $HOME/data/pacbio/rawdata/ler0_test
 
-dextract ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam
+# segfault
+#dextract ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam
 ```
 
 
