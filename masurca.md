@@ -412,7 +412,7 @@ runlist stat sr/sr.depth50.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth50.cs
 cd ~/data/test/
 
 printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-    "name" "N50 SR" "N50 Contig" "N50 Scaffold" "#SR" "#Contig" "#Scaffold" "Exp. G" \
+    "name" "N50 SR" "#SR" "N50 Contig" "#Contig" "N50 Scaffold" "#Scaffold" "Exp. G" \
     > stat.md
 printf "|---|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
 
@@ -420,12 +420,9 @@ for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rh
 do
     printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
         ${d} \
-        $( faops n50 -H ${d}/work1/superReadSequences.fasta ) \
-        $( faops n50 -H ${d}/CA/10-gapclose/genome.ctg.fasta ) \
-        $( faops n50 -H ${d}/CA/10-gapclose/genome.scf.fasta ) \
-        $( faops size ${d}/work1/superReadSequences.fasta | wc -l ) \
-        $( faops size ${d}/CA/10-gapclose/genome.ctg.fasta | wc -l ) \
-        $( faops size ${d}/CA/10-gapclose/genome.scf.fasta | wc -l ) \
+        $( faops n50 -H -N 50 -C ${d}/work1/superReadSequences.fasta ) \
+        $( faops n50 -H -N 50 -C ${d}/CA/10-gapclose/genome.ctg.fasta ) \
+        $( faops n50 -H -N 50 -C ${d}/CA/10-gapclose/genome.scf.fasta ) \
         $( cat ${d}/environment.sh \
             | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
 done >> stat.md
@@ -433,10 +430,10 @@ done >> stat.md
 cat stat.md
 ```
 
-| name          | N50 SR | N50 Contig | N50 Scaffold |  #SR | #Contig | #Scaffold |  Exp. G |
-|:--------------|-------:|-----------:|-------------:|-----:|--------:|----------:|--------:|
-| PE_SJ_Sanger4 |   4586 |     205225 |      3196849 | 4187 |      69 |        35 | 4602968 |
-| PE_SJ_Sanger  |   4586 |      63274 |      3070846 | 4187 |     141 |        28 | 4602968 |
-| PE_SJ         |   4586 |      43125 |      3058404 | 4187 |     219 |        59 | 4602968 |
-| PE            |   4705 |      20826 |        34421 | 4043 |     407 |       278 | 4595684 |
-| superreads    |   4705 |            |              | 4042 |         |           | 4595684 |
+| name          | N50 SR |  #SR | N50 Contig | #Contig | N50 Scaffold | #Scaffold |  Exp. G |
+|:--------------|-------:|-----:|-----------:|--------:|-------------:|----------:|--------:|
+| PE_SJ_Sanger4 |   4586 | 4187 |     205225 |      69 |      3196849 |        35 | 4602968 |
+| PE_SJ_Sanger  |   4586 | 4187 |      63274 |     141 |      3070846 |        28 | 4602968 |
+| PE_SJ         |   4586 | 4187 |      43125 |     219 |      3058404 |        59 | 4602968 |
+| PE            |   4705 | 4043 |      20826 |     407 |        34421 |       278 | 4595684 |
+| superreads    |   4705 | 4043 |            |         |              |           | 4595684 |
