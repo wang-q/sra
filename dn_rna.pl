@@ -17,24 +17,33 @@ use MyBAM;
 #----------------------------------------------------------#
 # GetOpt section
 #----------------------------------------------------------#
+my $usage_desc = <<EOF;
+Create bash files for de novo rna-seq projects
 
-(
-    #@type Getopt::Long::Descriptive::Opts
-    my $opt,
+    If input files are fasta other than sra, name and gzip them as:
+        srr.fq.gz
+        srr.1.fq.gz and srr.2.fq.gz
 
-    #@type Getopt::Long::Descriptive::Usage
-    my $usage,
-    )
-    = Getopt::Long::Descriptive::describe_options(
-    "Create bash files for de novo rna-seq projects\n" . "Usage: perl %c [options]",
+Usage: perl %c [options]
+EOF
+
+my @opt_spec = (
     [ 'help|h', 'display this message' ],
     [],
     [ 'base|b=s',     'Base directory',                  { required => 1, }, ],
     [ 'csv|c=s',      'CSV file of project information', { required => 1, }, ],
+    [ 'fq',           'Inputs are .fq.gz files', ],
     [ 'parallel|p=i', 'Parallel mode',                   { default  => 8, }, ],
     [ 'memory|m=i',   'Memory size for JVM',             { default  => 64, }, ],
-    { show_defaults => 1, }
-    );
+    [   'trinity=s',
+        'Directory of Trinity',
+        { default => path( $ENV{HOME}, "share/trinityrnaseq-2.0.6" )->stringify, },
+    ],
+    { show_defaults => 1, },
+);
+
+( my Getopt::Long::Descriptive::Opts $opt, my Getopt::Long::Descriptive::Usage $usage, )
+    = Getopt::Long::Descriptive::describe_options( $usage_desc, @opt_spec, );
 
 $usage->die if $opt->{help};
 
@@ -43,7 +52,7 @@ $usage->die if $opt->{help};
 #----------------------------------------------------------#
 my $bin_dir = {
     script  => $FindBin::RealBin,
-    trinity => path( $ENV{HOME}, "share/trinityrnaseq-2.0.6" )->stringify,
+    trinity => $opt->{trinity},
 };
 my $data_dir = {
     sra  => path( $opt->{base}, "sra" )->stringify,
@@ -86,16 +95,36 @@ ITEM: for my $name (@names) {
         my $srr      = $_->[5];
 
         my $file;
-        if ( path( $data_dir->{sra}, $srr )->is_file ) {
-            $file = path( $data_dir->{sra}, $srr )->stringify;
-        }
-        elsif ( path( $data_dir->{sra}, "$srr.sra" )->is_file ) {
-            $file = path( $data_dir->{sra}, "$srr.sra" )->stringify;
+        if ( $opt->{fq} ) {
+            if ( path( $data_dir->{sra}, "$srr.fq.gz" )->is_file ) {
+                $file = path( $data_dir->{sra}, "$srr.fq.gz" )->stringify;
+            }
+            elsif ( path( $data_dir->{sra}, "$srr.1.fq.gz" )->is_file
+                and path( $data_dir->{sra}, "$srr.2.fq.gz" )->is_file )
+            {
+                $file = [
+                    path( $data_dir->{sra}, "$srr.1.fq.gz" ),
+                    path( $data_dir->{sra}, "$srr.2.fq.gz" ),
+                ];
+            }
+            else {
+                print "Can't find $srr(.fq.gz) for $name\n";
+                $item = undef;
+                next ITEM;
+            }
         }
         else {
-            print "Can't find $srr(.sra) for $name\n";
-            $item = undef;
-            next ITEM;
+            if ( path( $data_dir->{sra}, $srr )->is_file ) {
+                $file = path( $data_dir->{sra}, $srr )->stringify;
+            }
+            elsif ( path( $data_dir->{sra}, "$srr.sra" )->is_file ) {
+                $file = path( $data_dir->{sra}, "$srr.sra" )->stringify;
+            }
+            else {
+                print "Can't find $srr(.sra) for $name\n";
+                $item = undef;
+                next ITEM;
+            }
         }
 
         my $rg_str = '@RG' . "\\tID:$srr" . "\\tLB:$srx" . "\\tPL:$platform" . "\\tSM:$name";
@@ -106,6 +135,7 @@ ITEM: for my $name (@names) {
             layout   => $layout,
             srr      => $srr,
             rg_str   => $rg_str,
+            fq       => $opt->{fq},
         };
 
         push @{ $item->{lanes} }, $lane;
