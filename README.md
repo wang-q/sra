@@ -241,7 +241,6 @@ cat << EOF > spartina.csv
 name,srx,platform,layout,ilength,srr,spot,base
 spartina,LAN1_SA1,Illumina,PAIRED,,LAN1_SA1,42426645,8.4G
 EOF
-
 ```
 
 Generate bash files and run.
@@ -266,10 +265,22 @@ mkdir -p ~/data/rna-seq/cercis_gigantea/sra
 cd ~/data/rna-seq/cercis_gigantea/sra
 
 cat << EOF > cercis_gigantea.csv
-name,srx,platform,layout,srr,spot,base
-cercis_gigantea,LAN8_SA4,Illumina,PAIRED,LAN8_SA4,42426645,6.9G
+name,srx,platform,layout,ilength,srr,spot,base
+cercis_gigantea,LAN8_SA4,Illumina,PAIRED,,LAN8_SA4,42426645,6.9G
 EOF
+```
 
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_rna.pl \
+    --fq \
+    -b ~/data/rna-seq/cercis_gigantea \
+    -c ~/data/rna-seq/cercis_gigantea/sra/cercis_gigantea.csv
+
+cd ~/data/rna-seq/cercis_gigantea
+bash bash/sra.cercis_gigantea.sh
+bash bash/tri.cercis_gigantea.sh
 ```
 
 ### Gleditsia sinensis 皂荚树
@@ -281,10 +292,22 @@ mkdir -p ~/data/rna-seq/gleditsia_sinensis/sra
 cd ~/data/rna-seq/gleditsia_sinensis/sra
 
 cat << EOF > gleditsia_sinensis.csv
-name,srx,platform,layout,srr,spot,base
-gleditsia_sinensis,ZJ,Illumina,PAIRED,ZJ,37785244,7632619288
+name,srx,platform,layout,ilength,srr,spot,base
+gleditsia_sinensis,ZJ,Illumina,PAIRED,,ZJ,37785244,7632619288
 EOF
+```
 
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_rna.pl \
+    --fq \
+    -b ~/data/rna-seq/gleditsia_sinensis \
+    -c ~/data/rna-seq/gleditsia_sinensis/sra/gleditsia_sinensis.csv
+
+cd ~/data/rna-seq/gleditsia_sinensis
+bash bash/sra.gleditsia_sinensis.sh
+bash bash/tri.gleditsia_sinensis.sh
 ```
 
 ### Sophora japonica 槐树
@@ -296,10 +319,22 @@ mkdir -p ~/data/rna-seq/sophora_japonica/sra
 cd ~/data/rna-seq/sophora_japonica/sra
 
 cat << EOF > sophora_japonica.csv
-name,srx,platform,layout,srr,spot,base
-sophora_japonica,HS,Illumina,PAIRED,HS,37785244,7.1G
+name,srx,platform,layout,ilength,srr,spot,base
+sophora_japonica,HS,Illumina,PAIRED,,HS,37785244,7.1G
 EOF
+```
 
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_rna.pl \
+    --fq \
+    -b ~/data/rna-seq/sophora_japonica \
+    -c ~/data/rna-seq/sophora_japonica/sra/sophora_japonica.csv
+
+cd ~/data/rna-seq/sophora_japonica
+bash bash/sra.sophora_japonica.sh
+bash bash/tri.sophora_japonica.sh
 ```
 
 ## De novo dna-seq projects (dn_dna_*.pl)
