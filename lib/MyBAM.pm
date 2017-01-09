@@ -1525,6 +1525,7 @@ cd [% item.dir %]
 perl [% bin_dir.trinity %]/Trinity --seqType fq \
     --max_memory [% memory %]G \
     --CPU [% parallel %] \
+    --bypass_java_version_check \
     --min_contig_length 200 \
 [% IF item.lanes.0.layout == 'PAIRED' -%]
 [% IF item.sickle -%]

@@ -238,10 +238,23 @@ mkdir -p ~/data/rna-seq/spartina/sra
 cd ~/data/rna-seq/spartina/sra
 
 cat << EOF > spartina.csv
-name,srx,platform,layout,srr,spot,base
-spartina,LAN1_SA1,Illumina,PAIRED,LAN1_SA1,42426645,8.4G
+name,srx,platform,layout,ilength,srr,spot,base
+spartina,LAN1_SA1,Illumina,PAIRED,,LAN1_SA1,42426645,8.4G
 EOF
 
+```
+
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_rna.pl \
+    --fq \
+    -b ~/data/rna-seq/spartina \
+    -c ~/data/rna-seq/spartina/sra/spartina.csv
+
+cd ~/data/rna-seq/spartina
+bash bash/sra.spartina.sh
+bash bash/tri.spartina.sh
 ```
 
 ### Cercis gigantea 巨紫荆
