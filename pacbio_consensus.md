@@ -604,6 +604,8 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
     -s 450 -d 50 --long
 
+echo $( faops n50 -H -C ./work1/superReadSequences.fasta )
+
 ```
 
 `.subreads.bam` to fasta
