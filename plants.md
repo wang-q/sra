@@ -32,9 +32,6 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/SRR611087_2.fastq.gz \
     -s 450 -d 50 -p 16
 
-secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
-printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
-
 faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
@@ -48,9 +45,6 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
     -s 450 -d 50 -p 16
-
-secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
-printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
 
 faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
@@ -80,19 +74,26 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz \
     -s 300 -d 30 -p 16
 
-secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
-printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
-
 faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
 | Name       | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
 |:-----------|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
-| SRR3166543 |      100 |   71 | 65.5 GB |         |             |          |          |           |          |
+| SRR3166543 |      100 |   71 | 65.5 GB |   35 GB |   159276042 |          |          |           |          |
 | SRR611087  |      100 |   71 | 20.4 GB | 10.8 GB |   125423153 | 46914691 |  3:13'   | 308181766 |     2.46 |
-| SRR616965  |      100 |   71 | 10.2 GB | 5.42 GB |   118742701 | 25750807 |          | 186951724 |     1.57 |
+| SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |          | 186951724 |     1.57 |
 | F63        |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
 | F340       |      150 |   75 | 35.9 GB | 19.3 GB |   566603922 | 22024705 |  3:21'   | 852873811 |     1.51 |
+
+* fq size - pe.renamed.fastq
+* fa size - pe.cor.fa
+* L. Reads, kmer, Est. Genome, and #reads from `environment.sh`
+* Run time
+
+    ```bash
+    secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
+    printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
+    ```
 
 * kmer 与污染的关系还不好说
 * kmer 估计基因组比真实的大得越多, 污染就越多
@@ -210,6 +211,9 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
     ' \
     > ambiguous.cover.txt
 
+#----------------------------#
+# runlists
+#----------------------------#
 jrunlist cover unambiguous.cover.txt 
 runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
 
@@ -235,10 +239,10 @@ faops n50 -N 50 -S -C pe.anchor.fa
 
 ```
 
-| Name       | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor |
-|:-----------|-------:|--------:|----------:|-----------:|-----------:|-----------:|
-| SRR3166543 |        |         |           |            |            |            |
-| SRR611087  |   5338 |  722096 |           |            |            |            |
-| SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |
-| F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |
-| F340       |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |
+| Name       | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor | #anchor |
+|:-----------|-------:|--------:|----------:|-----------:|-----------:|-----------:|--------:|
+| SRR3166543 |        |         |           |            |            |            |         |
+| SRR611087  |   5338 |  722096 | 101582900 |   97625637 |   10321588 |       8696 |    1891 |
+| SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |   35038 |
+| F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |   21120 |
+| F340       |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |   70742 |
