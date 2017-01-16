@@ -376,35 +376,168 @@ Coverages on super-reads.
 ```bash
 cd ~/data/test/rhodobacter_superreads
 
-mkdir sr
+mkdir -p sr
 
 # 0       1     2        3
 # read_id sr_id position orientation
-cat work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt \
-    | perl -nl -e '
-        my ( $read_id, $sr_id, $position, $orientation ) = split /\s+/, $_;
-        $orientation =~ /F|R/ or next;
-        my ($s, $e);
-        $orientation eq qq{F}
-            ? ($s = $position, $e = $s + 100 )
-            : ($e = $position, $s = $e - 100 );
-        print qq{$sr_id:$s-$e};
+#cat work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt \
+#    | perl -nl -e '
+#        my ( $read_id, $sr_id, $position, $orientation ) = split /\s+/, $_;
+#        $orientation =~ /F|R/ or next;
+#        my ($s, $e);
+#        $orientation eq qq{F}
+#            ? ($s = $position, $e = $s + 100 )
+#            : ($e = $position, $s = $e - 100 );
+#        print qq{$sr_id:$s-$e};
+#    ' \
+#    > sr/sr.pos.txt
+#cat work1/readPlacementsInSuperReads.final.read.superRead.offset.ori.txt \
+#    | perl -nl -e '
+#        my ( $read_id, $sr_id, $position, $orientation ) = split /\s+/, $_;
+#        $orientation =~ /F|R/ or next;
+#        my $s = $position;
+#        my $e = $s + 100 - 1;
+#        print qq{$sr_id:$s-$e};
+#    ' \
+#    > sr/sr.pos.txt
+#
+#faops size work1/superReadSequences.fasta > sr/sr.chr.sizes
+#head -n 100 sr/sr.chr.sizes  > sr/sr100.chr.sizes
+#runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 5 -o sr/sr.depth5.yml
+#runlist stat sr/sr.depth5.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth5.csv
+#
+#runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 50 -o sr/sr.depth50.yml
+#runlist stat sr/sr.depth50.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth50.csv
+#
+#runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 200 -o sr/sr.depth200.yml
+#runlist stat sr/sr.depth200.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth200.csv
+
+cd sr
+ln -s ../pe.cor.fa .
+ln -s ../work1/superReadSequences.fasta .
+
+faops size superReadSequences.fasta > sr.chr.sizes
+
+# tolerates 1 substitution
+cat pe.cor.fa \
+    | perl -nle '/>/ or next; /sub.+sub/ and next; />(\w+)/ and print $1;' \
+    > pe.strict.txt
+
+# correct
+#cat pe.strict.txt | sort | uniq > uniq.txt
+
+# No Ns; longer than 69 bp
+faops some pe.cor.fa pe.strict.txt stdout \
+    | faops filter -n 0 -a 70 -l 0 stdin stdout \
+    > pe.strict.fa
+
+#N50	4705
+#S	8609951
+#C	4043
+faops n50 -N 50 -S -C superReadSequences.fasta
+#C	2050868
+faops n50 -N 0 -C pe.cor.fa
+#C	922664
+faops n50 -N 0 -C pe.strict.fa
+
+# bowtie2
+#bowtie2-build superReadSequences.fasta superReadSequences
+#bowtie2 -x superReadSequences \
+#    -N 0 -p 4 -f \
+#    -U pe.strict.fa -S strict.sam
+
+#----------------------------#
+# unambiguous
+#----------------------------#
+
+# https://www.biostars.org/p/163429/
+# "out" gets all reads. "outm" only gets mapped reads. But with "ambig=toss", 
+# reads mapping to multiple locations will be classified as unmapped, so they will not go to outm.
+bbmap.sh \
+    maxindel=0 strictmaxindel perfectmode nodisk \
+    ambiguous=toss \
+    ref=superReadSequences.fasta in=pe.strict.fa \
+    outm=unambiguous.sam outu=unmapped.sam
+
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CleanSam \
+    INPUT=unambiguous.sam \
+    OUTPUT=_clean.bam
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    SortSam \
+    INPUT=_clean.bam \
+    OUTPUT=_sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+rm _clean.bam
+mv _sort.bam unambiguous.sort.bam
+#samtools index unambiguous.sort.bam
+
+genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
+    | perl -nlae '
+        $F[3] == 0 and next;
+        $F[3] == 1 and next;
+        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
     ' \
-    > sr/sr.pos.txt
+    > unambiguous.cover.txt
 
-faops size work1/superReadSequences.fasta > sr/sr.chr.sizes
-head -n 100 sr/sr.chr.sizes  > sr/sr100.chr.sizes
+#----------------------------#
+# ambiguous
+#----------------------------#
+cat unmapped.sam \
+    | perl -nle '
+        /^@/ and next;
+        @fields = split "\t";
+        print $fields[0];
+    ' \
+    > pe.unmapped.txt
+faops some pe.strict.fa pe.unmapped.txt pe.unmapped.fa
 
-#cat sr/sr.chr.sizes | grep -nr "\b500$"
+bbmap.sh \
+    maxindel=0 strictmaxindel perfectmode nodisk \
+    ref=superReadSequences.fasta in=pe.unmapped.fa \
+    outm=ambiguous.sam outu=unmapped2.sam
 
-runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 5 -o sr/sr.depth5.yml
-runlist stat sr/sr.depth5.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth5.csv
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    CleanSam \
+    INPUT=ambiguous.sam \
+    OUTPUT=_clean.bam
+java -jar ~/share/picard-tools-1.128/picard.jar \
+    SortSam \
+    INPUT=_clean.bam \
+    OUTPUT=_sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+rm _clean.bam
+mv _sort.bam ambiguous.sort.bam
 
-runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 50 -o sr/sr.depth50.yml
-runlist stat sr/sr.depth50.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth50.csv
+genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
+    | perl -nlae '
+        $F[3] == 0 and next;
+        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
+    ' \
+    > ambiguous.cover.txt
 
-runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 200 -o sr/sr.depth200.yml
-runlist stat sr/sr.depth200.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth200.csv
+jrunlist cover unambiguous.cover.txt 
+runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
+
+jrunlist cover ambiguous.cover.txt 
+runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
+
+runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
+runlist stat unique.cover.yml -s sr.chr.sizes -o stdout \
+    | perl -nla -F"," -e '
+        $F[0] eq q{chr} and next;
+        $F[0] eq q{all} and next;
+        $F[2] < 500 and next;
+        $F[3] < 0.95 and next;
+        print $F[0];
+    ' \
+    | sort -n \
+    > anchor.txt
+
+faops some superReadSequences.fasta anchor.txt pe.anchor.fa
+faops n50 -N 50 -S -C pe.anchor.fa
 
 ```
 
@@ -415,7 +548,7 @@ runlist stat sr/sr.depth200.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth200.
 cd ~/data/test/
 
 printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-    "name" "N50 SR" "#SR" "N50 Contig" "#Contig" "N50 Scaffold" "#Scaffold" "Exp. G" \
+    "name" "N50 SR" "#SR" "N50 Contig" "#Contig" "N50 Scaffold" "#Scaffold" "Est. G" \
     > stat.md
 printf "|---|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
 
@@ -433,7 +566,7 @@ done >> stat.md
 cat stat.md
 ```
 
-| name          | N50 SR |  #SR | N50 Contig | #Contig | N50 Scaffold | #Scaffold |  Exp. G |
+| name          | N50 SR |  #SR | N50 Contig | #Contig | N50 Scaffold | #Scaffold |  Est. G |
 |:--------------|-------:|-----:|-----------:|--------:|-------------:|----------:|--------:|
 | PE_SJ_Sanger4 |   4586 | 4187 |     205225 |      69 |      3196849 |        35 | 4602968 |
 | PE_SJ_Sanger  |   4586 | 4187 |      63274 |     141 |      3070846 |        28 | 4602968 |
