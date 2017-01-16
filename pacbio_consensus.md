@@ -595,27 +595,22 @@ perl ~/Scripts/sra/superreads.pl \
 
 ```
 
-```bash
-mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
-cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
-    -s 450 -d 50 --long
-
-echo $( faops n50 -H -C ./work1/superReadSequences.fasta )
-
-```
-
 `.subreads.bam` to fasta
 
 ```bash
-mkdir -p $HOME/data/pacbio/rawdata/ler0_test
-cd $HOME/data/pacbio/rawdata/ler0_test
+mkdir -p $HOME/data/pacbio/rawdata/ler0_test/fasta
+cd $HOME/data/pacbio/rawdata/ler0_test/fasta
 
 # segfault
 #dextract ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam
+
+samtools fasta \
+    ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam \
+    > m54113_160913_184949.fasta
+
+samtools fasta \
+    ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam \
+    > m54113_160914_092411.fasta
 ```
 
 
