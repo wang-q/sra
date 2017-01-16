@@ -309,6 +309,13 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 * [这里](https://github.com/PacificBiosciences/FALCON/issues/251)有个脚本帮助解决这个问题. 已经放到本地,
   `falcon_name_fasta.pl`
 
+* Clear intermediate dirs
+
+    ```bash
+    find $HOME/data/pacbio -type d -name 'm_*' | xargs rm -fr
+    find $HOME/data/pacbio -type d -name 'job_*' | xargs rm -fr
+    ```
+
 ### `falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 过墙下载以下三个文件
