@@ -618,8 +618,12 @@ samtools fasta \
 samtools fasta \
     ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam \
     > m54113_160914_092411.fasta
-```
 
+#N50     70763
+#S       10753458447
+#C       1135065
+faops n50 -C -S *.fasta
+```
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
@@ -630,7 +634,7 @@ then
 fi
 mkdir -p $HOME/data/pacbio/ler0_test
 cd $HOME/data/pacbio/ler0_test
-find $HOME/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData -name "*.subreads.bam" > input.fofn
+find $HOME/data/pacbio/rawdata/ler0_test/fasta -name "*.fasta" > input.fofn
 
 cat <<EOF > fc_run.cfg
 [General]
