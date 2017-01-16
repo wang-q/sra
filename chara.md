@@ -2,26 +2,53 @@
 
 ## super-reads
 
+* F63, Closterium sp., 新月藻
+
 ```bash
-mkdir -p ~/data/dna-seq/chara/superreads
-cd ~/data/dna-seq/chara/superreads
+mkdir -p ~/data/dna-seq/chara/superreads/F63
+cd ~/data/dna-seq/chara/superreads/F63
 
 perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz \
     ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz \
-    -s 300 -d 30
+    -s 300 -d 30 -p 16
+
+faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
-| Name | Read length | fa size | Est. Genome | Total reads | Run time |
-|:-----|------------:|--------:|------------:|------------:|:---------|
-| F63  |         150 | 18.1 GB |   345627684 |    13840871 | 4:30'    |
-|      |             |         |             |             |          |
-|      |             |         |             |             |          |
-|      |             |         |             |             |          |
+* F340, Zygnema extenue, 亚小双星藻
 
 ```bash
-mkdir -p ~/data/dna-seq/chara/superreads/sr
-cd ~/data/dna-seq/chara/superreads/sr
+mkdir -p ~/data/dna-seq/chara/superreads/F340
+cd ~/data/dna-seq/chara/superreads/F340
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz \
+    ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz \
+    -s 300 -d 30 -p 16
+
+secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
+printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
+
+faops n50 -N 50 -S -C work1/superReadSequences.fasta
+```
+
+| Name | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
+|:-----|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
+| F63  |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
+| F340 |      150 |   75 | 35.9 GB | 19.3 GB |   566603922 | 22024705 |  3:21'   | 852873811 |     1.51 |
+|      |          |      |         |         |             |          |          |           |          |
+|      |          |      |         |         |             |          |          |           |          |
+
+* kmer 越大的污染越多
+* kmer 估计基因组比真实的大得越多的污染越多
+* SR/Est.G 有两个因素. 细菌与单倍体会趋向于 2, paralog 与杂合会趋向于 4.
+
+## Anchors
+
+```bash
+mkdir -p sr
+cd sr
 
 ln -s ../pe.cor.fa .
 ln -s ../work1/superReadSequences.fasta .
@@ -135,7 +162,9 @@ jrunlist cover ambiguous.cover.txt
 runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
 
 runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
-runlist stat unique.cover.yml -s sr.chr.sizes -o stdout \
+runlist stat unique.cover.yml -s sr.chr.sizes -o unique.cover.csv
+ 
+cat unique.cover.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
@@ -151,9 +180,9 @@ faops n50 -N 50 -S -C pe.anchor.fa
 
 ```
 
-| Name |    Sum SR | SR/Est.G | N50 SR |    #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor |
-|:-----|----------:|---------:|-------:|-------:|----------:|-----------:|-----------:|-----------:|
-| F63  | 697371843 |     2.02 |   1815 | 986675 | 115078314 |   94324950 |   52342433 |       4003 |
-|      |           |          |        |        |           |            |            |            |
-|      |           |          |        |        |           |            |            |            |
-|      |           |          |        |        |           |            |            |            |
+| Name | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor |
+|:-----|-------:|--------:|----------:|-----------:|-----------:|-----------:|
+| F63  |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |
+| F340 |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |
+|      |        |         |           |            |            |            |
+|      |        |         |           |            |            |            |
