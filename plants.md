@@ -1,4 +1,4 @@
-# Chara
+# Plants 2+3
 
 ## super-reads
 
@@ -14,9 +14,6 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-1/SRR3166543/SRR3166543_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-1/SRR3166543/SRR3166543_2.fastq.gz \
     -s 300 -d 30 -p 16
-
-secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
-printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
 
 faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
@@ -79,7 +76,7 @@ faops n50 -N 50 -S -C work1/superReadSequences.fasta
 
 | Name       | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
 |:-----------|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
-| SRR3166543 |      100 |   71 | 65.5 GB |   35 GB |   159276042 |          |          |           |          |
+| SRR3166543 |      100 |   71 | 65.5 GB |   35 GB |   159276042 | 46692222 |  6:22'   | 501353151 |     3.15 |
 | SRR611087  |      100 |   71 | 20.4 GB | 10.8 GB |   125423153 | 46914691 |  3:13'   | 308181766 |     2.46 |
 | SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |          | 186951724 |     1.57 |
 | F63        |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
@@ -241,7 +238,7 @@ faops n50 -N 50 -S -C pe.anchor.fa
 
 | Name       | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor | #anchor |
 |:-----------|-------:|--------:|----------:|-----------:|-----------:|-----------:|--------:|
-| SRR3166543 |        |         |           |            |            |            |         |
+| SRR3166543 |   1929 | 1313227 | 324725120 |  299807953 |            |            |         |
 | SRR611087  |   5338 |  722096 | 101582900 |   97625637 |   10321588 |       8696 |    1891 |
 | SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |   35038 |
 | F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |   21120 |
