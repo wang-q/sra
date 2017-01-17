@@ -2,9 +2,9 @@
 
 ## super-reads
 
-* Ler-0-1, SRR3166543
+###  Ler-0-1, SRR3166543
 
-    `-s 300 -d 30` are guessed.
+`-s 300 -d 30` are guessed.
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR3166543
@@ -14,11 +14,9 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-1/SRR3166543/SRR3166543_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-1/SRR3166543/SRR3166543_2.fastq.gz \
     -s 300 -d 30 -p 16
-
-faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
-* Ler-0-2, SRR611087
+### Ler-0-2, SRR611087
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR611087
@@ -28,11 +26,9 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/SRR611087_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/SRR611087_2.fastq.gz \
     -s 450 -d 50 -p 16
-
-faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
-* Ler-0-2, SRR616965
+### Ler-0-2, SRR616965
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
@@ -42,11 +38,9 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
     -s 450 -d 50 -p 16
-
-faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
-* F63, Closterium sp., 新月藻
+### F63, Closterium sp., 新月藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F63
@@ -56,11 +50,21 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz \
     ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz \
     -s 300 -d 30 -p 16
-
-faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
 
-* F340, Zygnema extenue, 亚小双星藻
+### F295, Cosmarium botrytis, 葡萄鼓藻
+
+```bash
+mkdir -p ~/data/dna-seq/chara/superreads/F295
+cd ~/data/dna-seq/chara/superreads/F295
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_1.clean.fq.gz \
+    ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_2.clean.fq.gz \
+    -s 300 -d 30 -p 16
+```
+
+### F340, Zygnema extenue, 亚小双星藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F340
@@ -70,9 +74,45 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz \
     ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz \
     -s 300 -d 30 -p 16
-
-faops n50 -N 50 -S -C work1/superReadSequences.fasta
 ```
+
+### F354, Spirogyra gracilis, 纤细水绵
+
+```bash
+mkdir -p ~/data/dna-seq/chara/superreads/F354
+cd ~/data/dna-seq/chara/superreads/F354
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_1.clean.fq.gz \
+    ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_2.clean.fq.gz \
+    -s 300 -d 30 -p 16
+```
+
+### F357, Botryococcus braunii, 布朗葡萄藻
+
+```bash
+mkdir -p ~/data/dna-seq/chara/superreads/F357
+cd ~/data/dna-seq/chara/superreads/F357
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/chara/clean_data/F357_HF5WLALXX_L7_1.clean.fq.gz \
+    ~/data/dna-seq/chara/clean_data/F357_HF5WLALXX_L7_2.clean.fq.gz \
+    -s 300 -d 30 -p 16
+```
+
+### F1084, Staurastrum sp., 角星鼓藻
+
+```bash
+mkdir -p ~/data/dna-seq/chara/superreads/F1084
+cd ~/data/dna-seq/chara/superreads/F1084
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz \
+    ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz \
+    -s 300 -d 30 -p 16
+```
+
+### Summary of SR
 
 | Name       | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
 |:-----------|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
@@ -80,7 +120,13 @@ faops n50 -N 50 -S -C work1/superReadSequences.fasta
 | SRR611087  |      100 |   71 | 20.4 GB | 10.8 GB |   125423153 | 46914691 |  3:13'   | 308181766 |     2.46 |
 | SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |          | 186951724 |     1.57 |
 | F63        |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
+| F295       |          |      |         |         |             |          |          |           |          |
 | F340       |      150 |   75 | 35.9 GB | 19.3 GB |   566603922 | 22024705 |  3:21'   | 852873811 |     1.51 |
+| F354       |          |      |         |         |             |          |          |           |          |
+| F357       |          |      |         |         |             |          |          |           |          |
+| F1084      |          |      |         |         |             |          |          |           |          |
+
+Columns:
 
 * fq size - pe.renamed.fastq
 * fa size - pe.cor.fa
@@ -91,6 +137,14 @@ faops n50 -N 50 -S -C work1/superReadSequences.fasta
     secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
     printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
     ```
+
+* SR stats
+
+    ```bash
+    faops n50 -N 50 -S -C work1/superReadSequences.fasta
+    ```
+
+Thoughts:
 
 * kmer 与污染的关系还不好说
 * kmer 估计基因组比真实的大得越多, 污染就越多
