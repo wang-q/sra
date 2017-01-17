@@ -114,6 +114,18 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
+### moli, 茉莉
+
+```bash
+mkdir -p /home/wangq/zlc/medfood/superreads/moli
+cd /home/wangq/zlc/medfood/superreads/moli
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
+    ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
+    -s 300 -d 30 -p 16
+```
+
 ### Summary of SR
 
 | Name       | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
