@@ -78,6 +78,8 @@ perl ~/Scripts/sra/superreads.pl \
 
 ### F354, Spirogyra gracilis, 纤细水绵
 
+转录本杂合度 0.35%
+
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F354
 cd ~/data/dna-seq/chara/superreads/F354
@@ -118,13 +120,13 @@ perl ~/Scripts/sra/superreads.pl \
 |:-----------|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
 | SRR3166543 |      100 |   71 | 65.5 GB |   35 GB |   159276042 | 46692222 |  6:22'   | 501353151 |     3.15 |
 | SRR611087  |      100 |   71 | 20.4 GB | 10.8 GB |   125423153 | 46914691 |  3:13'   | 308181766 |     2.46 |
-| SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |          | 186951724 |     1.57 |
+| SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |  2:40'   | 186951724 |     1.57 |
 | F63        |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
-| F295       |          |      |         |         |             |          |          |           |          |
+| F295       |      150 |   49 | 43.3 GB | 23.2 GB |   452975652 | 18630254 |   6:1'   | 742260051 |     1.64 |
 | F340       |      150 |   75 | 35.9 GB | 19.3 GB |   566603922 | 22024705 |  3:21'   | 852873811 |     1.51 |
-| F354       |          |      |         |         |             |          |          |           |          |
-| F357       |          |      |         |         |             |          |          |           |          |
-| F1084      |          |      |         |         |             |          |          |           |          |
+| F354       |      150 |   49 | 36.2 GB | 19.5 GB |   133802786 | 11574363 |   6:6'   | 351863887 |     2.63 |
+| F357       |      150 |   49 | 43.5 GB | 23.3 GB |   338905264 | 22703546 |  5:41'   | 796466152 |     2.35 |
+| F1084      |      150 |   75 | 33.9 GB | 18.2 GB |   199395661 |  9895988 |  4:32'   | 570760287 |     2.86 |
 
 Columns:
 
@@ -141,6 +143,7 @@ Columns:
 * SR stats
 
     ```bash
+    faops n50 -N 0 -C pe.cor.fa
     faops n50 -N 50 -S -C work1/superReadSequences.fasta
     ```
 
@@ -179,16 +182,12 @@ do
 done >> pe.strict.fa
 rm pe.part??
 
-faops n50 -N 50 -S -C superReadSequences.fasta
-faops n50 -N 0 -C pe.cor.fa
-faops n50 -N 0 -C pe.strict.fa
-
-# index
-bbmap.sh ref=superReadSequences.fasta
-
 #----------------------------#
 # unambiguous
 #----------------------------#
+# index
+bbmap.sh ref=superReadSequences.fasta
+
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     ambiguous=toss \
@@ -286,14 +285,42 @@ cat unique.cover.csv \
     > anchor.txt
 
 faops some superReadSequences.fasta anchor.txt pe.anchor.fa
+
+#----------------------------#
+# reports
+#----------------------------#
+faops n50 -N 0 -C pe.strict.fa
 faops n50 -N 50 -S -C pe.anchor.fa
 
 ```
 
 | Name       | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor | #anchor |
 |:-----------|-------:|--------:|----------:|-----------:|-----------:|-----------:|--------:|
-| SRR3166543 |   1929 | 1313227 | 324725120 |  299807953 |            |            |         |
+| SRR3166543 |   1929 | 1313227 | 324725120 |  299807953 |    5393267 |       2163 |    3695 |
 | SRR611087  |   5338 |  722096 | 101582900 |   97625637 |   10321588 |       8696 |    1891 |
 | SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |   35038 |
 | F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |   21120 |
+| F295       |    477 | 1975444 | 146979656 |            |            |            |         |
 | F340       |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |   70742 |
+| F354       |    768 |  584408 | 123057622 |            |            |            |         |
+| F357       |    599 | 1644428 | 147581634 |            |            |            |         |
+| F1084      |    893 |  882123 | 115210566 |   97481899 |            |            |         |
+
+Clear intermediate files
+
+sftp://wangq@wq.nju.edu.cn/data/dna-seq/atha_ler_0/superreads/SRR3166543/
+
+```bash
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "pe.linking.fa" | xargs rm
+find . -type f -name "pe.linking.frg" | xargs rm
+find . -type f -name "superReadSequences_shr.frg" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+
+find . -type f -name "ambiguous.sam" | xargs rm
+find . -type f -name "unambiguous.sam" | xargs rm
+find . -type f -name "unmapped.sam" | xargs rm
+find . -type f -name "pe.unmapped.fa" | xargs rm
+```
+
