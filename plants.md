@@ -123,7 +123,7 @@ cd /home/wangq/zlc/medfood/superreads/moli
 perl ~/Scripts/sra/superreads.pl \
     ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
     ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
-    -s 300 -d 30 -p 16
+    -s 300 -d 30 -p 16 --jf 10_000_000_000
 ```
 
 ### Summary of SR
@@ -139,6 +139,7 @@ perl ~/Scripts/sra/superreads.pl \
 | F354       |      150 |   49 | 36.2 GB | 19.5 GB |   133802786 | 11574363 |   6:6'   | 351863887 |     2.63 |
 | F357       |      150 |   49 | 43.5 GB | 23.3 GB |   338905264 | 22703546 |  5:41'   | 796466152 |     2.35 |
 | F1084      |      150 |   75 | 33.9 GB | 18.2 GB |   199395661 |  9895988 |  4:32'   | 570760287 |     2.86 |
+| moli       |      150 |  105 |  258 GB |         |             |          |          |           |          |
 
 Columns:
 
@@ -312,24 +313,26 @@ faops n50 -N 50 -S -C pe.anchor.fa
 | SRR611087  |   5338 |  722096 | 101582900 |   97625637 |   10321588 |       8696 |    1891 |
 | SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |   35038 |
 | F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |   21120 |
-| F295       |    477 | 1975444 | 146979656 |            |            |            |         |
+| F295       |    477 | 1975444 | 146979656 |  119415569 |   17374987 |       2118 |   10473 |
 | F340       |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |   70742 |
-| F354       |    768 |  584408 | 123057622 |            |            |            |         |
-| F357       |    599 | 1644428 | 147581634 |            |            |            |         |
-| F1084      |    893 |  882123 | 115210566 |   97481899 |            |            |         |
+| F354       |    768 |  584408 | 123057622 |  106900181 |   23543840 |       2553 |   11667 |
+| F357       |    599 | 1644428 | 147581634 |  129353409 |   53821193 |       1541 |   40017 |
+| F1084      |    893 |  882123 | 115210566 |   97481899 |    4412080 |       1721 |    3059 |
 
 Clear intermediate files
-
-sftp://wangq@wq.nju.edu.cn/data/dna-seq/atha_ler_0/superreads/SRR3166543/
-
+sftp://wangq@wq.nju.edu.cn/data/dna-seq/chara/superreads/F63/pe.renamed.fastq
 ```bash
+# masurca
 find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
 find . -type f -name "pe.linking.fa" | xargs rm
 find . -type f -name "pe.linking.frg" | xargs rm
 find . -type f -name "superReadSequences_shr.frg" | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
 find . -type f -name "*.tmp" | xargs rm
+find . -type f -name "pe.renamed.fastq" | xargs rm
 
+# anchor
 find . -type f -name "ambiguous.sam" | xargs rm
 find . -type f -name "unambiguous.sam" | xargs rm
 find . -type f -name "unmapped.sam" | xargs rm
