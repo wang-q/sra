@@ -128,18 +128,18 @@ perl ~/Scripts/sra/superreads.pl \
 
 ### Summary of SR
 
-| Name       | L. Reads | kmer | fq size | fa size | Est. Genome |   #reads | Run time |    Sum SR | SR/Est.G |
-|:-----------|---------:|-----:|--------:|--------:|------------:|---------:|:--------:|----------:|---------:|
-| SRR3166543 |      100 |   71 | 65.5 GB |   35 GB |   159276042 | 46692222 |  6:22'   | 501353151 |     3.15 |
-| SRR611087  |      100 |   71 | 20.4 GB | 10.8 GB |   125423153 | 46914691 |  3:13'   | 308181766 |     2.46 |
-| SRR616965  |      100 |   71 | 10.2 GB |  5.4 GB |   118742701 | 25750807 |  2:40'   | 186951724 |     1.57 |
-| F63        |      150 |   49 | 33.9 GB | 18.1 GB |   345627684 | 13840871 |  4:30'   | 697371843 |     2.02 |
-| F295       |      150 |   49 | 43.3 GB | 23.2 GB |   452975652 | 18630254 |   6:1'   | 742260051 |     1.64 |
-| F340       |      150 |   75 | 35.9 GB | 19.3 GB |   566603922 | 22024705 |  3:21'   | 852873811 |     1.51 |
-| F354       |      150 |   49 | 36.2 GB | 19.5 GB |   133802786 | 11574363 |   6:6'   | 351863887 |     2.63 |
-| F357       |      150 |   49 | 43.5 GB | 23.3 GB |   338905264 | 22703546 |  5:41'   | 796466152 |     2.35 |
-| F1084      |      150 |   75 | 33.9 GB | 18.2 GB |   199395661 |  9895988 |  4:32'   | 570760287 |     2.86 |
-| moli       |      150 |  105 |  258 GB |         |             |          |          |           |          |
+| Name       | fq size | fa size | Length | kmer | Est. Genome |   #reads | Run time  |    Sum SR | SR/Est.G |
+|:-----------|--------:|--------:|-------:|-----:|------------:|---------:|:---------:|----------:|---------:|
+| SRR3166543 |   65.5G |     35G |    100 |   71 |   159276042 | 46692222 | 6:22'54'' | 501353151 |     3.15 |
+| SRR611087  |   20.4G |   10.8G |    100 |   71 |   125423153 | 46914691 |   3:13'   | 308181766 |     2.46 |
+| SRR616965  |   10.2G |    5.4G |    100 |   71 |   118742701 | 25750807 |   2:40'   | 186951724 |     1.57 |
+| F63        |   33.9G |   18.1G |    150 |   49 |   345627684 | 13840871 |   4:30'   | 697371843 |     2.02 |
+| F295       |   43.3G |   23.2G |    150 |   49 |   452975652 | 18630254 |   6:1'    | 742260051 |     1.64 |
+| F340       |   35.9G |   19.3G |    150 |   75 |   566603922 | 22024705 |   3:21'   | 852873811 |     1.51 |
+| F354       |   36.2G |   19.5G |    150 |   49 |   133802786 | 11574363 |   6:6'    | 351863887 |     2.63 |
+| F357       |   43.5G |   23.3G |    150 |   49 |   338905264 | 22703546 |   5:41'   | 796466152 |     2.35 |
+| F1084      |   33.9G |   18.2G |    150 |   75 |   199395661 |  9895988 |   4:32'   | 570760287 |     2.86 |
+| moli       |    258G |    137G |    150 |  105 |   851215891 |          |           |           |          |
 
 Columns:
 
@@ -155,10 +155,25 @@ Columns:
 
 * SR stats
 
-    ```bash
-    faops n50 -N 0 -C pe.cor.fa
-    faops n50 -N 50 -S -C work1/superReadSequences.fasta
-    ```
+```bash
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | | \n" \
+    $( basename $( pwd ) ) \
+    $( if [[ -e pe.renamed.fastq ]]; then du -h pe.renamed.fastq | cut -f1; else echo 0; fi ) \
+    $( du -h pe.cor.fa | cut -f1 ) \
+    $( cat environment.sh \
+        | perl -n -e '/PE_AVG_READ_LENGTH=\"(\d+)\"/ and print $1' ) \
+    $( cat environment.sh \
+        | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
+    $( cat environment.sh \
+        | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' ) \
+    $( cat environment.sh \
+        | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
+    $( secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh)); \
+        printf "%d:%d'%d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60)) ) \
+    $( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
+
+```
+
 
 Thoughts:
 
@@ -170,6 +185,9 @@ Thoughts:
 ## Anchors
 
 ```bash
+TOLERATE_SUBS=true
+MIN_LENGTH_READ=100
+
 mkdir -p sr
 cd sr
 
@@ -178,10 +196,17 @@ ln -s ../work1/superReadSequences.fasta .
 
 faops size superReadSequences.fasta > sr.chr.sizes
 
-# tolerates 1 substitution
-cat pe.cor.fa \
-    | perl -nle '/>/ or next; /sub.+sub/ and next; />(\w+)/ and print $1;' \
-    > pe.strict.txt
+if [ "${TOLERATE_SUBS}" = true ]; then
+    # tolerates 1 substitution
+    cat pe.cor.fa \
+        | perl -nle '/>/ or next; /sub.+sub/ and next; />(\w+)/ and print $1;' \
+        > pe.strict.txt
+else
+    # discard any reads with substitutions
+    cat pe.cor.fa \
+        | perl -nle '/>/ or next; /sub/ and next; />(\w+)/ and print $1;' \
+        > pe.strict.txt
+fi
 
 # Too large for `faops some`
 split -n10 -d pe.strict.txt pe.part
@@ -190,10 +215,10 @@ split -n10 -d pe.strict.txt pe.part
 rm pe.strict.fa
 for part in $(printf "%.2d " {0..9})
 do 
-    faops some pe.cor.fa pe.part${part} stdout \
-        | faops filter -n 0 -a 100 -l 0 stdin stdout
+    faops some -l 0 pe.cor.fa pe.part${part} stdout \
+        | faops filter -n 0 -a ${MIN_LENGTH_READ} -l 0 stdin stdout
+    rm pe.part${part}
 done >> pe.strict.fa
-rm pe.part??
 
 #----------------------------#
 # unambiguous
@@ -245,9 +270,9 @@ split -n10 -d pe.unmapped.txt pe.part
 rm pe.unmapped.fa
 for part in $(printf "%.2d " {0..9})
 do 
-    faops some pe.strict.fa pe.part${part} stdout
+    faops some -l 0 pe.strict.fa pe.part${part} stdout
+    rm pe.part${part}
 done >> pe.unmapped.fa
-rm pe.part??
 
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
@@ -275,7 +300,7 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
     > ambiguous.cover.txt
 
 #----------------------------#
-# runlists
+# anchor
 #----------------------------#
 jrunlist cover unambiguous.cover.txt 
 runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
@@ -285,42 +310,161 @@ runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
 
 runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
 runlist stat unique.cover.yml -s sr.chr.sizes -o unique.cover.csv
- 
+
 cat unique.cover.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
-        $F[2] < 500 and next;
+        $F[2] < 1000 and next;
         $F[3] < 0.95 and next;
         print $F[0];
     ' \
     | sort -n \
     > anchor.txt
 
-faops some superReadSequences.fasta anchor.txt pe.anchor.fa
+faops some -l 0 superReadSequences.fasta anchor.txt pe.anchor.fa
+
+#----------------------------#
+# anchor2
+#----------------------------#
+jrunlist span unique.cover.yml --op excise -n 1000 -o stdout \
+    | runlist stat stdin -s sr.chr.sizes -o unique2.cover.csv
+
+cat unique2.cover.csv \
+    | perl -nla -F"," -e '
+        $F[0] eq q{chr} and next;
+        $F[0] eq q{all} and next;
+        $F[2] < 1000 and next;
+        print $F[0];
+    ' \
+    | sort -n \
+    > unique2.txt
+
+cat unique2.txt \
+    | perl -nl -MPath::Tiny -e '
+        BEGIN {
+            %seen = ();
+            @ls = grep {/\S/}
+                  path(q{anchor.txt})->lines({ chomp => 1});
+            $seen{$_}++ for @ls;
+        }
+        
+        $seen{$_} and next;
+        print;
+    ' \
+    > anchor2.txt
+
+faops some -l 0 superReadSequences.fasta anchor2.txt pe.anchor2.fa
+
+faops some -l 0 -i superReadSequences.fasta anchor.txt stdout \
+    | faops some -l 0 -i stdin anchor2.txt pe.others.fa
+
+rm unique2.cover.csv unique2.txt
+
+#----------------------------#
+# record unique regions
+#----------------------------#
+
+cat pe.anchor2.fa \
+    | perl -nl -MPath::Tiny -e '
+        BEGIN {
+            %seen = ();
+            @ls = grep {/\S/}
+                  path(q{unique.cover.yml})->lines({ chomp => 1});
+            for (@ls) {
+                /^(\d+):\s+([\d,-]+)/ or next;
+                $seen{$1} = $2;
+            }
+            $flag = 0;
+        }
+        
+        if (/^>(\d+)/) {
+            if ($seen{$1}) {
+                print qq{>$1|$seen{$1}};
+                $flag = 1;
+            }
+        }
+        elsif (/^\w+/) {
+            if ($flag) {
+                print;
+                $flag = 0;
+            }
+        }
+    ' \
+    > pe.anchor2.record.fa
+
+cat pe.others.fa \
+    | perl -nl -MPath::Tiny -e '
+        BEGIN {
+            %seen = ();
+            @ls = grep {/\S/}
+                  path(q{unique.cover.yml})->lines({ chomp => 1});
+            for (@ls) {
+                /^(\d+):\s+([\d,-]+)/ or next;
+                $seen{$1} = $2;
+            }
+            $flag = 0;
+        }
+        
+        if (/^>(\d+)/) {
+            if ($seen{$1}) {
+                print qq{>$1|$seen{$1}};
+            }
+            else {
+                print;
+            }
+            $flag = 1;
+        }
+        elsif (/^\w+/) {
+            if ($flag) {
+                print;
+                $flag = 0;
+            }
+        }
+    ' \
+    > pe.others.record.fa
 
 #----------------------------#
 # reports
 #----------------------------#
+faops n50 -N 50 -S -C superReadSequences.fasta
+faops n50 -N 0 -C pe.cor.fa
 faops n50 -N 0 -C pe.strict.fa
-faops n50 -N 50 -S -C pe.anchor.fa
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+    $( basename $( dirname $(pwd) ) ) \
+    $( faops n50 -H -N 50 -S -C pe.anchor.fa) \
+    $( faops n50 -H -N 50 -S -C pe.anchor2.fa) \
+    $( faops n50 -H -N 50 -S -C pe.others.fa)
 
 ```
 
-| Name       | N50 SR |     #SR |   #cor.fa | #strict.fa | Sum anchor | N50 anchor | #anchor |
-|:-----------|-------:|--------:|----------:|-----------:|-----------:|-----------:|--------:|
-| SRR3166543 |   1929 | 1313227 | 324725120 |  299807953 |    5393267 |       2163 |    3695 |
-| SRR611087  |   5338 |  722096 | 101582900 |   97625637 |   10321588 |       8696 |    1891 |
-| SRR616965  |   1643 |  488218 |  50872510 |   48928772 |   86327581 |       3446 |   35038 |
-| F63        |   1815 |  986675 | 115078314 |   94324950 |   52342433 |       4003 |   21120 |
-| F295       |    477 | 1975444 | 146979656 |  119415569 |   17374987 |       2118 |   10473 |
-| F340       |    388 | 2383927 | 122062736 |  102014388 |   76859329 |       1105 |   70742 |
-| F354       |    768 |  584408 | 123057622 |  106900181 |   23543840 |       2553 |   11667 |
-| F357       |    599 | 1644428 | 147581634 |  129353409 |   53821193 |       1541 |   40017 |
-| F1084      |    893 |  882123 | 115210566 |   97481899 |    4412080 |       1721 |    3059 |
+| Name       | N50 SR |    Sum SR |     #SR |   #cor.fa | #strict.fa |
+|:-----------|-------:|----------:|--------:|----------:|-----------:|
+| SRR3166543 |   1929 | 501353151 | 1313227 | 324725120 |  299807953 |
+| SRR611087  |   5338 | 308181766 |  722096 | 101582900 |   97625637 |
+| SRR616965  |   1643 | 186951724 |  488218 |  50872510 |   48928772 |
+| F63        |   1815 | 697371843 |  986675 | 115078314 |   94324950 |
+| F295       |    477 | 742260051 | 1975444 | 146979656 |  119415569 |
+| F340       |    388 | 852873811 | 2383927 | 122062736 |  102014388 |
+| F354       |    768 | 351863887 |  584408 | 123057622 |  106900181 |
+| F357       |    599 | 796466152 | 1644428 | 147581634 |  129353409 |
+| F1084      |    893 | 570760287 |  882123 | 115210566 |   97481899 |
 
-Clear intermediate files
-sftp://wangq@wq.nju.edu.cn/data/dna-seq/chara/superreads/F63/pe.renamed.fastq
+| Name       |  N50 |      Sum | #anchor |   N50 |      Sum | #anchor2 |  N50 |       Sum | #others |
+|:-----------|-----:|---------:|--------:|------:|---------:|---------:|-----:|----------:|--------:|
+| SRR3166543 | 5223 |  3609543 |    1119 |  8810 |  2717807 |      448 | 1897 | 495025801 | 1311660 |
+| SRR611087  | 8829 | 10146708 |    1656 | 10999 | 32989092 |     4024 | 4093 | 265045966 |  716416 |
+| SRR616965  | 3707 | 80021452 |   26553 |  3955 | 11905443 |     3481 |  209 |  95024829 |  458184 |
+| F63        | 4003 | 52342433 |   21120 |       |          |          |      |           |         |
+| F295       | 2118 | 17374987 |   10473 |       |          |          |      |           |         |
+| F340       | 1105 | 76859329 |   70742 |       |          |          |      |           |         |
+| F354       | 2553 | 23543840 |   11667 |       |          |          |      |           |         |
+| F357       | 1541 | 53821193 |   40017 |       |          |          |      |           |         |
+| F1084      | 1721 |  4412080 |    3059 |       |          |          |      |           |         |
+
+Clear intermediate files.
+
 ```bash
 # masurca
 find . -type f -name "quorum_mer_db.jf" | xargs rm
