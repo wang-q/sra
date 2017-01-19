@@ -9,15 +9,18 @@ doi:10.1093/bioinformatics/btt476
 de novo 基因组序列的拼接有以下几种主流的策略:
 
 1. Overlap–layout–consensus (OLC) assembly
-    * 主要用于长reads, 在Sanger测序时代就基本发展完备, 三代时代又重新发展
+
+    * 主要用于长 reads, 在 Sanger 测序时代就基本发展完备, 三代时代又重新发展
     * 代表: Celera Assembler, PCAP, Canu
 
 2. de Bruijn graph (德布鲁因图)
+
     * 二代测序的主流
     * 代表: Velvet, SOAPdenovo, Allpaths-LG
 
 3. String graph
-    * 与 de Bruijn graph 类似, 但较为节省内存
+
+    * 使用 FM-index/Burrows-Wheeler transform, 较为节省内存
     * 代表: SGA
 
 MaSuRCA 提出了一种新的策略, Super-reads. 主要思想是将多个短 reads 按 1 bp 延伸, 合并得到数量少得多的长 reads.
@@ -284,9 +287,6 @@ cd ~/data/test/rhodobacter_PE_SJ_Sanger
 
 $HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_1x.txt
 
-#real    15m2.065s
-#user    73m5.869s
-#sys     49m29.684s
 time bash assemble.sh
 ```
 
@@ -317,9 +317,66 @@ cd ~/data/test/rhodobacter_PE_SJ
 
 $HOME/share/MaSuRCA/bin/masurca config_PE_SJ.txt
 
-#real    13m32.175s
-#user    71m48.583s
-#sys     29m41.092s
+time bash assemble.sh
+```
+
+#### Illumina PE, and Sanger4
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE_Sanger4
+cd ~/data/test/rhodobacter_PE_Sanger4
+
+cat <<EOF > config_PE_Sanger_4x.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
+END
+
+EOF
+
+cd ~/data/test/rhodobacter_PE_Sanger4
+
+$HOME/share/MaSuRCA/bin/masurca config_PE_Sanger_4x.txt
+
+time bash assemble.sh
+```
+
+#### Illumina PE, and Sanger
+
+```bash
+mkdir -p ~/data/test/rhodobacter_PE_Sanger
+cd ~/data/test/rhodobacter_PE_Sanger
+
+cat <<EOF > config_PE_Sanger.txt
+PARAMETERS
+CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
+LIMIT_JUMP_COVERAGE = 60
+KMER_COUNT_THRESHOLD = 1
+EXTEND_JUMP_READS=0
+NUM_THREADS= 16
+JF_SIZE=50000000
+END
+
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
+END
+
+EOF
+
+cd ~/data/test/rhodobacter_PE_Sanger
+
+$HOME/share/MaSuRCA/bin/masurca config_PE_Sanger.txt
+
 time bash assemble.sh
 ```
 
@@ -347,9 +404,6 @@ EOF
 
 $HOME/share/MaSuRCA/bin/masurca sr_config.txt
 
-#real    5m46.738s
-#user    20m58.316s
-#sys     4m21.681s
 time bash assemble.sh
 ```
 
@@ -412,135 +466,7 @@ mkdir -p sr
 #runlist coverage sr/sr.pos.txt -s sr/sr100.chr.sizes -m 200 -o sr/sr.depth200.yml
 #runlist stat sr/sr.depth200.yml -s sr/sr100.chr.sizes --mk --all -o sr/depth200.csv
 
-cd sr
-ln -s ../pe.cor.fa .
-ln -s ../work1/superReadSequences.fasta .
-
-faops size superReadSequences.fasta > sr.chr.sizes
-
-# tolerates 1 substitution
-cat pe.cor.fa \
-    | perl -nle '/>/ or next; /sub.+sub/ and next; />(\w+)/ and print $1;' \
-    > pe.strict.txt
-
-# correct
-#cat pe.strict.txt | sort | uniq > uniq.txt
-
-# No Ns; longer than 69 bp
-faops some pe.cor.fa pe.strict.txt stdout \
-    | faops filter -n 0 -a 70 -l 0 stdin stdout \
-    > pe.strict.fa
-
-#N50	4705
-#S	8609951
-#C	4043
-faops n50 -N 50 -S -C superReadSequences.fasta
-#C	2050868
-faops n50 -N 0 -C pe.cor.fa
-#C	922664
-faops n50 -N 0 -C pe.strict.fa
-
-# bowtie2
-#bowtie2-build superReadSequences.fasta superReadSequences
-#bowtie2 -x superReadSequences \
-#    -N 0 -p 4 -f \
-#    -U pe.strict.fa -S strict.sam
-
-#----------------------------#
-# unambiguous
-#----------------------------#
-
-# https://www.biostars.org/p/163429/
-# "out" gets all reads. "outm" only gets mapped reads. But with "ambig=toss", 
-# reads mapping to multiple locations will be classified as unmapped, so they will not go to outm.
-bbmap.sh \
-    maxindel=0 strictmaxindel perfectmode nodisk \
-    ambiguous=toss \
-    ref=superReadSequences.fasta in=pe.strict.fa \
-    outm=unambiguous.sam outu=unmapped.sam
-
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    CleanSam \
-    INPUT=unambiguous.sam \
-    OUTPUT=_clean.bam
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    SortSam \
-    INPUT=_clean.bam \
-    OUTPUT=_sort.bam \
-    SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT
-rm _clean.bam
-mv _sort.bam unambiguous.sort.bam
-#samtools index unambiguous.sort.bam
-
-genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
-    | perl -nlae '
-        $F[3] == 0 and next;
-        $F[3] == 1 and next;
-        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
-    ' \
-    > unambiguous.cover.txt
-
-#----------------------------#
-# ambiguous
-#----------------------------#
-cat unmapped.sam \
-    | perl -nle '
-        /^@/ and next;
-        @fields = split "\t";
-        print $fields[0];
-    ' \
-    > pe.unmapped.txt
-faops some pe.strict.fa pe.unmapped.txt pe.unmapped.fa
-
-bbmap.sh \
-    maxindel=0 strictmaxindel perfectmode nodisk \
-    ref=superReadSequences.fasta in=pe.unmapped.fa \
-    outm=ambiguous.sam outu=unmapped2.sam
-
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    CleanSam \
-    INPUT=ambiguous.sam \
-    OUTPUT=_clean.bam
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    SortSam \
-    INPUT=_clean.bam \
-    OUTPUT=_sort.bam \
-    SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT
-rm _clean.bam
-mv _sort.bam ambiguous.sort.bam
-
-genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
-    | perl -nlae '
-        $F[3] == 0 and next;
-        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
-    ' \
-    > ambiguous.cover.txt
-
-jrunlist cover unambiguous.cover.txt 
-runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
-
-jrunlist cover ambiguous.cover.txt 
-runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
-
-runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
-runlist stat unique.cover.yml -s sr.chr.sizes -o stdout \
-    | perl -nla -F"," -e '
-        $F[0] eq q{chr} and next;
-        $F[0] eq q{all} and next;
-        $F[2] < 500 and next;
-        $F[3] < 0.95 and next;
-        print $F[0];
-    ' \
-    | sort -n \
-    > anchor.txt
-
-faops some superReadSequences.fasta anchor.txt pe.anchor.fa
-faops n50 -N 50 -S -C pe.anchor.fa
-
 ```
-
 
 #### 结果比较
 
@@ -552,7 +478,7 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     > stat.md
 printf "|---|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
 
-for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE rhodobacter_superreads;
+for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE_Sanger4 rhodobacter_PE_Sanger rhodobacter_PE rhodobacter_superreads;
 do
     printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
         ${d} \
@@ -571,5 +497,7 @@ cat stat.md
 | PE_SJ_Sanger4 |   4586 | 4187 |     205225 |      69 |      3196849 |        35 | 4602968 |
 | PE_SJ_Sanger  |   4586 | 4187 |      63274 |     141 |      3070846 |        28 | 4602968 |
 | PE_SJ         |   4586 | 4187 |      43125 |     219 |      3058404 |        59 | 4602968 |
+| PE_Sanger4    |   4705 | 4042 |     125228 |      67 |       534852 |        30 | 4595684 |
+| PE_Sanger     |   4705 | 4042 |      19435 |     412 |        21957 |       359 | 4595684 |
 | PE            |   4705 | 4043 |      20826 |     407 |        34421 |       278 | 4595684 |
 | superreads    |   4705 | 4043 |            |         |              |           | 4595684 |
