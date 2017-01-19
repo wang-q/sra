@@ -4,7 +4,7 @@ doi:10.1093/bioinformatics/btt476
 
 [MaSuRCA_QuickStartGuide](ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA_QuickStartGuide.pdf)
 
-## 特点
+# 特点
 
 de novo 基因组序列的拼接有以下几种主流的策略:
 
@@ -28,7 +28,7 @@ MaSuRCA 提出了一种新的策略, Super-reads. 主要思想是将多个短 re
 
 合并后的 super-reads 的 N50 约为 2-4 kbp.
 
-## 版本
+# 版本
 
 version 3.1.3.
 
@@ -42,7 +42,7 @@ http://ccb.jhu.edu/software.shtml
 > New modules coming soon include methods to create hybrid assemblies using both Illumina and PacBio
 > data.
 
-## 依赖
+# 依赖
 
 外部
 
@@ -61,7 +61,7 @@ http://ccb.jhu.edu/software.shtml
 * SuperReads: masurca 的主程序. 这个是我们所需要的, 合并 reads 的功能就在这里. 源码约五万行.
 * ufasta: UMD 的操作 fasta 的工具, 未在其它地方发现相关信息. 里面的 tests 写得不错, 值得借鉴.
 
-## 安装
+# 安装
 
 ```bash
 echo "==> MaSuRCA"
@@ -192,7 +192,7 @@ bin
 
 同时还生成一个配置文件样例, `sr_config_example.txt`.
 
-## 样例数据
+# 样例数据
 
 MaSuRCA 发表在 Bioinformatics 时自带的测试数据.
 
@@ -207,11 +207,9 @@ Super-reads在 `work1/superReadSequences.fasta`, `work2/` 和 `work2.1/` 是 sho
 
 MaSuRCA-3.1.3 supports gzipped fastq files while MaSuRCA-2.1.0 doesn't.
 
-### Rhodobacter sphaeroides (球形红细菌)
+## Rhodobacter sphaeroides (球形红细菌)
 
 高 GC 原核生物 (68%), 基因组 4.5 Mbp.
-
-* 数据
 
 ```bash
 mkdir -p ~/data/test
@@ -222,10 +220,9 @@ wget -m ftp://ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter .
 mv ftp.genome.umd.edu/pub/MaSuRCA/test_data/rhodobacter .
 rm -fr ftp.genome.umd.edu
 find . -name ".listing" | xargs rm
-
 ```
 
-#### Illumina PE, Short Jump and Sanger4
+### Illumina PE, Short Jump and Sanger4
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger4
@@ -259,7 +256,7 @@ $HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_4x.txt
 time bash assemble.sh
 ```
 
-#### Illumina PE, Short Jump and Sanger
+### Illumina PE, Short Jump and Sanger
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger
@@ -290,7 +287,7 @@ $HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_1x.txt
 time bash assemble.sh
 ```
 
-#### Illumina PE and Short Jump
+### Illumina PE and Short Jump
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE_SJ
@@ -320,7 +317,7 @@ $HOME/share/MaSuRCA/bin/masurca config_PE_SJ.txt
 time bash assemble.sh
 ```
 
-#### Illumina PE, and Sanger4
+### Illumina PE, and Sanger4
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE_Sanger4
@@ -350,7 +347,7 @@ $HOME/share/MaSuRCA/bin/masurca config_PE_Sanger_4x.txt
 time bash assemble.sh
 ```
 
-#### Illumina PE, and Sanger
+### Illumina PE, and Sanger
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE_Sanger
@@ -380,7 +377,7 @@ $HOME/share/MaSuRCA/bin/masurca config_PE_Sanger.txt
 time bash assemble.sh
 ```
 
-#### Illumina PE
+### Illumina PE
 
 ```bash
 mkdir -p ~/data/test/rhodobacter_PE
@@ -468,15 +465,15 @@ mkdir -p sr
 
 ```
 
-#### 结果比较
+### 结果比较
 
 ```bash
 cd ~/data/test/
 
 printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-    "name" "N50 SR" "#SR" "N50 Contig" "#Contig" "N50 Scaffold" "#Scaffold" "Est. G" \
+    "Name" "N50 SR" "#SR" "N50 Contig" "#Contig" "N50 Scaffold" "#Scaffold" "EstG" \
     > stat.md
-printf "|---|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
 
 for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE_Sanger4 rhodobacter_PE_Sanger rhodobacter_PE rhodobacter_superreads;
 do
@@ -492,7 +489,7 @@ done >> stat.md
 cat stat.md
 ```
 
-| name          | N50 SR |  #SR | N50 Contig | #Contig | N50 Scaffold | #Scaffold |  Est. G |
+| name          | N50 SR |  #SR | N50 Contig | #Contig | N50 Scaffold | #Scaffold |    EstG |
 |:--------------|-------:|-----:|-----------:|--------:|-------------:|----------:|--------:|
 | PE_SJ_Sanger4 |   4586 | 4187 |     205225 |      69 |      3196849 |        35 | 4602968 |
 | PE_SJ_Sanger  |   4586 | 4187 |      63274 |     141 |      3070846 |        28 | 4602968 |
@@ -501,3 +498,238 @@ cat stat.md
 | PE_Sanger     |   4705 | 4042 |      19435 |     412 |        21957 |       359 | 4595684 |
 | PE            |   4705 | 4043 |      20826 |     407 |        34421 |       278 | 4595684 |
 | superreads    |   4705 | 4043 |            |         |              |           | 4595684 |
+
+* 有足够多的 long reads 支持下, 不需要 short jump.
+
+## E. coli sampling
+
+### Download
+
+* N50: 151
+* S: 865,149,970
+* C: 5,729,470
+
+* Real: 4,641,652
+
+```bash
+mkdir -p ~/data/dna-seq/e_coli/superreads/MiSeq
+cd ~/data/dna-seq/e_coli/superreads/MiSeq
+
+wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
+
+faops n50 -S -C MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+
+curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_000913.3&rettype=fasta&retmode=txt" \
+    > NC_000913.fa
+faops n50 -N 0 -S NC_000913.fa
+```
+
+### Down sampling
+
+过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
+
+> Very highly-represented sequences (>1000X) can cause problems for SGA... In these cases, it is
+> worth considering pre-filtering the data...
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ];
+    then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### Generate super-reads
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ];
+    then
+        continue     
+    fi
+    
+    pushd ${DIR_COUNT}
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 8
+    popd
+done
+```
+
+### Stats of super-reads
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+    "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "#reads" "RunTime" "SumSR" "SR/EstG" \
+    > ~/data/dna-seq/e_coli/superreads/stat.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> ~/data/dna-seq/e_coli/superreads/stat.md
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    pushd ${DIR_COUNT}
+    SECS=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
+    EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
+    SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        $( basename $( pwd ) ) \
+        $( if [[ -e pe.renamed.fastq ]]; then du -h pe.renamed.fastq | cut -f1; else echo 0; fi ) \
+        $( du -h pe.cor.fa | cut -f1 ) \
+        $( cat environment.sh \
+            | perl -n -e '/PE_AVG_READ_LENGTH=\"(\d+)\"/ and print $1' ) \
+        $( cat environment.sh \
+            | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
+        ${EST_G} \
+        $( cat environment.sh \
+            | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
+        $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
+        ${SUM_SR} \
+        $( perl -e "printf qq{%.2f}, ${SUM_SR} * 1.0 / ${EST_G}" ) \
+        >> ~/data/dna-seq/e_coli/superreads/stat.md
+    popd
+done
+
+cat stat.md
+```
+
+| Name          | fqSize | faSize | Length | Kmer |    EstG | #reads |   RunTime |    SumSR | SR/EstG |
+|:--------------|-------:|-------:|-------:|-----:|--------:|-------:|----------:|---------:|--------:|
+| MiSeq_50000   |    31M |    15M |    151 |   75 | 2848356 |  15009 | 0:00'56'' |  2432529 |    0.85 |
+| MiSeq_100000  |    61M |    33M |    151 |   75 | 4283432 |  23894 | 0:01'19'' |  4442346 |    1.04 |
+| MiSeq_150000  |    91M |    49M |    151 |   75 | 4525464 |  18242 | 0:01'38'' |  4880895 |    1.08 |
+| MiSeq_200000  |   121M |    66M |    151 |   75 | 4570010 |  14079 | 0:01'24'' |  5740960 |    1.26 |
+| MiSeq_300000  |   181M |    98M |    151 |   75 | 4604273 |  14619 | 0:01'39'' |  9248681 |    2.01 |
+| MiSeq_400000  |   241M |   131M |    151 |   75 | 4637990 |  15852 | 0:01'56'' | 10223031 |    2.20 |
+| MiSeq_500000  |   302M |   164M |    151 |   75 | 4673825 |  17386 | 0:02'17'' | 10663685 |    2.28 |
+| MiSeq_600000  |   362M |   197M |    151 |   75 | 4720834 |  19576 | 0:02'31'' | 10996696 |    2.33 |
+| MiSeq_700000  |   423M |   229M |    151 |   75 | 4769693 |  21103 | 0:04'09'' | 11244264 |    2.36 |
+| MiSeq_800000  |   483M |   262M |    151 |   75 | 4819275 |  23685 | 0:03'00'' | 11668035 |    2.42 |
+| MiSeq_900000  |   544M |   295M |    151 |   75 | 4869460 |  25744 | 0:03'11'' | 11959177 |    2.46 |
+| MiSeq_1000000 |   604M |   328M |    151 |   75 | 4933858 |  28278 | 0:03'33'' | 12271938 |    2.49 |
+| MiSeq_1200000 |   725M |   393M |    151 |   75 | 5052478 |  33423 | 0:04'09'' | 12929921 |    2.56 |
+| MiSeq_1400000 |   846M |   459M |    151 |   75 | 5183791 |  39503 | 0:04'22'' | 13405411 |    2.59 |
+| MiSeq_1600000 |   967M |   525M |    151 |   75 | 5326650 |  46014 | 0:04'58'' | 14100368 |    2.65 |
+| MiSeq_1800000 |   1.1G |   590M |    151 |   75 | 5460717 |  54170 | 0:05'34'' | 14724645 |    2.70 |
+| MiSeq_2000000 |   1.2G |   656M |    151 |   75 | 5621863 |  62178 | 0:06'16'' | 15468429 |    2.75 |
+| MiSeq_3000000 |   1.8G |   983M |    151 |   75 | 6490892 | 107693 | 0:10'39'' | 18695968 |    2.88 |
+| MiSeq_4000000 |   2.4G |   1.3G |    151 |   75 | 7492813 | 159719 | 0:12'15'' | 22406939 |    2.99 |
+| MiSeq_5000000 |   3.0G |   1.6G |    151 |   75 | 8630397 | 215063 | 0:18'20'' | 26685370 |    3.09 |
+
+Columns:
+
+* fqSize - pe.renamed.fastq
+* faSize - pe.cor.fa
+* Length (PE_AVG_READ_LENGTH), Kmer, EstG (ESTIMATED_GENOME_SIZE), and #reads (TOTAL_READS) from
+  `environment.sh`
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+REAL_G=4641652
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+    "Name" \
+    "TotalFq" "TotalFa" "RatioDiscard" "TotalSubs" "RatioSubs" \
+    "RealG" "CovFq" "CovFa" \
+    "EstG" "SumSR" "Est/Real" "SumSR/Real" "N50SR" \
+    > ~/data/dna-seq/e_coli/superreads/stat2.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> ~/data/dna-seq/e_coli/superreads/stat2.md
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    pushd ${DIR_COUNT}
+    
+    TOTAL_FQ=$( if [[ -e pe.renamed.fastq ]]; then faops n50 -H -N 0 -S pe.renamed.fastq; else echo 0; fi )
+    TOTAL_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
+    EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
+    SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta )
+    N50_SR=$( faops n50 -H -N 50 work1/superReadSequences.fasta )
+    TOTAL_SUBS=$( cat pe.cor.fa | tr ' ' '\n' | grep ":sub:" | wc -l )
+    
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        $( basename $( pwd ) ) \
+        \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_FQ})") \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_FA})") \
+        $( perl -e "printf qq{%.4f}, 1 - ${TOTAL_FA} / ${TOTAL_FQ}" ) \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_SUBS})") \
+        $( perl -e "printf qq{%.4f}, ${TOTAL_SUBS} / ${TOTAL_FA}" ) \
+        \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${REAL_G})") \
+        $( perl -e "printf qq{%.1f}, ${TOTAL_FQ} / ${REAL_G}" ) \
+        $( perl -e "printf qq{%.1f}, ${TOTAL_FA} / ${REAL_G}" ) \
+        \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G})") \
+        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR})") \
+        $( perl -e "printf qq{%.2f}, ${EST_G} / ${REAL_G}" ) \
+        $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${REAL_G}" ) \
+        ${N50_SR} \
+        >> ~/data/dna-seq/e_coli/superreads/stat2.md
+    popd
+done
+
+cat stat2.md
+```
+
+| Name          | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs | RealG | CovFq | CovFa |  EstG |  SumSR | Est/Real | SumSR/Real | N50SR |
+|:--------------|--------:|--------:|-------------:|----------:|----------:|------:|------:|------:|------:|-------:|---------:|-----------:|------:|
+| MiSeq_50000   |   14.4M |  12.87M |       0.1061 |    57.03K |    0.0043 | 4.43M |   3.3 |   2.9 | 2.72M |  2.32M |     0.61 |       0.52 |   375 |
+| MiSeq_100000  |   28.8M |  28.12M |       0.0238 |   154.15K |    0.0054 | 4.43M |   6.5 |   6.4 | 4.08M |  4.24M |     0.92 |       0.96 |   874 |
+| MiSeq_150000  |   43.2M |  42.28M |       0.0212 |   245.39K |    0.0057 | 4.43M |   9.8 |   9.6 | 4.32M |  4.65M |     0.97 |       1.05 |  2366 |
+| MiSeq_200000  |   57.6M |  56.42M |       0.0205 |   328.01K |    0.0057 | 4.43M |  13.0 |  12.7 | 4.36M |  5.48M |     0.98 |       1.24 |  5885 |
+| MiSeq_300000  |   86.4M |  84.66M |       0.0202 |   495.96K |    0.0057 | 4.43M |  19.5 |  19.1 | 4.39M |  8.82M |     0.99 |       1.99 |  7066 |
+| MiSeq_400000  |  115.2M | 112.89M |       0.0201 |    654.4K |    0.0057 | 4.43M |  26.0 |  25.5 | 4.42M |  9.75M |     1.00 |       2.20 |  5514 |
+| MiSeq_500000  |    144M |  141.2M |       0.0195 |   818.88K |    0.0057 | 4.43M |  32.5 |  31.9 | 4.46M | 10.17M |     1.01 |       2.30 |  4200 |
+| MiSeq_600000  | 172.81M | 169.44M |       0.0195 |   977.41K |    0.0056 | 4.43M |  39.0 |  38.3 |  4.5M | 10.49M |     1.02 |       2.37 |  3423 |
+| MiSeq_700000  | 201.61M | 197.72M |       0.0193 |     1.11M |    0.0056 | 4.43M |  45.5 |  44.7 | 4.55M | 10.72M |     1.03 |       2.42 |  2922 |
+| MiSeq_800000  | 230.41M | 225.95M |       0.0194 |     1.26M |    0.0056 | 4.43M |  52.1 |  51.0 |  4.6M | 11.13M |     1.04 |       2.51 |  2583 |
+| MiSeq_900000  | 259.21M | 254.27M |       0.0190 |     1.41M |    0.0056 | 4.43M |  58.6 |  57.4 | 4.64M | 11.41M |     1.05 |       2.58 |  2330 |
+| MiSeq_1000000 | 288.01M | 282.53M |       0.0190 |     1.57M |    0.0056 | 4.43M |  65.1 |  63.8 | 4.71M |  11.7M |     1.06 |       2.64 |  2057 |
+| MiSeq_1200000 | 345.61M | 339.12M |       0.0188 |     1.87M |    0.0055 | 4.43M |  78.1 |  76.6 | 4.82M | 12.33M |     1.09 |       2.79 |  1796 |
+| MiSeq_1400000 | 403.21M | 395.72M |       0.0186 |     2.17M |    0.0055 | 4.43M |  91.1 |  89.4 | 4.94M | 12.78M |     1.12 |       2.89 |  1528 |
+| MiSeq_1600000 | 460.82M | 452.32M |       0.0184 |     2.47M |    0.0055 | 4.43M | 104.1 | 102.2 | 5.08M | 13.45M |     1.15 |       3.04 |  1377 |
+| MiSeq_1800000 | 518.42M |  508.9M |       0.0184 |     2.76M |    0.0054 | 4.43M | 117.1 | 115.0 | 5.21M | 14.04M |     1.18 |       3.17 |  1233 |
+| MiSeq_2000000 | 576.02M | 565.54M |       0.0182 |     3.06M |    0.0054 | 4.43M | 130.1 | 127.8 | 5.36M | 14.75M |     1.21 |       3.33 |  1117 |
+| MiSeq_3000000 | 864.03M | 848.73M |       0.0177 |     4.48M |    0.0053 | 4.43M | 195.2 | 191.7 | 6.19M | 17.83M |     1.40 |       4.03 |   730 |
+| MiSeq_4000000 |   1.13G |   1.11G |       0.0173 |     5.88M |    0.0052 | 4.43M | 260.3 | 255.8 | 7.15M | 21.37M |     1.61 |       4.83 |   543 |
+| MiSeq_5000000 |   1.41G |   1.38G |       0.0170 |     7.22M |    0.0051 | 4.43M | 325.3 | 319.8 | 8.23M | 25.45M |     1.86 |       5.75 |   439 |
+
+* Illumina reads 的分布是有偏性的. 极端 GC 区域, 结构复杂区域都会得到较低的 fq 分值, 本应被 trim 掉.
+  但覆盖度过高时, 这些区域之间的 reads 相互支持, 被保留下来的概率大大增加.
+    * RatioDiscard 在 CovFq 大于 100 倍时, 快速下降.
+* Illumina reads 错误率约为 1% 不到一点. 当覆盖度过高时, 错误的点重复出现的概率要比完全无偏性的情况大一些.
+    * 理论上 RatioSubs 应该是恒定值, 但当 CovFq 大于 100 倍时, 这个值在下降, 也就是这些错误的点相互支持, 躲过了
+      Kmer 纠错.
+* 直接的反映就是 EstG 过大, SumSR 过大.
+* 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
+* 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
