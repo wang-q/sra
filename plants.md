@@ -28,12 +28,18 @@ faops n50 -S -C MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-for count in 200000 500000 1000000 2000000 4000000;
+for count in 50000 100000 150000 200000 400000 600000 800000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
 do
     echo
     echo "==> Reads ${count}"
     DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
     mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ];
+    then
+        continue     
+    fi
+    
     seqtk sample -s${count} \
         ~/data/dna-seq/e_coli/superreads/MiSeq/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz ${count} \
         | gzip > ${DIR_COUNT}/R1.fq.gz
@@ -48,18 +54,23 @@ done
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-for count in 200000 500000 1000000 2000000 4000000;
+for count in 50000 100000 150000 200000 400000 600000 800000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
 do
     echo
     echo "==> Reads ${count}"
     DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    cd ${DIR_COUNT}
-
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ];
+    then
+        continue     
+    fi
+    
+    pushd ${DIR_COUNT}
     perl ~/Scripts/sra/superreads.pl \
         R1.fq.gz \
         R2.fq.gz \
         -s 300 -d 30 -p 8
-
+    popd
 done
 ```
 
@@ -69,15 +80,15 @@ done
 cd ~/data/dna-seq/e_coli/superreads/
 
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-    "Name" "fqSize" "faSize" "Length" "Kmer" "Est.Genome" "#reads" "RunTime" "SumSR" "SR/Est.G" \
-    > stat.md
-printf "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
+    "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "#reads" "RunTime" "SumSR" "SR/EstG" \
+    > ~/data/dna-seq/e_coli/superreads/stat.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> ~/data/dna-seq/e_coli/superreads/stat.md
 
-for count in 200000 500000 1000000 2000000 4000000;
+for count in 50000 100000 150000 200000 400000 600000 800000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
 do
     DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    cd ${DIR_COUNT}
-
+    
+    pushd ${DIR_COUNT}
     printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | | \n" \
         $( basename $( pwd ) ) \
         $( if [[ -e pe.renamed.fastq ]]; then du -h pe.renamed.fastq | cut -f1; else echo 0; fi ) \
@@ -92,20 +103,43 @@ do
             | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
         $( secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh)); \
             printf "%d:%02d'%02d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60)) ) \
-        $( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
-done >> stat.md
+        $( faops n50 -H -N 0 -S work1/superReadSequences.fasta) \
+        >> ~/data/dna-seq/e_coli/superreads/stat.md
+    popd
+done
 
-cd ~/data/dna-seq/e_coli/superreads/
 cat stat.md
 ```
 
-| Name          | fqSize | faSize | Length | Kmer | Est.Genome | #reads |   RunTime |    SumSR | SR/Est.G |
-|:--------------|-------:|-------:|-------:|-----:|-----------:|-------:|----------:|---------:|---------:|
-| MiSeq_200000  |   121M |    66M |    151 |   75 |    4570010 |  14079 | 0:01'24'' |  5740960 |          |
-| MiSeq_500000  |   302M |   164M |    151 |   75 |    4673825 |  17390 | 0:02'14'' | 10663685 |          |
-| MiSeq_1000000 |   604M |   328M |    151 |   75 |    4933858 |  28278 | 0:03'33'' | 12271938 |          |
-| MiSeq_2000000 |   1.2G |   656M |    151 |   75 |    5621863 |  62178 | 0:06'16'' | 15468429 |          |
-| MiSeq_4000000 |   2.4G |   1.3G |    151 |   75 |    7492813 | 159719 | 0:12'15'' | 22406939 |          |
+| Name          | fqSize | faSize | Length | Kmer |    EstG | #reads |   RunTime |    SumSR | SR/EstG |
+|:--------------|-------:|-------:|-------:|-----:|--------:|-------:|----------:|---------:|--------:|
+| MiSeq_50000   |    31M |    15M |    151 |   75 | 2848356 |  15009 | 0:00'56'' |  2432529 |         |
+| MiSeq_100000  |    61M |    33M |    151 |   75 | 4283432 |  23894 | 0:01'19'' |  4442346 |         |
+| MiSeq_150000  |    91M |    49M |    151 |   75 | 4525464 |  18242 | 0:01'38'' |  4880895 |         |
+| MiSeq_200000  |   121M |    66M |    151 |   75 | 4570010 |  14079 | 0:01'24'' |  5740960 |         |
+| MiSeq_400000  |   241M |   131M |    151 |   75 | 4637990 |  15852 | 0:01'56'' | 10223031 |         |
+| MiSeq_600000  |   362M |   197M |    151 |   75 | 4720834 |  19576 | 0:02'31'' | 10996696 |         |
+| MiSeq_800000  |   483M |   262M |    151 |   75 | 4819275 |  23685 | 0:03'00'' | 11668035 |         |
+| MiSeq_1000000 |   604M |   328M |    151 |   75 | 4933858 |  28278 | 0:03'33'' | 12271938 |         |
+| MiSeq_1200000 |   725M |   393M |    151 |   75 | 5052478 |  33423 | 0:04'09'' | 12929921 |         |
+| MiSeq_1400000 |   846M |   459M |    151 |   75 | 5183791 |  39503 | 0:04'22'' | 13405411 |         |
+| MiSeq_1600000 |   967M |   525M |    151 |   75 | 5326650 |  46014 | 0:04'58'' | 14100368 |         |
+| MiSeq_1800000 |   1.1G |   590M |    151 |   75 | 5460717 |  54170 | 0:05'34'' | 14724645 |         |
+| MiSeq_2000000 |   1.2G |   656M |    151 |   75 | 5621863 |  62178 | 0:06'16'' | 15468429 |         |
+| MiSeq_3000000 |   1.8G |   983M |    151 |   75 | 6490892 | 107693 | 0:10'39'' | 18695968 |         |
+| MiSeq_4000000 |   2.4G |   1.3G |    151 |   75 | 7492813 | 159719 | 0:12'15'' | 22406939 |         |
+| MiSeq_5000000 |   3.0G |   1.6G |    151 |   75 | 8630397 | 215063 | 0:18'20'' | 26685370 |         |
+
+Columns:
+
+* fqSize - pe.renamed.fastq
+* faSize - pe.cor.fa
+* Length (PE_AVG_READ_LENGTH), Kmer, EstG (ESTIMATED_GENOME_SIZE), and #reads (TOTAL_READS) from
+  `environment.sh`
+
+* Illumina Reads 错误率约为 1% 不到一点. 它的分布是有偏性的, 所以当覆盖度过高时,
+  错误的点重复出现的概率要比完全无偏性的情况要高很多. 这些错误的点相互支持, 躲过了 Kmer 纠错. 直接的反映就是 EstG
+  过大, SumSR 过大.
 
 ## super-reads
 
@@ -298,11 +332,6 @@ cd ~/zlc/Oropetium_thomaeum/illumina/masurca
 | moli_200M  |         |         |        |      |             |           |            |            |          |
 | moli_100M  |         |         |        |      |             |           |            |            |          |
 
-Columns:
-
-* fq size - pe.renamed.fastq
-* fa size - pe.cor.fa
-* Length, Kmer, Est. Genome, and #reads from `environment.sh`
 
 ```bash
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | | \n" \
