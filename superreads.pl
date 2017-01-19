@@ -13,7 +13,7 @@ use IO::Zlib;
 #----------------------------------------------------------#
 
 my $description = <<'EOF';
-This script runs MaSuRCA (3.1.3) and prepares the long reads and unassembled reads files.
+This script runs MaSuRCA (3.2.1) and prepares the long reads and unassembled reads files.
 
 Modified from superreads.pl in StringTie.
 
@@ -30,11 +30,12 @@ EOF
     $description,
     [ 'help|h', 'display this message' ],
     [],
-    [ 'size|s=i',     'fragment size',                    { default => 300, }, ],
-    [ 'std|d=i',      'fragment size standard deviation', { default => 20, }, ],
-    [ 'parallel|p=i', 'number of threads to use',         { default => 8, }, ],
-    [ 'jf|j=i',       'jellyfish hash size',              { default => 500_000_000, }, ],
-    [ 'prefix|r=s',   'prefix for paired-reads',          { default => 'pe', }, ],
+    [ 'size|s=i',     'fragment size',                        { default => 300, }, ],
+    [ 'std|d=i',      'fragment size standard deviation',     { default => 20, }, ],
+    [ 'parallel|p=i', 'number of threads to use',             { default => 8, }, ],
+    [ 'jf=i',         'jellyfish hash size',                  { default => 500_000_000, }, ],
+    [ 'kmer=s',       'kmer size to be used for super reads', { default => 'auto', }, ],
+    [ 'prefix|r=s',   'prefix for paired-reads',              { default => 'pe', }, ],
     [ 'long|l',       'create long reads', ],
     [   'masurca|m=s',
         'masurca directory',
@@ -82,10 +83,10 @@ PE= [% prefix %] [% size %] [% std %] [% r1file %] [% r2file %]
 END
 
 PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB
+CA_PARAMETERS = ovlMerSize=30 cgwErrorRate=0.15
 LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
+EXTEND_JUMP_READS = 0
+GRAPH_KMER_SIZE = [% kmer %]
 NUM_THREADS = [% parallel %]
 JF_SIZE = [% jf %]
 END
@@ -103,6 +104,7 @@ EOF
             r2file   => $ARGV[1],
             parallel => $opt->{parallel},
             jf       => $opt->{jf},
+            kmer     => $opt->{kmer},
         },
         path("sr_config.txt")->stringify
     ) or die Template->error;
