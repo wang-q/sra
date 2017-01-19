@@ -1,5 +1,112 @@
 # Plants 2+3
 
+## E. coli sampling
+
+### Download
+
+* N50: 151
+* S: 865,149,970
+* C: 5,729,470
+
+```bash
+mkdir -p ~/data/dna-seq/e_coli/superreads/MiSeq
+cd ~/data/dna-seq/e_coli/superreads/MiSeq
+
+wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
+
+faops n50 -S -C MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+```
+
+### Down sampling
+
+过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
+
+> Very highly-represented sequences (>1000X) can cause problems for SGA... In these cases, it is
+> worth considering pre-filtering the data...
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 200000 500000 1000000 2000000 4000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    mkdir -p ${DIR_COUNT}
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### Generate super-reads
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 200000 500000 1000000 2000000 4000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    cd ${DIR_COUNT}
+
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 8
+
+done
+```
+
+### Stats of super-reads
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+    "Name" "fqSize" "faSize" "Length" "Kmer" "Est.Genome" "#reads" "RunTime" "SumSR" "SR/Est.G" \
+    > stat.md
+printf "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> stat.md
+
+for count in 200000 500000 1000000 2000000 4000000;
+do
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    cd ${DIR_COUNT}
+
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | | \n" \
+        $( basename $( pwd ) ) \
+        $( if [[ -e pe.renamed.fastq ]]; then du -h pe.renamed.fastq | cut -f1; else echo 0; fi ) \
+        $( du -h pe.cor.fa | cut -f1 ) \
+        $( cat environment.sh \
+            | perl -n -e '/PE_AVG_READ_LENGTH=\"(\d+)\"/ and print $1' ) \
+        $( cat environment.sh \
+            | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
+        $( cat environment.sh \
+            | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' ) \
+        $( cat environment.sh \
+            | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
+        $( secs=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh)); \
+            printf "%d:%02d'%02d''\n" $(($secs/3600)) $(($secs%3600/60)) $(($secs%60)) ) \
+        $( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
+done >> stat.md
+
+cd ~/data/dna-seq/e_coli/superreads/
+cat stat.md
+```
+
+| Name          | fqSize | faSize | Length | Kmer | Est.Genome | #reads |   RunTime |    SumSR | SR/Est.G |
+|:--------------|-------:|-------:|-------:|-----:|-----------:|-------:|----------:|---------:|---------:|
+| MiSeq_200000  |   121M |    66M |    151 |   75 |    4570010 |  14079 | 0:01'24'' |  5740960 |          |
+| MiSeq_500000  |   302M |   164M |    151 |   75 |    4673825 |  17390 | 0:02'14'' | 10663685 |          |
+| MiSeq_1000000 |   604M |   328M |    151 |   75 |    4933858 |  28278 | 0:03'33'' | 12271938 |          |
+| MiSeq_2000000 |   1.2G |   656M |    151 |   75 |    5621863 |  62178 | 0:06'16'' | 15468429 |          |
+| MiSeq_4000000 |   2.4G |   1.3G |    151 |   75 |    7492813 | 159719 | 0:12'15'' | 22406939 |          |
+
 ## super-reads
 
 ###  Ler-0-1, SRR3166543
@@ -116,6 +223,11 @@ perl ~/Scripts/sra/superreads.pl \
 
 ### moli, 茉莉
 
+SR had failed twice due to the calculating results from awk were larger than the MAX_INT
+
+* for jellyfish
+* for --number-reads of `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
+
 ```bash
 mkdir -p /home/wangq/zlc/medfood/superreads/moli
 cd ~/zlc/medfood/superreads/moli
@@ -123,7 +235,42 @@ cd ~/zlc/medfood/superreads/moli
 perl ~/Scripts/sra/superreads.pl \
     ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
     ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
+    -s 300 -d 30 -p 16 --jf 10_000_000_000 --kmer 77
+```
+
+```bash
+mkdir -p /home/wangq/zlc/medfood/superreads/moli_200M
+cd ~/zlc/medfood/superreads/moli_200M
+
+# 200 M Reads
+zcat ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
+    | head -n 800000000 \
+    | gzip > R1.fq.gz
+
+zcat ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
+    | head -n 800000000 \
+    | gzip > R2.fq.gz
+
+perl ~/Scripts/sra/superreads.pl \
+    R1.fq.gz \
+    R2.fq.gz \
     -s 300 -d 30 -p 16 --jf 10_000_000_000
+```
+
+```bash
+mkdir -p /home/wangq/zlc/medfood/superreads/moli_100M
+cd ~/zlc/medfood/superreads/moli_100M
+
+# 100 M Reads
+seqtk sample -2 -s100 ~/zlc/medfood/moli/lane5ml_R1.fq.gz 100000000 \
+    | gzip > R1.fq.gz
+seqtk sample -2 -s100 ~/zlc/medfood/moli/lane5ml_R2.fq.gz 100000000 \
+    | gzip > R2.fq.gz
+
+perl ~/Scripts/sra/superreads.pl \
+    R1.fq.gz \
+    R2.fq.gz \
+    -s 300 -d 30 -p 16 --jf 10_000_000_000 --kmer 71
 ```
 
 ### Otho, Oropetium thomaeum, 复活草
@@ -146,8 +293,10 @@ cd ~/zlc/Oropetium_thomaeum/illumina/masurca
 | F354       |   36.2G |     20G |    150 |   49 |   133802786 |  11574363 |  6:06'09'' |  351863887 |     2.63 |
 | F357       |   43.5G |     24G |    150 |   49 |   338905264 |  22703546 |  5:41'49'' |  796466152 |     2.35 |
 | F1084      |   33.9G |     19G |    150 |   75 |   199395661 |   9895988 |  4:32'01'' |  570760287 |     2.86 |
-| moli       |    258G |    137G |    150 |  105 |   851215891 |           |            |            |          |
 | Otho       |     68G |     35G |    111 |   77 |   488134842 | 130642636 | 58:13'35'' | 1041518135 |     2.13 |
+| moli       |    258G |    137G |    150 |  105 |   851215891 |           |            |            |          |
+| moli_200M  |         |         |        |      |             |           |            |            |          |
+| moli_100M  |         |         |        |      |             |           |            |            |          |
 
 Columns:
 
