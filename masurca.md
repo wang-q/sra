@@ -1171,56 +1171,23 @@ cat MiSeq/NC_000913.fa \
     ' \
     > NC_000913.fa
 
-# add a blank line after sequences
-faops filter -b trimmed_800000/sr/pe.anchor.fa pe.anchor.fa
-
-perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f pe.anchor.fa -g NC_000913.fa \
-    --length 500 -o pe.replace.tsv
-
-cat pe.replace.tsv \
-    | perl -nla -e '/\(\-\)/ and print $F[0];' \
-    > rc.list
-
-faops some -l 0 -i pe.anchor.fa rc.list stdout \
-    > pe.strand.fa
-faops some pe.anchor.fa rc.list stdout \
-    | faops rc -l 0 stdin stdout \
-    >> pe.strand.fa
-
-# recreate pe.replace.tsv. now all positive strands
-perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f pe.strand.fa -g NC_000913.fa \
-    --length 500 -o pe.replace.tsv
-
-rangeops sort pe.replace.tsv -o stdout
-
-faops filter -b pe.strand.fa pe.strand.fas
-    
-fasops replace pe.strand.fas pe.replace.tsv -o pe.replace.fas
-
-faops size pe.replace.fas | cut -f 1 > pe.heads.list
-rangeops sort pe.heads.list -o stdout > pe.heads.sort
-grep -Fx -f pe.heads.sort -v pe.heads.list >> pe.heads.sort
-
-for word in $(cat pe.heads.sort); do
-    faops some -l 0 pe.replace.fas <(echo ${word}) stdout
-done > pe.sort.fa
-
-faops n50 -N 0 -C pe.anchor.fa
-faops n50 -N 0 -C pe.sort.fa
-wc -l pe.replace.tsv
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/sra/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa NC_000913.fa pe.${part}
+    nucmer -l 200 NC_000913.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
 
 #brew install mummer
 #brew install homebrew/versions/gnuplot4
-nucmer -l 500 NC_000913.fa pe.sort.fa
-mummerplot -png out.delta -p pe
 
-nucmer -l 500 NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
-mummerplot -png out.delta -p pacbio
+nucmer -l 200 NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
+mummerplot -png out.delta -p pacbio --medium
 
-cat NC_000913.fa pe.replace.fas > pe.all.fa
-mafft pe.all.fa
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
 ```
 
 ## Ler-0-2, SRR616965
