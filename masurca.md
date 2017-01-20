@@ -997,7 +997,10 @@ cat stat2.md
 * 直接的反映就是 EstG 过大, SumSR 过大.
 * 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
 * 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
-* trim 的效果比 filter 好. 可能是留下了更多二代测序效果较差的位置.
+* trim 的效果比 filter 好. 可能是留下了更多二代测序效果较差的位置. 最大的 EstG, trim 的更接近真实值
+    * Real    - 4641652
+    * Trimmed - 4621800 (EstG)
+    * Filter  - 4577674 (EstG)
 
 ### Create anchors
 
