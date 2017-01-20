@@ -2,8 +2,6 @@
 
 USAGE="Usage: $0 RESULT_DIR N_THREADS TOLERATE_SUBS MIN_LENGTH_READ"
 
-# bash anchor.sh ~/data/rna-seq/medfood/process/Arabidopsis_thaliana/result/Trinity.fasta 100 1000 2000
-
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
     exit 1
