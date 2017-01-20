@@ -269,6 +269,6 @@ find . -type f -name "pe.linking.frg" | xargs rm
 find . -type f -name "superReadSequences_shr.frg" | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
 find . -type f -name "*.tmp" | xargs rm
-find . -type f -name "pe.renamed.fastq" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
 
 ```
