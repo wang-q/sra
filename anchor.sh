@@ -70,8 +70,8 @@ log_debug () {
 # set default parameters
 RESULT_DIR=$1
 N_THREADS=${2:-8}
-TOLERATE_SUBS=${2:-true}
-MIN_LENGTH_READ=${3:-100}
+TOLERATE_SUBS=${3:-true}
+MIN_LENGTH_READ=${4:-100}
 
 log_info "Parameters"
 log_debug "    RESULT_DIR=${RESULT_DIR}"
