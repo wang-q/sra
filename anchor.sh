@@ -91,7 +91,11 @@ fi
 split -n10 -d pe.strict.txt pe.part
 
 # No Ns; longer than MIN_LENGTH_READ (70% of read length)
-rm pe.strict.fa
+if [ -e pe.strict.fa ];
+then
+    rm pe.strict.fa
+fi
+
 for part in $(printf "%.2d " {0..9})
 do
     faops some -l 0 pe.cor.fa pe.part${part} stdout \
@@ -151,7 +155,11 @@ cat unmapped.sam \
 # Too large for `faops some`
 split -n10 -d pe.unmapped.txt pe.part
 
-rm pe.unmapped.fa
+if [ -e pe.unmapped.fa ];
+then
+    rm pe.unmapped.fa
+fi
+
 for part in $(printf "%.2d " {0..9})
 do
     faops some -l 0 pe.strict.fa pe.part${part} stdout
