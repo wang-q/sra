@@ -1163,14 +1163,6 @@ http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-usi
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-# add a blank line after sequences
-cat trimmed_800000/sr/pe.anchor.fa \
-    | perl -nl -e '
-        /^>/ and print;
-        /^\w/ and print qq{$_\n};
-    ' \
-    > pe.anchor.fa
-
 # simplify header
 cat MiSeq/NC_000913.fa \
     | perl -nl -e '
@@ -1178,6 +1170,9 @@ cat MiSeq/NC_000913.fa \
         print;
     ' \
     > NC_000913.fa
+
+# add a blank line after sequences
+faops filter -b trimmed_800000/sr/pe.anchor.fa pe.anchor.fa
 
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f pe.anchor.fa -g NC_000913.fa \
@@ -1193,36 +1188,35 @@ faops some pe.anchor.fa rc.list stdout \
     | faops rc -l 0 stdin stdout \
     >> pe.strand.fa
 
+# recreate pe.replace.tsv. now all positive strands
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f pe.strand.fa -g NC_000913.fa \
     --length 500 -o pe.replace.tsv
 
-cat pe.strand.fa \
-    | perl -nl -e '
-        /^>/ and print;
-        /^\w/ and print qq{$_\n};
-    ' \
-    > pe.strand.fas
+rangeops sort pe.replace.tsv -o stdout
+
+faops filter -b pe.strand.fa pe.strand.fas
     
 fasops replace pe.strand.fas pe.replace.tsv -o pe.replace.fas
 
-perl -nli -e '/^>.+:(\d+)/ and print qq{>$1} and next; print;' pe.replace.fas
+faops size pe.replace.fas | cut -f 1 > pe.heads.list
+rangeops sort pe.heads.list -o stdout > pe.heads.sort
+grep -Fx -f pe.heads.sort -v pe.heads.list >> pe.heads.sort
 
-faops filter -l 0 pe.replace.fas pe.replace2.fa
-
-cat pe.replace.fas | grep '>' | sed 's/>//' | sort -n > order.list
-fasops subset pe.replace2.fa order.list -o pe.sort.fa
+for word in $(cat pe.heads.sort); do
+    faops some -l 0 pe.replace.fas <(echo ${word}) stdout
+done > pe.sort.fa
 
 faops n50 -N 0 -C pe.anchor.fa
 faops n50 -N 0 -C pe.sort.fa
 wc -l pe.replace.tsv
 
-brew install mummer
-brew install homebrew/versions/gnuplot4
-nucmer NC_000913.fa pe.sort.fa
+#brew install mummer
+#brew install homebrew/versions/gnuplot4
+nucmer -l 500 NC_000913.fa pe.sort.fa
 mummerplot -png out.delta -p pe
 
-nucmer NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
+nucmer -l 500 NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
 mummerplot -png out.delta -p pacbio
 
 cat NC_000913.fa pe.replace.fas > pe.all.fa
