@@ -505,24 +505,107 @@ cat stat.md
 
 ### Download
 
-* N50: 151
-* S: 865,149,970
-* C: 5,729,470
+* Real:
 
-* Real: 4,641,652
+    * S: 4,641,652
+
+* Original:
+
+    * N50: 151
+    * S: 865,149,970
+    * C: 5,729,470
+
+* Trimmed:
+
+    * N50: 151
+    * S: 673,476,526
+    * C: 4,575,516
 
 ```bash
 mkdir -p ~/data/dna-seq/e_coli/superreads/MiSeq
 cd ~/data/dna-seq/e_coli/superreads/MiSeq
 
+curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_000913.3&rettype=fasta&retmode=txt" \
+    > NC_000913.fa
+faops n50 -N 0 -S NC_000913.fa
+
 wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
 wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
 
 faops n50 -S -C MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+```
 
-curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_000913.3&rettype=fasta&retmode=txt" \
-    > NC_000913.fa
-faops n50 -N 0 -S NC_000913.fa
+```bash
+cd ~/data/dna-seq/e_coli/superreads/MiSeq
+
+cat <<EOF > illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>solexa-forward
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+>nextera-forward-read-contam
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+>nextera-reverse-read-contam
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+>solexa-reverse
+AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+
+EOF
+
+fastqc -t 8 \
+    MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz \
+    MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
+rm *_fastqc.zip
+
+mkdir trimmed
+
+# scythe (pair end)
+scythe \
+    MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a illumina_adapters.fa \
+    -m trimmed/R1.matches.txt \
+    --quiet \
+    | gzip -c --fast \
+    > trimmed/R1.scythe.fq.gz
+
+scythe \
+    MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a illumina_adapters.fa \
+    -m trimmed/R2.matches.txt \
+    --quiet \
+    | gzip -c --fast \
+    > trimmed/R2.scythe.fq.gz
+
+# sickle (pair end)
+sickle pe \
+    -t sanger -l 100 -q 20 \
+    -f trimmed/R1.scythe.fq.gz \
+    -r trimmed/R2.scythe.fq.gz \
+    -o trimmed/R1.sickle.fq \
+    -p trimmed/R2.sickle.fq \
+    -s trimmed/single.sickle.fq
+
+find trimmed/ -type f -name "*.sickle.fq" | parallel -j 8 gzip -f
+
+fastqc -t 8 \
+    trimmed/R1.sickle.fq.gz \
+    trimmed/R2.sickle.fq.gz
+
+find . -type d -name "*fastqc" | sort | xargs rm -fr
+find . -type f -name "*_fastqc.zip" | sort | xargs rm
+find . -type f -name "*matches.txt" | sort | xargs rm
+find . -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
+
+faops n50 -S -C trimmed/R1.sickle.fq.gz
+
 ```
 
 ### Down sampling
@@ -556,6 +639,30 @@ do
 done
 ```
 
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ];
+    then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/trimmed/R1.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/e_coli/superreads/MiSeq/trimmed/R1.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
 ### Generate super-reads
 
 ```bash
@@ -566,6 +673,7 @@ do
     echo
     echo "==> Reads ${count}"
     DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
     
     if [ -e ${DIR_COUNT}/pe.cor.fa ];
     then
@@ -589,7 +697,8 @@ cd ~/data/dna-seq/e_coli/superreads/
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
     "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "#reads" "RunTime" "SumSR" "SR/EstG" \
     > ~/data/dna-seq/e_coli/superreads/stat.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> ~/data/dna-seq/e_coli/superreads/stat.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+    >> ~/data/dna-seq/e_coli/superreads/stat.md
 
 for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
 do
@@ -661,7 +770,8 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | 
     "RealG" "CovFq" "CovFa" \
     "EstG" "SumSR" "Est/Real" "SumSR/Real" "N50SR" \
     > ~/data/dna-seq/e_coli/superreads/stat2.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" >> ~/data/dna-seq/e_coli/superreads/stat2.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+    >> ~/data/dna-seq/e_coli/superreads/stat2.md
 
 for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
 do
@@ -733,3 +843,132 @@ cat stat2.md
 * 直接的反映就是 EstG 过大, SumSR 过大.
 * 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
 * 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
+
+### Create anchors
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ];
+    then
+        continue     
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 8 false 120
+done
+
+```
+
+Stats of anchors
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
+    "Name" \
+    "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR" \
+    > ~/data/dna-seq/e_coli/superreads/stat3.md
+printf "|:--|--:|--:|--:|--:|--:|--:|\n" \
+    >> ~/data/dna-seq/e_coli/superreads/stat3.md
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    pushd ${DIR_COUNT}/sr
+    COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
+    COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
+    printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
+        $( basename $( dirname $(pwd) ) ) \
+        ${COUNT_COR} \
+        ${COUNT_STRICT} \
+        $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
+        $( faops n50 -H -N 50 -S -C superReadSequences.fasta ) \
+        >> ~/data/dna-seq/e_coli/superreads/stat3.md
+    popd
+done
+
+cat stat3.md
+```
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+    "Name" \
+    "N50Anchor" "SumAnchor" "#anchor" \
+    "N50Anchor2" "SumAnchor2" "#anchor2" \
+    "N50Others" "SumOthers" "#others" \
+    > ~/data/dna-seq/e_coli/superreads/stat4.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+    >> ~/data/dna-seq/e_coli/superreads/stat4.md
+
+for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+do
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
+    
+    pushd ${DIR_COUNT}/sr
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        $( basename $( dirname $(pwd) ) ) \
+        $( faops n50 -H -N 50 -S -C pe.anchor.fa ) \
+        $( faops n50 -H -N 50 -S -C pe.anchor2.fa ) \
+        $( faops n50 -H -N 50 -S -C pe.others.fa ) \
+        >> ~/data/dna-seq/e_coli/superreads/stat4.md
+    popd
+done
+
+cat stat4.md
+```
+
+| Name          |  #cor.fa | #strict.fa | strict/cor | N50SR |    SumSR |   #SR |
+|:--------------|---------:|-----------:|-----------:|------:|---------:|------:|
+| MiSeq_50000   |   100000 |      76717 |     0.7672 |   375 |  2432529 |  7595 |
+| MiSeq_100000  |   200000 |     161610 |     0.8081 |   874 |  4442346 |  7265 |
+| MiSeq_150000  |   300000 |     240332 |     0.8011 |  2366 |  4880895 |  3425 |
+| MiSeq_200000  |   400000 |     320627 |     0.8016 |  5885 |  5740960 |  1823 |
+| MiSeq_300000  |   600000 |     479962 |     0.7999 |  7066 |  9248681 |  2098 |
+| MiSeq_400000  |   800000 |     641280 |     0.8016 |  5514 | 10223031 |  2981 |
+| MiSeq_500000  |  1000000 |     802104 |     0.8021 |  4200 | 10663685 |  3808 |
+| MiSeq_600000  |  1200000 |     963216 |     0.8027 |  3423 | 10996696 |  4785 |
+| MiSeq_700000  |  1400000 |    1125118 |     0.8037 |  2922 | 11244264 |  5662 |
+| MiSeq_800000  |  1600000 |    1286410 |     0.8040 |  2583 | 11668035 |  6626 |
+| MiSeq_900000  |  1800000 |    1449088 |     0.8050 |  2330 | 11959177 |  7413 |
+| MiSeq_1000000 |  2000000 |    1609161 |     0.8046 |  2057 | 12271938 |  8522 |
+| MiSeq_1200000 |  2400000 |    1935704 |     0.8065 |  1796 | 12929921 | 10364 |
+| MiSeq_1400000 |  2800000 |    2260464 |     0.8073 |  1528 | 13405411 | 12278 |
+| MiSeq_1600000 |  3200000 |    2586433 |     0.8083 |  1377 | 14100368 | 14388 |
+| MiSeq_1800000 |  3600000 |    2912306 |     0.8090 |  1233 | 14724645 | 16778 |
+| MiSeq_2000000 |  4000000 |    3239023 |     0.8098 |  1117 | 15468429 | 19143 |
+| MiSeq_3000000 |  6000000 |    4881446 |     0.8136 |   730 | 18695968 | 32523 |
+| MiSeq_4000000 |  8000000 |    6534196 |     0.8168 |   543 | 22406939 | 48244 |
+| MiSeq_5000000 | 10000000 |    8198162 |     0.8198 |   439 | 26685370 | 66799 |
+
+| Name          | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:--------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| MiSeq_50000   |      1304 |     20340 |      15 |       1355 |      12862 |        9 |       373 |   2399327 |    7571 |
+| MiSeq_100000  |      1674 |   1184783 |     714 |       1429 |     431987 |      298 |       592 |   2825576 |    6253 |
+| MiSeq_150000  |      2973 |   3108720 |    1196 |       2259 |     608083 |      281 |       792 |   1164092 |    1948 |
+| MiSeq_200000  |      5953 |   2776938 |     604 |       6601 |    1162604 |      234 |      5097 |   1801418 |     985 |
+| MiSeq_300000  |      5810 |    124911 |      28 |       7965 |    1074088 |      162 |      6978 |   8049682 |    1908 |
+| MiSeq_400000  |         0 |         0 |       0 |       6606 |     154187 |       29 |      5509 |  10068844 |    2952 |
+| MiSeq_500000  |         0 |         0 |       0 |       6237 |      25431 |        6 |      4197 |  10638254 |    3802 |
+| MiSeq_600000  |         0 |         0 |       0 |       2839 |       4756 |        2 |      3423 |  10991940 |    4783 |
+| MiSeq_700000  |         0 |         0 |       0 |       4190 |       4190 |        1 |      2920 |  11240074 |    5661 |
+| MiSeq_800000  |         0 |         0 |       0 |          0 |          0 |        0 |      2583 |  11668035 |    6626 |
+| MiSeq_900000  |         0 |         0 |       0 |          0 |          0 |        0 |      2330 |  11959177 |    7413 |
+| MiSeq_1000000 |         0 |         0 |       0 |          0 |          0 |        0 |      2057 |  12271938 |    8522 |
+| MiSeq_1200000 |         0 |         0 |       0 |          0 |          0 |        0 |      1796 |  12929921 |   10364 |
+| MiSeq_1400000 |         0 |         0 |       0 |          0 |          0 |        0 |      1528 |  13405411 |   12278 |
+| MiSeq_1600000 |         0 |         0 |       0 |          0 |          0 |        0 |      1377 |  14100368 |   14388 |
+| MiSeq_1800000 |         0 |         0 |       0 |          0 |          0 |        0 |      1233 |  14724645 |   16778 |
+| MiSeq_2000000 |      1054 |      2072 |       2 |          0 |          0 |        0 |      1117 |  15466357 |   19141 |
+| MiSeq_3000000 |      2351 |      4125 |       2 |          0 |          0 |        0 |       730 |  18691843 |   32521 |
+| MiSeq_4000000 |      1863 |      1863 |       1 |       1127 |       1127 |        1 |       543 |  22403949 |   48242 |
+| MiSeq_5000000 |      1856 |      1856 |       1 |          0 |          0 |        0 |       439 |  26683514 |   66798 |
