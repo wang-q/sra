@@ -44,29 +44,55 @@ hash runlist 2>/dev/null || {
     exit 1;
 }
 
+# colors in term
+# http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+GREEN=
+RED=
+NC=
+if tty -s < /dev/fd/1 2> /dev/null; then
+  GREEN='\033[0;32m'
+  RED='\033[0;31m'
+  NC='\033[0m' # No Color
+fi
+
+log_warn () {
+  echo -e "${RED}==> $@ <==${NC}"
+}
+
+log_info () {
+  echo -e "${GREEN}==> $@${NC}"
+}
+
+log_debug () {
+  echo -e "==> $@"
+}
+
 # set default parameters
 RESULT_DIR=$1
 N_THREADS=${2:-8}
 TOLERATE_SUBS=${2:-true}
 MIN_LENGTH_READ=${3:-100}
 
-echo >&2 "==> Parameters <=="
-echo >&2 "    RESULT_DIR=${RESULT_DIR}"
-echo >&2 "    N_THREADS=${N_THREADS}"
-echo >&2 "    TOLERATE_SUBS=${TOLERATE_SUBS}"
-echo >&2 "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
+log_info "Parameters"
+log_debug "    RESULT_DIR=${RESULT_DIR}"
+log_debug "    N_THREADS=${N_THREADS}"
+log_debug "    TOLERATE_SUBS=${TOLERATE_SUBS}"
+log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
 
 [ -e ${RESULT_DIR}/pe.cor.fa ] || {
-    echo >&2 "Can't find pe.cor.fa in [${RESULT_DIR}].";
+    log_warn "Can't find pe.cor.fa in [${RESULT_DIR}].";
     exit 1;
 }
 
 [ -e ${RESULT_DIR}/work1/superReadSequences.fasta ] || {
-    echo >&2 "Can't find superReadSequences.fasta in [${RESULT_DIR}/work1].";
+    log_warn "Can't find superReadSequences.fasta in [${RESULT_DIR}/work1].";
     exit 1;
 }
 
-echo >&2 "==> Prepare files"
+#----------------------------#
+# Prepare files
+#----------------------------#
+log_info "Prepare files"
 mkdir -p ${RESULT_DIR}/sr
 cd ${RESULT_DIR}/sr
 
@@ -106,7 +132,7 @@ done >> pe.strict.fa
 #----------------------------#
 # unambiguous
 #----------------------------#
-echo >&2 "==> unambiguous regions"
+log_info "unambiguous regions"
 
 # index
 bbmap.sh ref=superReadSequences.fasta
@@ -142,7 +168,7 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
 #----------------------------#
 # ambiguous
 #----------------------------#
-echo >&2 "==> ambiguous regions"
+log_info "ambiguous regions"
 
 cat unmapped.sam \
     | perl -nle '
@@ -195,7 +221,7 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
 #----------------------------#
 # anchor
 #----------------------------#
-echo >&2 "==> pe.anchor.fa"
+log_info "pe.anchor.fa"
 
 jrunlist cover unambiguous.cover.txt
 runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
@@ -222,7 +248,7 @@ faops some -l 0 superReadSequences.fasta anchor.txt pe.anchor.fa
 #----------------------------#
 # anchor2
 #----------------------------#
-echo >&2 "==> pe.anchor2.fa & pe.others.fa"
+log_info "pe.anchor2.fa & pe.others.fa"
 
 jrunlist span unique.cover.yml --op excise -n 1000 -o stdout \
     | runlist stat stdin -s sr.chr.sizes -o unique2.cover.csv
@@ -261,7 +287,7 @@ rm unique2.cover.csv unique2.txt
 #----------------------------#
 # record unique regions
 #----------------------------#
-echo >&2 "==> record unique regions"
+log_info "record unique regions"
 
 cat pe.anchor2.fa \
     | perl -nl -MPath::Tiny -e '
@@ -325,7 +351,7 @@ cat pe.others.fa \
 #----------------------------#
 # clear intermediate files
 #----------------------------#
-echo >&2 "==> clear intermediate files"
+log_info "clear intermediate files"
 
 find . -type f -name "ambiguous.sam" | xargs rm
 find . -type f -name "unambiguous.sam" | xargs rm
