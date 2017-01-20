@@ -1233,3 +1233,72 @@ find . -type f -name "*.tmp" | xargs rm
 #find . -type f -name "pe.renamed.fastq" | xargs rm
 
 ```
+
+Dotplot of pe.anchor.fa.
+
+http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+# add a blank line after sequences
+cat trimmed_800000/sr/pe.anchor.fa \
+    | perl -nl -e '
+        /^>/ and print;
+        /^\w/ and print qq{$_\n};
+    ' \
+    > pe.anchor.fa
+
+# simplify header
+cat MiSeq/NC_000913.fa \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > NC_000913.fa
+
+perl ~/Scripts/egaz/sparsemem_exact.pl \
+    -f pe.anchor.fa -g NC_000913.fa \
+    --length 500 -o pe.replace.tsv
+
+cat pe.replace.tsv \
+    | perl -nla -e '/\(\-\)/ and print $F[0];' \
+    > rc.list
+
+faops some -l 0 -i pe.anchor.fa rc.list stdout \
+    > pe.strand.fa
+faops some pe.anchor.fa rc.list stdout \
+    | faops rc -l 0 stdin stdout \
+    >> pe.strand.fa
+
+perl ~/Scripts/egaz/sparsemem_exact.pl \
+    -f pe.strand.fa -g NC_000913.fa \
+    --length 500 -o pe.replace.tsv
+
+cat pe.strand.fa \
+    | perl -nl -e '
+        /^>/ and print;
+        /^\w/ and print qq{$_\n};
+    ' \
+    > pe.strand.fas
+    
+fasops replace pe.strand.fas pe.replace.tsv -o pe.replace.fas
+
+perl -nli -e '/^>.+:(\d+)/ and print qq{>$1} and next; print;' pe.replace.fas
+
+faops filter -l 0 pe.replace.fas pe.replace2.fa
+
+cat pe.replace.fas | grep '>' | sed 's/>//' | sort -n > order.list
+fasops subset pe.replace2.fa order.list -o pe.sort.fa
+
+faops n50 -N 0 -C pe.anchor.fa
+faops n50 -N 0 -C pe.sort.fa
+wc -l pe.replace.tsv
+
+brew install homebrew/versions/gnuplot4
+nucmer NC_000913.fa pe.sort.fa
+mummerplot -png out.delta
+
+cat NC_000913.fa pe.replace.fas > pe.all.fa
+mafft pe.all.fa
+```
