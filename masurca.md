@@ -225,183 +225,105 @@ find . -name ".listing" | xargs rm
 ### Illumina PE, Short Jump and Sanger4
 
 ```bash
-mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger4
-cd ~/data/test/rhodobacter_PE_SJ_Sanger4
-
-cat <<EOF > config_PE_SJ_Sanger_4x.txt
-PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
-LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
-END
-
-DATA
-PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
-JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
-OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
-END
-
-EOF
-
-cd ~/data/test/rhodobacter_PE_SJ_Sanger4
-
-$HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_4x.txt
-
-#real    19m47.737s
-#user    79m13.602s
-#sys     60m45.557s
-time bash assemble.sh
-```
-
-### Illumina PE, Short Jump and Sanger
-
-```bash
-mkdir -p ~/data/test/rhodobacter_PE_SJ_Sanger
-cd ~/data/test/rhodobacter_PE_SJ_Sanger
-
-cat <<EOF > config_PE_SJ_Sanger_1x.txt
-PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
-LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
-END
-
-DATA
-PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
-JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
-OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
-END
-
-EOF
-
-cd ~/data/test/rhodobacter_PE_SJ_Sanger
-
-$HOME/share/MaSuRCA/bin/masurca config_PE_SJ_Sanger_1x.txt
-
-time bash assemble.sh
-```
-
-### Illumina PE and Short Jump
-
-```bash
-mkdir -p ~/data/test/rhodobacter_PE_SJ
-cd ~/data/test/rhodobacter_PE_SJ
-
-cat <<EOF > config_PE_SJ.txt
-PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
-LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
-END
-
-DATA
-PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
-JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
-END
-
-EOF
-
-cd ~/data/test/rhodobacter_PE_SJ
-
-$HOME/share/MaSuRCA/bin/masurca config_PE_SJ.txt
-
-time bash assemble.sh
-```
-
-### Illumina PE, and Sanger4
-
-```bash
-mkdir -p ~/data/test/rhodobacter_PE_Sanger4
-cd ~/data/test/rhodobacter_PE_Sanger4
-
-cat <<EOF > config_PE_Sanger_4x.txt
-PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
-LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
-END
-
-DATA
-PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
-OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
-END
-
-EOF
-
-cd ~/data/test/rhodobacter_PE_Sanger4
-
-$HOME/share/MaSuRCA/bin/masurca config_PE_Sanger_4x.txt
-
-time bash assemble.sh
-```
-
-### Illumina PE, and Sanger
-
-```bash
-mkdir -p ~/data/test/rhodobacter_PE_Sanger
-cd ~/data/test/rhodobacter_PE_Sanger
-
-cat <<EOF > config_PE_Sanger.txt
-PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
-LIMIT_JUMP_COVERAGE = 60
-KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
-END
-
-DATA
-PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
-OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
-END
-
-EOF
-
-cd ~/data/test/rhodobacter_PE_Sanger
-
-$HOME/share/MaSuRCA/bin/masurca config_PE_Sanger.txt
-
-time bash assemble.sh
-```
-
-### Illumina PE
-
-```bash
-mkdir -p ~/data/test/rhodobacter_PE
-cd ~/data/test/rhodobacter_PE
+cd ~/data/test
 
 cat <<EOF > sr_config.txt
 PARAMETERS
-CA_PARAMETERS= ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB
+CA_PARAMETERS = ovlMerSize=30 cgwErrorRate=0.25 merylMemory=8192 ovlMemory=4GB 
 LIMIT_JUMP_COVERAGE = 60
 KMER_COUNT_THRESHOLD = 1
-EXTEND_JUMP_READS=0
-NUM_THREADS= 16
-JF_SIZE=50000000
+EXTEND_JUMP_READS = 0
+NUM_THREADS = 16
+JF_SIZE = 50000000
 END
 
+EOF
+
+# Illumina PE, Short Jump and Sanger4
+mkdir -p rhodobacter_PE_SJ_Sanger4
+cp sr_config.txt rhodobacter_PE_SJ_Sanger4/
+cat <<EOF >> rhodobacter_PE_SJ_Sanger4/sr_config.txt
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
+END
+
+EOF
+
+# Illumina PE, Short Jump and Sanger
+mkdir -p rhodobacter_PE_SJ_Sanger
+cp sr_config.txt rhodobacter_PE_SJ_Sanger/
+cat <<EOF >> rhodobacter_PE_SJ_Sanger/sr_config.txt
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
+END
+
+EOF
+
+# Illumina PE and Short Jump
+mkdir -p rhodobacter_PE_SJ
+cp sr_config.txt rhodobacter_PE_SJ/
+cat <<EOF >> rhodobacter_PE_SJ/sr_config.txt
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+JUMP= sj 3600 200  /home/wangq/data/test/rhodobacter/SJ/short_1.fastq  /home/wangq/data/test/rhodobacter/SJ/short_2.fastq
+END
+
+EOF
+
+# Illumina PE, and Sanger4
+mkdir -p rhodobacter_PE_Sanger4
+cp sr_config.txt rhodobacter_PE_Sanger4/
+cat <<EOF >> rhodobacter_PE_Sanger4/sr_config.txt
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.4x.frg
+END
+
+EOF
+
+# Illumina PE, and Sanger
+mkdir -p rhodobacter_PE_Sanger
+cp sr_config.txt rhodobacter_PE_Sanger/
+cat <<EOF >> rhodobacter_PE_Sanger/sr_config.txt
+DATA
+PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
+OTHER=/home/wangq/data/test/rhodobacter/Sanger/rhodobacter_sphaeroides_2_4_1.1x.frg
+END
+
+EOF
+
+
+# Illumina PE
+mkdir -p rhodobacter_PE_Sanger
+cp sr_config.txt rhodobacter_PE_Sanger/
+cat <<EOF >> rhodobacter_PE_Sanger/sr_config.txt
 DATA
 PE=  pe 180 20 /home/wangq/data/test/rhodobacter/PE/frag_1.fastq /home/wangq/data/test/rhodobacter/PE/frag_2.fastq
 END
 
 EOF
 
-$HOME/share/MaSuRCA/bin/masurca sr_config.txt
+# Run
+cd ~/data/test
 
-time bash assemble.sh
+for d in rhodobacter_PE_SJ_Sanger4 rhodobacter_PE_SJ_Sanger rhodobacter_PE_SJ rhodobacter_PE_Sanger4 rhodobacter_PE_Sanger rhodobacter_PE rhodobacter_superreads;
+do
+    echo "==> ${d}"
+    if [ -e ${d}/work1/superReadSequences.fasta ];
+    then
+        continue     
+    fi
+
+    pushd ~/data/test/rhodobacter_PE_SJ_Sanger4 > /dev/null
+    $HOME/share/MaSuRCA/bin/masurca sr_config.txt
+    bash assemble.sh
+    popd > /dev/null
+done
+
 ```
 
 ### Rhodobacter sphaeroides with `superreads.pl`
@@ -1295,10 +1217,26 @@ faops n50 -N 0 -C pe.anchor.fa
 faops n50 -N 0 -C pe.sort.fa
 wc -l pe.replace.tsv
 
+brew install mummer
 brew install homebrew/versions/gnuplot4
 nucmer NC_000913.fa pe.sort.fa
-mummerplot -png out.delta
+mummerplot -png out.delta -p pe
+
+nucmer NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
+mummerplot -png out.delta -p pacbio
 
 cat NC_000913.fa pe.replace.fas > pe.all.fa
 mafft pe.all.fa
+```
+
+## Ler-0-2, SRR616965
+
+```bash
+mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+
+perl ~/Scripts/sra/superreads.pl \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
+    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
+    -s 450 -d 50 -p 16
 ```
