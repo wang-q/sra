@@ -412,6 +412,11 @@ perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/cele_n2 -c ~/data/dna-seq/cele_n2
 cd ~/data/dna-seq/cele_n2
 bash bash/sra.cele_n2.sh
 
+
+find . -type d -name "*fastqc" | sort | xargs rm -fr
+find . -type f -name "*_fastqc.zip" | sort | xargs rm
+find . -type f -name "*matches.txt" | sort | xargs rm
+
 ```
 
 ### Setaria italica
