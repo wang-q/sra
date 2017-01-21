@@ -863,16 +863,13 @@ cat stat2.md
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
     echo
-    echo "==> Reads ${count}"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
 
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ];
-    then
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
     fi
     
@@ -887,35 +884,19 @@ Stats of anchors
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
-    "Name" \
-    "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR" \
+bash ~/Scripts/sra/sr_stat.sh 3 header \
     > ~/data/dna-seq/e_coli/superreads/stat3.md
-printf "|:--|--:|--:|--:|--:|--:|--:|\n" \
-    >> ~/data/dna-seq/e_coli/superreads/stat3.md
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
-
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ];
-    then
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
     fi
-
-    pushd ${DIR_COUNT}/sr
-    COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
-    COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
-    printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
-        $( basename $( dirname $(pwd) ) ) \
-        ${COUNT_COR} \
-        ${COUNT_STRICT} \
-        $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
-        $( faops n50 -H -N 50 -S -C superReadSequences.fasta ) \
+    
+    bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
         >> ~/data/dna-seq/e_coli/superreads/stat3.md
-    popd
 done
 
 cat stat3.md
@@ -924,34 +905,19 @@ cat stat3.md
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-    "Name" \
-    "N50Anchor" "SumAnchor" "#anchor" \
-    "N50Anchor2" "SumAnchor2" "#anchor2" \
-    "N50Others" "SumOthers" "#others" \
-    > ~/data/dna-seq/e_coli/superreads/stat4.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
-    >> ~/data/dna-seq/e_coli/superreads/stat4.md
+bash ~/Scripts/sra/sr_stat.sh 4 header \
+    > ~/data/dna-seq/e_coli/superreads/stat3.md
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
-
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ];
-    then
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
     fi
-
-    pushd ${DIR_COUNT}/sr
-    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-        $( basename $( dirname $(pwd) ) ) \
-        $( faops n50 -H -N 50 -S -C pe.anchor.fa ) \
-        $( faops n50 -H -N 50 -S -C pe.anchor2.fa ) \
-        $( faops n50 -H -N 50 -S -C pe.others.fa ) \
+    
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
         >> ~/data/dna-seq/e_coli/superreads/stat4.md
-    popd
 done
 
 cat stat4.md

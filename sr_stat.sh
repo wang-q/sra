@@ -140,6 +140,48 @@ elif [ "${STAT_TASK}" = "2" ]; then
         log_warn "RESULT_DIR not exists"
     fi
 
+elif [ "${STAT_TASK}" = "3" ]; then
+    if [ "${RESULT_DIR}" = "header" ]; then
+        printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
+            "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR"
+        printf "|:--|--:|--:|--:|--:|--:|--:|\n"
+    elif [ -d "${RESULT_DIR}/sr" ]; then
+        log_debug "${RESULT_DIR}/sr"
+        cd "${RESULT_DIR}/sr"
+
+        COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
+        COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
+        printf "| %s | %s | %s | %s | %s | %s | %s | \n" \
+            $( basename $( dirname $(pwd) ) ) \
+            ${COUNT_COR} \
+            ${COUNT_STRICT} \
+            $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
+            $( faops n50 -H -N 50 -S -C superReadSequences.fasta )
+    else
+        log_warn "RESULT_DIR/sr not exists"
+    fi
+
+elif [ "${STAT_TASK}" = "4" ]; then
+    if [ "${RESULT_DIR}" = "header" ]; then
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+            "Name" \
+            "N50Anchor" "SumAnchor" "#anchor" \
+            "N50Anchor2" "SumAnchor2" "#anchor2" \
+            "N50Others" "SumOthers" "#others"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+    elif [ -d "${RESULT_DIR}/sr" ]; then
+        log_debug "${RESULT_DIR}/sr"
+        cd "${RESULT_DIR}/sr"
+
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+            $( basename $( dirname $(pwd) ) ) \
+            $( faops n50 -H -N 50 -S -C pe.anchor.fa ) \
+            $( faops n50 -H -N 50 -S -C pe.anchor2.fa ) \
+            $( faops n50 -H -N 50 -S -C pe.others.fa )
+    else
+        log_warn "RESULT_DIR/sr not exists"
+    fi
+
 else
     log_warn "Unsupported STAT_TASK"
 fi
