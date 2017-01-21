@@ -339,6 +339,43 @@ bash bash/tri.sophora_japonica.sh
 
 ## De novo dna-seq projects (dn_dna_*.pl)
 
+### Caenorhabditis elegans
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/cele_n2/sra
+cd ~/data/dna-seq/cele_n2/sra
+
+cat << EOF |
+DRX007633,cele_n2,
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin -v \
+    > sra_info.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/cele_n2/sra
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+```
+
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/cele_n2 -c ~/data/dna-seq/cele_n2/sra/sra_info.csv
+
+cd ~/data/dna-seq/cele_n2
+bash bash/sra.cele_n2.sh
+
+```
+
 ### Setaria italica
 
 Grab information.
@@ -461,7 +498,7 @@ SRS118359,hy5_215,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl ath_example.source.csv  \
-> ath_example.yml
+    > ath_example.yml
 
 ```
 
