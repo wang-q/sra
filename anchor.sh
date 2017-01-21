@@ -7,65 +7,67 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-# check whether faops is installed
+#----------------------------#
+# External dependencies
+#----------------------------#
 hash faops 2>/dev/null || {
     echo >&2 "faops is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
     exit 1;
 }
 
-# check whether bbmap.sh is installed
 hash bbmap.sh 2>/dev/null || {
     echo >&2 "bbmap.sh is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/bbtools";
     exit 1;
 }
 
-# check whether genomeCoverageBed is installed
 hash genomeCoverageBed 2>/dev/null || {
     echo >&2 "genomeCoverageBed is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/bedtools";
     exit 1;
 }
 
-# check whether jrunlist is installed
 hash jrunlist 2>/dev/null || {
     echo >&2 "jrunlist is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/jrunlist";
     exit 1;
 }
 
-# check whether runlist is installed
 hash runlist 2>/dev/null || {
     echo >&2 "runlist is required but it's not installed.";
     echo >&2 "Install with cpanm: cpanm App::RL";
     exit 1;
 }
 
-# colors in term
+#----------------------------#
+# Colors in term
+#----------------------------#
 # http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 GREEN=
 RED=
 NC=
 if tty -s < /dev/fd/1 2> /dev/null; then
-  GREEN='\033[0;32m'
-  RED='\033[0;31m'
-  NC='\033[0m' # No Color
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
 fi
 
 log_warn () {
-  echo -e "${RED}==> $@ <==${NC}"
+    >&2 echo -e "${RED}==> $@ <==${NC}"
 }
 
 log_info () {
-  echo -e "${GREEN}==> $@${NC}"
+    >&2 echo -e "${GREEN}==> $@${NC}"
 }
 
 log_debug () {
-  echo -e "==> $@"
+    >&2 echo -e "==> $@"
 }
 
-# set default parameters
+#----------------------------#
+# Parameters
+#----------------------------#
 RESULT_DIR=$1
 N_THREADS=${2:-8}
 TOLERATE_SUBS=${3:-true}
