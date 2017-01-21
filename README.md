@@ -339,6 +339,44 @@ bash bash/tri.sophora_japonica.sh
 
 ## De novo dna-seq projects (dn_dna_*.pl)
 
+### Atha Ler-0
+
+Grab information.
+
+```bash
+mkdir -p ~/data/dna-seq/atha_ler_0/sra
+cd ~/data/dna-seq/atha_ler_0/sra
+
+cat << EOF |
+SRX1567556,Ler-0-1,Ler sequencing and assembly
+SRX202247,Ler-0-2,Ler_XL_4
+EOF
+    perl ~/Scripts/sra/sra_info.pl stdin \
+    > atha_ler_0.yml
+
+```
+
+Download.
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/sra
+perl ~/Scripts/sra/sra_prep.pl atha_ler_0.yml --md5
+
+aria2c -x 9 -s 3 -c -i atha_ler_0.ftp.txt
+
+md5sum --check atha_ler_0.md5.txt
+```
+
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/atha_ler_0 -c ~/data/dna-seq/atha_ler_0/sra/atha_ler_0.csv
+
+cd ~/data/dna-seq/atha_ler_0
+bash bash/sra.Ler-0-1.sh
+bash bash/sra.Ler-0-2.sh
+```
+
 ### Caenorhabditis elegans
 
 Grab information.
@@ -1166,46 +1204,6 @@ perl ~/Scripts/sra/sra_prep.pl glycine_soja.yml --md5 -p illumina
 #aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
 
 #md5sum --check ath_example.md5.txt
-```
-
-### Atha Ler-0
-
-Grab information.
-
-```bash
-mkdir -p ~/data/dna-seq/atha_ler_0/sra
-cd ~/data/dna-seq/atha_ler_0/sra
-
-cat << EOF |
-SRX1567556,Ler-0-1,Ler sequencing and assembly
-SRX202247,Ler-0-2,Ler_XL_4
-EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > atha_ler_0.yml
-
-```
-
-Download.
-
-```bash
-cd ~/data/dna-seq/atha_ler_0/sra
-perl ~/Scripts/sra/sra_prep.pl atha_ler_0.yml --md5
-
-aria2c -x 9 -s 3 -c -i atha_ler_0.ftp.txt
-
-md5sum --check atha_ler_0.md5.txt
-```
-
-SKIP: Prepare reference genome.
-
-Generate bash files and run a sample.
-
-```bash
-perl ~/Scripts/sra/rb_dna.pl -b ~/data/dna-seq/atha_ler_0 -c ~/data/dna-seq/atha_ler_0/sra/atha_ler_0.csv
-
-cd ~/data/dna-seq/atha_ler_0
-bash bash/sra.Ler-0-1.sh
-bash bash/sra.Ler-0-2.sh
 ```
 
 ## Unused projects
