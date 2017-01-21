@@ -556,8 +556,6 @@ faops n50 -S -C filter/R1.sickle.fq.gz
 find . -type d -name "*fastqc" | sort | xargs rm -fr
 find . -type f -name "*_fastqc.zip" | sort | xargs rm
 find . -type f -name "*matches.txt" | sort | xargs rm
-#find . -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
-
 ```
 
 ### Down sampling
@@ -1190,7 +1188,7 @@ rm out.delta
 rm *.gp
 ```
 
-## Ler-0-2, SRR616965
+## Atha Ler-0-2, SRR616965
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
@@ -1200,4 +1198,124 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
     ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
     -s 450 -d 50 -p 16
+```
+
+## Cele N2, DRR008443
+
+* Real:
+
+    * S: 100,286,401
+
+* Original:
+
+    * N50: 110
+    * S: 3,584,972,820
+    * C: 32,590,662
+
+* Trimmed, 80-110 bp
+
+    * N50: 110
+    * S: 3,176,158,837
+    * C: 29,148,069
+
+```bash
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_1.fastq.gz
+
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.sickle.fq.gz
+
+cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa \
+    ~/data/alignment/Ensembl/Cele/MtDNA.fa.skip \
+    > ~/data/dna-seq/cele_n2/ref/genome.fa
+faops size ~/data/dna-seq/cele_n2/ref/genome.fa \
+    > ~/data/dna-seq/cele_n2/ref/chr.sizes
+
+faops n50 -S -C ~/data/dna-seq/cele_n2/ref/genome.fa
+```
+
+### Down sampling of cele_n2
+
+* Original
+
+```bash
+mkdir -p ~/data/dna-seq/cele_n2/superreads/
+cd ~/data/dna-seq/cele_n2/superreads/
+
+for count in 10000000 20000000 30000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ];
+    then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_1.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_2.fastq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+* Trimmed
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 10000000 20000000 30000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ];
+    then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_2.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### Generate super-reads of cele_n2
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+for count in 10000000 20000000 30000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
+#    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
+
+    if [ ! -d ${DIR_COUNT} ];
+    then
+        echo "${DIR_COUNT} doesn't exist"
+        continue;     
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ];
+    then
+        echo "pe.cor.fa already presents"
+        continue     
+    fi
+    
+    pushd ${DIR_COUNT}
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 8
+    popd
+done
 ```
