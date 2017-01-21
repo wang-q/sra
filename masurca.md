@@ -648,32 +648,28 @@ done
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
     echo
-    echo "==> Reads ${count}"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
 
-    if [ ! -d ${DIR_COUNT} ];
-    then
+    if [ ! -d ${DIR_COUNT} ]; then
         echo "${DIR_COUNT} doesn't exist"
-        continue;     
+        continue
     fi
     
-    if [ -e ${DIR_COUNT}/pe.cor.fa ];
-    then
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
         echo "pe.cor.fa already presents"
-        continue     
+        continue
     fi
     
-    pushd ${DIR_COUNT}
+    pushd ${DIR_COUNT} > /dev/null
     perl ~/Scripts/sra/superreads.pl \
         R1.fq.gz \
         R2.fq.gz \
         -s 300 -d 30 -p 8
-    popd
+    popd > /dev/null
 done
 ```
 
@@ -685,7 +681,7 @@ cd ~/data/dna-seq/e_coli/superreads/
 bash ~/Scripts/sra/sr_stat.sh 1 header \
     > ~/data/dna-seq/e_coli/superreads/stat.md
 
-for d in {MiSeq,filter,trimmed}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
     DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
 
@@ -771,55 +767,19 @@ cd ~/data/dna-seq/e_coli/superreads/
 
 REAL_G=4641652
 
-printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-    "Name" \
-    "TotalFq" "TotalFa" "RatioDiscard" "TotalSubs" "RatioSubs" \
-    "RealG" "CovFq" "CovFa" \
-    "EstG" "SumSR" "Est/Real" "SumSR/Real" "N50SR" \
+bash ~/Scripts/sra/sr_stat.sh 2 header \
     > ~/data/dna-seq/e_coli/superreads/stat2.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
-    >> ~/data/dna-seq/e_coli/superreads/stat2.md
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
     
-    if [ ! -d ${DIR_COUNT} ];
-    then
+    if [ ! -d ${DIR_COUNT} ]; then
         continue     
     fi
-
-    pushd ${DIR_COUNT}
     
-    TOTAL_FQ=$( if [[ -e pe.renamed.fastq ]]; then faops n50 -H -N 0 -S pe.renamed.fastq; else echo 0; fi )
-    TOTAL_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
-    EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
-    SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta )
-    N50_SR=$( faops n50 -H -N 50 work1/superReadSequences.fasta )
-    TOTAL_SUBS=$( cat pe.cor.fa | tr ' ' '\n' | grep ":sub:" | wc -l )
-    
-    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-        $( basename $( pwd ) ) \
-        \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_FQ})") \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_FA})") \
-        $( perl -e "printf qq{%.4f}, 1 - ${TOTAL_FA} / ${TOTAL_FQ}" ) \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_SUBS})") \
-        $( perl -e "printf qq{%.4f}, ${TOTAL_SUBS} / ${TOTAL_FA}" ) \
-        \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${REAL_G})") \
-        $( perl -e "printf qq{%.1f}, ${TOTAL_FQ} / ${REAL_G}" ) \
-        $( perl -e "printf qq{%.1f}, ${TOTAL_FA} / ${REAL_G}" ) \
-        \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G})") \
-        $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR})") \
-        $( perl -e "printf qq{%.2f}, ${EST_G} / ${REAL_G}" ) \
-        $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${REAL_G}" ) \
-        ${N50_SR} \
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
         >> ~/data/dna-seq/e_coli/superreads/stat2.md
-    popd
 done
 
 cat stat2.md
