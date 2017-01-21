@@ -146,7 +146,7 @@ elif [ "${STAT_TASK}" = "3" ]; then
             "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR"
         printf "|:--|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
-        log_debug "${RESULT_DIR}/sr"
+        log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
 
         COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
@@ -170,7 +170,7 @@ elif [ "${STAT_TASK}" = "4" ]; then
             "N50Others" "SumOthers" "#others"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
-        log_debug "${RESULT_DIR}/sr"
+        log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
 
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \

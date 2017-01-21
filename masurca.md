@@ -906,7 +906,7 @@ cat stat3.md
 cd ~/data/dna-seq/e_coli/superreads/
 
 bash ~/Scripts/sra/sr_stat.sh 4 header \
-    > ~/data/dna-seq/e_coli/superreads/stat3.md
+    > ~/data/dna-seq/e_coli/superreads/stat4.md
 
 for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
