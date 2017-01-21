@@ -8,6 +8,31 @@ if [ "$#" -lt 3 ]; then
 fi
 
 #----------------------------#
+# Colors in term
+#----------------------------#
+# http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+GREEN=
+RED=
+NC=
+if tty -s < /dev/fd/1 2> /dev/null; then
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+fi
+
+log_warn () {
+    echo >&2 -e "${RED}==> $@ <==${NC}"
+}
+
+log_info () {
+    echo >&2 -e "${GREEN}==> $@${NC}"
+}
+
+log_debug () {
+    echo >&2 -e "==> $@"
+}
+
+#----------------------------#
 # External dependencies
 #----------------------------#
 hash faops 2>/dev/null || {
@@ -32,31 +57,6 @@ hash rangeops 2>/dev/null || {
     echo >&2 "rangeops is required but it's not installed.";
     echo >&2 "Install with cpanm: cpanm App::Rangeops";
     exit 1;
-}
-
-#----------------------------#
-# Colors in term
-#----------------------------#
-# http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
-GREEN=
-RED=
-NC=
-if tty -s < /dev/fd/1 2> /dev/null; then
-    GREEN='\033[0;32m'
-    RED='\033[0;31m'
-    NC='\033[0m' # No Color
-fi
-
-log_warn () {
-    >&2 echo -e "${RED}==> $@ <==${NC}"
-}
-
-log_info () {
-    >&2 echo -e "${GREEN}==> $@${NC}"
-}
-
-log_debug () {
-    >&2 echo -e "==> $@"
 }
 
 #----------------------------#
