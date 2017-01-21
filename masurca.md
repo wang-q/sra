@@ -682,43 +682,19 @@ done
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
 
-printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-    "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "#reads" "RunTime" "SumSR" "SR/EstG" \
+bash ~/Scripts/sra/sr_stat.sh 1 header \
     > ~/data/dna-seq/e_coli/superreads/stat.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
-    >> ~/data/dna-seq/e_coli/superreads/stat.md
 
-for count in 50000 100000 150000 200000 300000 400000 500000 600000 700000 800000 900000 1000000 1200000 1400000 1600000 1800000 2000000 3000000 4000000 5000000;
+for d in {MiSeq,filter,trimmed}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/MiSeq_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/filter_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/trimmed_${count}/"
+    DIR_COUNT="$HOME/data/dna-seq/e_coli/superreads/${d}/"
 
-    if [ ! -d ${DIR_COUNT} ];
-    then
+    if [ ! -d ${DIR_COUNT} ]; then
         continue     
     fi
 
-    pushd ${DIR_COUNT}
-    SECS=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
-    EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
-    SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
-    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-        $( basename $( pwd ) ) \
-        $( if [[ -e pe.renamed.fastq ]]; then du -h pe.renamed.fastq | cut -f1; else echo 0; fi ) \
-        $( du -h pe.cor.fa | cut -f1 ) \
-        $( cat environment.sh \
-            | perl -n -e '/PE_AVG_READ_LENGTH=\"(\d+)\"/ and print $1' ) \
-        $( cat environment.sh \
-            | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
-        ${EST_G} \
-        $( cat environment.sh \
-            | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
-        $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
-        ${SUM_SR} \
-        $( perl -e "printf qq{%.2f}, ${SUM_SR} * 1.0 / ${EST_G}" ) \
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
         >> ~/data/dna-seq/e_coli/superreads/stat.md
-    popd
 done
 
 cat stat.md
@@ -1232,7 +1208,7 @@ faops size ~/data/dna-seq/cele_n2/ref/genome.fa \
 faops n50 -S -C ~/data/dna-seq/cele_n2/ref/genome.fa
 ```
 
-### Down sampling of cele_n2
+### cele_n2: Down sampling
 
 * Original
 
@@ -1240,7 +1216,7 @@ faops n50 -S -C ~/data/dna-seq/cele_n2/ref/genome.fa
 mkdir -p ~/data/dna-seq/cele_n2/superreads/
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in 10000000 20000000 30000000;
+for count in 10000000 15000000 20000000 25000000 30000000;
 do
     echo
     echo "==> Reads ${count}"
@@ -1264,9 +1240,9 @@ done
 * Trimmed
 
 ```bash
-cd ~/data/dna-seq/e_coli/superreads/
+cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in 10000000 20000000 30000000;
+for count in 10000000 15000000 20000000 25000000 30000000;
 do
     echo
     echo "==> Reads ${count}"
@@ -1287,17 +1263,17 @@ do
 done
 ```
 
-### Generate super-reads of cele_n2
+### cele_n2: Generate super-reads
 
 ```bash
-cd ~/data/dna-seq/e_coli/superreads/
+cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in 10000000 20000000 30000000;
+for count in original_10000000 original_15000000 original_20000000 original_25000000 original_30000000 \
+    trimmed_10000000 trimmed_15000000 trimmed_20000000 trimmed_25000000 trimmed_30000000;
 do
     echo
     echo "==> Reads ${count}"
-#    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${count}/"
 
     if [ ! -d ${DIR_COUNT} ];
     then
@@ -1318,4 +1294,27 @@ do
         -s 424 -d 40 -p 16
     popd > /dev/null
 done
+```
+
+### cele_n2: Create anchors
+
+```bash
+cd ~/data/dna-seq/cele_n2/superreads/
+
+for count in original_10000000 original_15000000 original_20000000 original_25000000 original_30000000 \
+    trimmed_10000000 trimmed_15000000 trimmed_20000000 trimmed_25000000 trimmed_30000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${count}/"
+
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ];
+    then
+        continue     
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 16 false 80
+done
+
 ```
