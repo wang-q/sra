@@ -1296,8 +1296,8 @@ for count in 10000000 20000000 30000000;
 do
     echo
     echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
-#    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
+#    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
 
     if [ ! -d ${DIR_COUNT} ];
     then
@@ -1311,11 +1311,11 @@ do
         continue     
     fi
     
-    pushd ${DIR_COUNT}
+    pushd ${DIR_COUNT} > /dev/null
     perl ~/Scripts/sra/superreads.pl \
         R1.fq.gz \
         R2.fq.gz \
-        -s 300 -d 30 -p 8
-    popd
+        -s 424 -d 40 -p 16
+    popd > /dev/null
 done
 ```
