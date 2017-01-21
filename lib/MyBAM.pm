@@ -12,6 +12,7 @@ has bin_dir  => ( is => 'rw', isa => 'HashRef', default => sub { {} }, );
 has data_dir => ( is => 'rw', isa => 'HashRef', default => sub { {} }, );
 has ref_file => ( is => 'rw', isa => 'HashRef', default => sub { {} }, );
 
+has min      => ( is => 'rw', isa => 'Int', default => 80, );
 has parallel => ( is => 'rw', isa => 'Int', default => 4, );
 has memory   => ( is => 'rw', isa => 'Int', default => 1, );
 has tmpdir   => ( is => 'rw', isa => 'Str', default => "/tmp", );
@@ -273,7 +274,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.matches.txt \
     --quiet \
-    | gzip -c --fast > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
+    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
 
 scythe \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
@@ -282,7 +283,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.matches.txt \
     --quiet \
-    | gzip -c --fast > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz
+    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz
 
 [% ELSE -%]
 # scythe (single end)
@@ -293,7 +294,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].matches.txt \
     --quiet \
-    | gzip -c --fast > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
+    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
 
 [% END -%]
 
@@ -314,7 +315,7 @@ echo "* Start sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 [% IF lane.layout == 'PAIRED' -%]
 # sickle (pair end)
 sickle pe \
-    -t sanger -l 20 -q 20 \
+    -t sanger -l [% min %] -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz \
     -r [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.sickle.fq \
@@ -325,7 +326,7 @@ sickle pe \
 [% ELSE -%]
 # sickle (single end)
 sickle se \
-    -t sanger -l 20 -q 20 \
+    -t sanger -l [% min %] -q 20 \
     -f [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz \
     -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].sickle.fq
     2>&1 | tee -a [% data_dir.log %]/sickle.log ; ( exit ${PIPESTATUS} )
@@ -349,6 +350,7 @@ EOF
             bin_dir  => $self->bin_dir,
             data_dir => $self->data_dir,
             ref_file => $self->ref_file,
+            min      => $self->min,
             parallel => $self->parallel,
             memory   => $self->memory,
             tmpdir   => $self->tmpdir,
@@ -1943,8 +1945,8 @@ cd [% base_dir %]
 ### Clean
 # find [% data_dir.proc %] -type d -name "*fastqc" | sort | xargs rm -fr
 # find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | grep -v trimmed | xargs rm
+# find [% data_dir.proc %] -type f -name "*fastq.zip" | sort | grep -v trimmed | xargs rm
 # find [% data_dir.proc %] -type f -name "*matches.txt" | sort | xargs rm
-# find [% data_dir.proc %] -type f -name "*scythe.fq.gz" | sort | grep trimmed | xargs rm
 
 EOF
     my $output;
