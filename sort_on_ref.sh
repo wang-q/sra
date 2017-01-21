@@ -7,35 +7,61 @@ if [ "$#" -lt 3 ]; then
     exit 1
 fi
 
-# check whether faops is installed
+#----------------------------#
+# External dependencies
+#----------------------------#
 hash faops 2>/dev/null || {
     echo >&2 "faops is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
     exit 1;
 }
 
-# check whether sparsemem is installed
 hash sparsemem 2>/dev/null || {
     echo >&2 "sparsemem is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/sparsemem";
     exit 1;
 }
 
-# check whether fasops is installed
 hash fasops 2>/dev/null || {
     echo >&2 "fasops is required but it's not installed.";
     echo >&2 "Install with cpanm: cpanm App::Fasops";
     exit 1;
 }
 
-# check whether rangeops is installed
 hash rangeops 2>/dev/null || {
     echo >&2 "rangeops is required but it's not installed.";
     echo >&2 "Install with cpanm: cpanm App::Rangeops";
     exit 1;
 }
 
-# set parameters
+#----------------------------#
+# Colors in term
+#----------------------------#
+# http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+GREEN=
+RED=
+NC=
+if tty -s < /dev/fd/1 2> /dev/null; then
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+fi
+
+log_warn () {
+    >&2 echo -e "${RED}==> $@ <==${NC}"
+}
+
+log_info () {
+    >&2 echo -e "${GREEN}==> $@${NC}"
+}
+
+log_debug () {
+    >&2 echo -e "==> $@"
+}
+
+#----------------------------#
+# Parameters
+#----------------------------#
 FA_FILE=$1
 REF_FILE=$2
 OUT_BASE=${3:-sort}
