@@ -494,6 +494,36 @@ time fc_run fc_run.cfg
 faops n50 -C 2-asm-falcon/p_ctg.fa
 ```
 
+### C. elegans
+
+https://github.com/PacificBiosciences/DevNet/wiki/C.-elegans-data-set
+
+```bash
+mkdir -p ~/data/pacbio/rawdata/c_elegans_p6c4
+cd ~/data/pacbio/rawdata/c_elegans_p6c4
+
+proxychains4 perl ~/Scripts/download/list.pl -u http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/wget.html --ncp
+
+cat 2014_c_elegans_wget.html.yml \
+    | grep subreads.fasta \
+    | perl -nl -e '($url, undef) = split q{: }; $url =~ s/^\s+//g; print $url;' \
+    > s3.url.txt
+
+# on linode VPS
+aria2c -x 9 -s 3 -c -i s3.url.txt
+
+#sudo apt-get install pigz
+find . -type f -name "*.fasta" | xargs pigz
+
+# local
+rsync -avP wangq@45.79.80.100:data/pacbio/rawdata/ ~/data/pacbio/rawdata
+
+#N50     55460
+#S       8117663505
+#C       740776
+faops n50 -S -C *.subreads.fasta.gz
+```
+
 ### 复活草
 
 * 预处理
