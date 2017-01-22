@@ -4,14 +4,14 @@
 - [Purpose](#purpose)
 - [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn_rnapl)
     - [medfood: medicine food homology. Rna-seq survey.](#medfood-medicine-food-homology-rna-seq-survey)
-        - [chickpea](#chickpea)
-        - [Dioscorea villosa 长柔毛薯蓣](#dioscorea-villosa-长柔毛薯蓣)
-- [De novo rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)](#de-novo-rna-seq-projects-starting-from-fastq-dn_rna_fq_pl)
+    - [chickpea](#chickpea)
+    - [Dioscorea villosa 长柔毛薯蓣](#dioscorea-villosa-长柔毛薯蓣)
+- [*De novo* rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)](#de-novo-rna-seq-projects-starting-from-fastq-dn_rna_fq_pl)
     - [Spartina alterniflora 互花米草](#spartina-alterniflora-互花米草)
     - [Cercis gigantea 巨紫荆](#cercis-gigantea-巨紫荆)
     - [Gleditsia sinensis 皂荚树](#gleditsia-sinensis-皂荚树)
     - [Sophora japonica 槐树](#sophora-japonica-槐树)
-- [De novo dna-seq projects (dn_dna_*.pl)](#de-novo-dna-seq-projects-dn_dna_pl)
+- [*De novo* dna-seq projects (dn_dna_*.pl)](#de-novo-dna-seq-projects-dn_dna_pl)
     - [Atha Ler-0](#atha-ler-0)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
     - [Setaria italica](#setaria-italica)
@@ -419,7 +419,7 @@ bash bash/sra.Ler-0-2.sh
 
 ## Caenorhabditis elegans
 
-Grab information.
+Grab information and download.
 
 ```bash
 mkdir -p ~/data/dna-seq/cele_n2/sra
@@ -427,16 +427,13 @@ cd ~/data/dna-seq/cele_n2/sra
 
 cat << EOF > source.csv
 DRX007633,cele_n2,
+ERX1118232,cele_n2_2,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v \
     > sra_info.yml
-```
 
-Download.
-
-```bash
-cd ~/data/dna-seq/cele_n2/sra
+# check before running these
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
 
 aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
@@ -451,6 +448,7 @@ perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/cele_n2 -c ~/data/dna-seq/cele_n2
 
 cd ~/data/dna-seq/cele_n2
 bash bash/sra.cele_n2.sh
+bash bash/sra.cele_n2_2.sh
 
 find . -type d -name "*fastqc" | sort | xargs rm -fr
 find . -type f -name "*_fastqc.zip" | sort | xargs rm
