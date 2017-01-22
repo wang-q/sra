@@ -1,8 +1,47 @@
-# Processing NCBI sra/EBI ena data
+[TOC levels=1-3]: #
 
-## De novo rna-seq projects (dn_rna_*.pl)
+# Table of Contents
+- [Purpose](#purpose)
+- [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn_rnapl)
+    - [medfood: medicine food homology. Rna-seq survey.](#medfood-medicine-food-homology-rna-seq-survey)
+        - [chickpea](#chickpea)
+        - [Dioscorea villosa 长柔毛薯蓣](#dioscorea-villosa-长柔毛薯蓣)
+- [De novo rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)](#de-novo-rna-seq-projects-starting-from-fastq-dn_rna_fq_pl)
+    - [Spartina alterniflora 互花米草](#spartina-alterniflora-互花米草)
+    - [Cercis gigantea 巨紫荆](#cercis-gigantea-巨紫荆)
+    - [Gleditsia sinensis 皂荚树](#gleditsia-sinensis-皂荚树)
+    - [Sophora japonica 槐树](#sophora-japonica-槐树)
+- [De novo dna-seq projects (dn_dna_*.pl)](#de-novo-dna-seq-projects-dn_dna_pl)
+    - [Atha Ler-0](#atha-ler-0)
+    - [Caenorhabditis elegans](#caenorhabditis-elegans)
+    - [Setaria italica](#setaria-italica)
+    - [Glycine max cultivar Williams 82](#glycine-max-cultivar-williams-82)
+    - [Oropetium thomaeum](#oropetium-thomaeum)
+    - [Quercus lobata 加州峡谷栎树](#quercus-lobata-加州峡谷栎树)
+- [Reference based rna-seq projects (rb_rna_*.pl)](#reference-based-rna-seq-projects-rb_rna_pl)
+    - [ath example](#ath-example)
+    - [Human bodymap2](#human-bodymap2)
+    - [Mouse transcriptome](#mouse-transcriptome)
+    - [Dmel transcriptome](#dmel-transcriptome)
+    - [Rat hypertension](#rat-hypertension)
+- [Reference based dna-seq projects (rb_dna_*.pl)](#reference-based-dna-seq-projects-rb_dna_pl)
+    - [cele_mmp: 40 wild strains from *C. elegans* million mutation project](#cele_mmp-40-wild-strains-from-c-elegans-million-mutation-project)
+    - [dicty](#dicty)
+    - [ath19](#ath19)
+    - [dpgp](#dpgp)
+    - [japonica24](#japonica24)
+    - [dgrp](#dgrp)
+    - [Glycine soja](#glycine-soja)
+- [Unused projects](#unused-projects)
 
-### medfood: medicine food homology. Rna-seq survey.
+
+# Purpose
+
+Processing NCBI sra/EBI ena data
+
+# *De novo* rna-seq projects (`dn_rna.pl`)
+
+## medfood: medicine food homology. Rna-seq survey.
 
 Grab information.
 
@@ -10,7 +49,7 @@ Grab information.
 mkdir -p ~/data/rna-seq/medfood/sra
 cd ~/data/rna-seq/medfood/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX305204,Crataegus_pinnatifida,山楂
 SRX800799,Portulaca_oleracea,马齿苋
 ERX651070,Glycyrrhiza_glabra,光果甘草
@@ -96,9 +135,9 @@ SRX474978,Staurastrum_punctulatum,
 SRX474979,Staurastrum_tetracerum,
 SRX474985,Zygnema_cylindricum,亚小双星藻
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > medfood.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > medfood.yml
 ```
 
 Download.
@@ -135,8 +174,8 @@ perl ~/Scripts/sra/dn_rna.pl -b ~/data/rna-seq/medfood -c ~/data/rna-seq/medfood
 
 Open `~/data/rna-seq/medfood/screen.sh.txt` and paste bash lines to terminal.
 
-When the size of `screen.sra_XXX-0.log` reach 6.5K, the process should be finished.
-The size of `screen.tri_XXX-0.log` varies a lot, from 700K to 30M.
+When the size of `screen.sra_XXX-0.log` reach 6.5K, the process should be finished. The size of
+`screen.tri_XXX-0.log` varies a lot, from 700K to 30M.
 
 ```bash
 cd ~/data/rna-seq/medfood/log
@@ -161,7 +200,7 @@ Sat May 28 03:40:27 CST 2016 Malus_hupehensis [trinity] failed
 Tue Jun 14 10:36:46 CST 2016 Glycine_max_2 [trinity_rsem] failed
 ```
 
-### chickpea
+## chickpea
 
 Grab information.
 
@@ -169,7 +208,7 @@ Grab information.
 mkdir -p ~/data/rna-seq/chickpea/sra
 cd ~/data/rna-seq/chickpea/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX402846,ShootCold,
 SRX402839,RootControl,
 SRX402841,RootSalinity,
@@ -180,9 +219,9 @@ SRX402844,ShootDesiccation,
 SRX402845,ShootSalinity,
 SRX402846,ShootCold,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > chickpea_rnaseq.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > chickpea_rnaseq.yml
 ```
 
 Download.
@@ -196,7 +235,7 @@ aria2c -x 9 -s 3 -c -i chickpea_rnaseq.ftp.txt
 md5sum --check chickpea_rnaseq.md5.txt
 ```
 
-### Dioscorea villosa 长柔毛薯蓣
+## Dioscorea villosa 长柔毛薯蓣
 
 SRP006697
 
@@ -206,14 +245,14 @@ Grab information.
 mkdir -p ~/data/rna-seq/dioscorea_villosa/sra
 cd ~/data/rna-seq/dioscorea_villosa/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX060310,mature_leaf,
 SRX060311,stem,
 SRX060329,root,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > dioscorea_villosa.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > dioscorea_villosa.yml
 ```
 
 Download.
@@ -227,9 +266,9 @@ aria2c -x 9 -s 3 -c -i dioscorea_villosa.ftp.txt
 md5sum --check dioscorea_villosa.md5.txt
 ```
 
-## De novo rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)
+# *De novo* rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)
 
-### Spartina alterniflora 互花米草
+## Spartina alterniflora 互花米草
 
 Create information.
 
@@ -256,7 +295,7 @@ bash bash/sra.spartina.sh
 bash bash/tri.spartina.sh
 ```
 
-### Cercis gigantea 巨紫荆
+## Cercis gigantea 巨紫荆
 
 Create information.
 
@@ -283,7 +322,7 @@ bash bash/sra.cercis_gigantea.sh
 bash bash/tri.cercis_gigantea.sh
 ```
 
-### Gleditsia sinensis 皂荚树
+## Gleditsia sinensis 皂荚树
 
 Create information.
 
@@ -310,7 +349,7 @@ bash bash/sra.gleditsia_sinensis.sh
 bash bash/tri.gleditsia_sinensis.sh
 ```
 
-### Sophora japonica 槐树
+## Sophora japonica 槐树
 
 Create information.
 
@@ -337,9 +376,9 @@ bash bash/sra.sophora_japonica.sh
 bash bash/tri.sophora_japonica.sh
 ```
 
-## De novo dna-seq projects (dn_dna_*.pl)
+# *De novo* dna-seq projects (dn_dna_*.pl)
 
-### Atha Ler-0
+## Atha Ler-0
 
 Grab information.
 
@@ -347,11 +386,12 @@ Grab information.
 mkdir -p ~/data/dna-seq/atha_ler_0/sra
 cd ~/data/dna-seq/atha_ler_0/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX1567556,Ler-0-1,Ler sequencing and assembly
 SRX202247,Ler-0-2,Ler_XL_4
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
+
+perl ~/Scripts/sra/sra_info.pl source.csv \
     > atha_ler_0.yml
 
 ```
@@ -377,7 +417,7 @@ bash bash/sra.Ler-0-1.sh
 bash bash/sra.Ler-0-2.sh
 ```
 
-### Caenorhabditis elegans
+## Caenorhabditis elegans
 
 Grab information.
 
@@ -385,12 +425,12 @@ Grab information.
 mkdir -p ~/data/dna-seq/cele_n2/sra
 cd ~/data/dna-seq/cele_n2/sra
 
-cat << EOF |
+cat << EOF > source.csv
 DRX007633,cele_n2,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -v \
-    > sra_info.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
+    > sra_info.yml
 ```
 
 Download.
@@ -412,14 +452,12 @@ perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/cele_n2 -c ~/data/dna-seq/cele_n2
 cd ~/data/dna-seq/cele_n2
 bash bash/sra.cele_n2.sh
 
-
 find . -type d -name "*fastqc" | sort | xargs rm -fr
 find . -type f -name "*_fastqc.zip" | sort | xargs rm
 find . -type f -name "*matches.txt" | sort | xargs rm
-
 ```
 
-### Setaria italica
+## Setaria italica
 
 Grab information.
 
@@ -427,12 +465,12 @@ Grab information.
 mkdir -p ~/data/dna-seq/setaria_italica/sra
 cd ~/data/dna-seq/setaria_italica/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRP011164,setaria_italica,小米
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
-    > setaria_italica.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv -v -s erp \
+    > setaria_italica.yml
 ```
 
 Download.
@@ -446,7 +484,7 @@ perl ~/Scripts/sra/sra_prep.pl setaria_italica.yml --md5
 #md5sum --check ath_example.md5.txt
 ```
 
-### Glycine max cultivar Williams 82
+## Glycine max cultivar Williams 82
 
 Grab information.
 
@@ -454,10 +492,11 @@ Grab information.
 mkdir -p ~/data/dna-seq/glycine_max/sra
 cd ~/data/dna-seq/glycine_max/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRP062333,glycine_max,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v -s erp \
     > glycine_max.yml
 
 ```
@@ -473,16 +512,17 @@ aria2c -x 9 -s 3 -c -i glycine_max.ftp.txt
 md5sum --check glycine_max.md5.txt
 ```
 
-### Oropetium thomaeum
+## Oropetium thomaeum
 
 ```bash
 mkdir -p ~/data/dna-seq/oropetium_thomaeum/sra
 cd ~/data/dna-seq/oropetium_thomaeum/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRP059326,Oropetium_thomaeum,复活草
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v -s erp \
     > oropetium_thomaeum.yml
 
 ```
@@ -498,18 +538,18 @@ aria2c -x 9 -s 3 -c -i oropetium_thomaeum.ftp.txt
 md5sum --check oropetium_thomaeum.md5.txt
 ```
 
-### Quercus lobata 加州峡谷栎树
+## Quercus lobata 加州峡谷栎树
 
 ```bash
 mkdir -p ~/data/dna-seq/quercus_lobata/sra
 cd ~/data/dna-seq/quercus_lobata/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRP072046,Quercus_lobata,加州峡谷栎树
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -v -s erp \
-    > quercus_lobata.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv -v -s erp \
+    > quercus_lobata.yml
 ```
 
 Download.
@@ -523,9 +563,9 @@ aria2c -x 9 -s 3 -c -i quercus_lobata.ftp.txt
 md5sum --check quercus_lobata.md5.txt
 ```
 
-## Reference based rna-seq projects (rb_rna_*.pl)
+# Reference based rna-seq projects (rb_rna_*.pl)
 
-### ath example
+## ath example
 
 http://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP003951
 
@@ -556,7 +596,7 @@ aria2c -x 9 -s 3 -c -i ath_example.ftp.txt
 md5sum --check ath_example.md5.txt
 ```
 
-### Human bodymap2
+## Human bodymap2
 
 * http://www.ebi.ac.uk/ena/data/view/ERP000546
 * http://www.ncbi.nlm.nih.gov/Traces/study/?acc=ERP000546
@@ -567,7 +607,7 @@ Grab information.
 mkdir -p ~/data/rna-seq/bodymap2/sra
 cd ~/data/rna-seq/bodymap2/sra
 
-cat << EOF |
+cat << EOF > source.csv
 ERS025081,kidney,
 ERS025082,heart,
 ERS025083,ovary,
@@ -588,9 +628,9 @@ ERS025084,16_tissues_mixture_1,
 ERS025087,16_tissues_mixture_2,
 ERS025093,16_tissues_mixture_3,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > bodymap2.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > bodymap2.yml
 ```
 
 Download.
@@ -604,7 +644,7 @@ aria2c -x 9 -s 3 -c -i bodymap2.ftp.txt
 md5sum --check bodymap2.md5.txt
 ```
 
-### Mouse transcriptome
+## Mouse transcriptome
 
 http://www.ebi.ac.uk/ena/data/view/SRP012040
 
@@ -614,7 +654,7 @@ Grab information.
 mkdir -p ~/data/rna-seq/mouse_trans/sra
 cd ~/data/rna-seq/mouse_trans/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX135150,Ovary,
 SRX135151,MammaryGland,
 SRX135152,Stomach,
@@ -633,9 +673,9 @@ SRX135164,Spleen,
 SRX135165,Colon,
 SRX135166,Heart,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin -s erp \
-    > mouse_transcriptome.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv -s erp \
+    > mouse_transcriptome.yml
 ```
 
 Download.
@@ -649,7 +689,7 @@ aria2c -x 9 -s 3 -c -i mouse_transcriptome.ftp.txt
 md5sum --check mouse_transcriptome.md5.txt
 ```
 
-### Dmel transcriptome
+## Dmel transcriptome
 
 * http://intermine.modencode.org/query/experiment.do?experiment=Tissue-specific+Transcriptional+Profiling+of+D.+melanogaster+using+Illumina+poly%28A%29%2B+RNA-Seq
 * http://www.ebi.ac.uk/ena/data/view/SRP003905
@@ -660,7 +700,7 @@ Grab information.
 mkdir -p ~/data/rna-seq/dmel_trans/sra
 cd ~/data/rna-seq/dmel_trans/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRS118258,mated_female_eclosion_1d_heads,
 SRS118259,mated_female_eclosion_20d_heads,
 SRS118260,mated_female_eclosion_4d_heads,
@@ -691,9 +731,9 @@ SRS118284,WPP_2d_fat_body,
 SRS118285,WPP_fat_body,
 SRS118286,WPP_salivary_glands,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > dmel_transcriptome.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > dmel_transcriptome.yml
 ```
 
 Download.
@@ -707,7 +747,7 @@ aria2c -x 9 -s 3 -c -i dmel_transcriptome.ftp.txt
 md5sum --check dmel_transcriptome.md5.txt
 ```
 
-### Rat hypertension
+## Rat hypertension
 
 Information.
 
@@ -773,9 +813,9 @@ bash bash/sra.Control.sh
 
 ```
 
-## Reference based dna-seq projects (rb_dna_*.pl)
+# Reference based dna-seq projects (rb_dna_*.pl)
 
-### cele_mmp: 40 wild strains from *C. elegans* million mutation project
+## cele_mmp: 40 wild strains from *C. elegans* million mutation project
 
 From http://genome.cshlp.org/content/23/10/1749.abstract ,
 http://genome.cshlp.org/content/suppl/2013/08/20/gr.157651.113.DC2/Supplemental_Table_12.txt
@@ -786,7 +826,7 @@ Grab information.
 mkdir -p ~/data/dna-seq/cele_mmp/sra
 cd ~/data/dna-seq/cele_mmp/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX218993,AB1,
 SRX218973,AB3,
 SRX218981,CB4853,
@@ -828,9 +868,9 @@ SRX218998,MY2,
 SRX218968,MY6,
 SRX219154,PX174,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > cele_mmp.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > cele_mmp.yml
 ```
 
 Download.
@@ -877,7 +917,7 @@ bash bash/sra.AB1.sh
 
 Open `~/data/dna-seq/cele_mmp/screen.sh.txt` and paste bash lines to terminal.
 
-### dicty
+## dicty
 
 SRA012238, SRP002085
 
@@ -887,7 +927,7 @@ Grab information.
 mkdir -p ~/data/dna-seq/dicty/sra
 cd ~/data/dna-seq/dicty/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX017832,QS1,
 SRX017812,68,
 SRX018144,QS17,
@@ -912,9 +952,9 @@ SRX017441,TW5A,
 SRX017440,MA12C1,
 SRX017439,MA12C1,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > dicty.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > dicty.yml
 ```
 
 Download.
@@ -928,7 +968,7 @@ aria2c -x 9 -s 3 -c -i dicty.ftp.txt
 md5sum --check dicty.md5.txt
 ```
 
-### ath19
+## ath19
 
 ERP000565 ERA023479
 
@@ -940,7 +980,7 @@ Grab information.
 mkdir -p ~/data/dna-seq/ath19/sra
 cd ~/data/dna-seq/ath19/sra
 
-cat << EOF |
+cat << EOF > source.csv
 ERS025622,Bur_0,
 ERS025623,Can_0,
 ERS025624,Col_0,
@@ -961,9 +1001,9 @@ ERS025638,Ws_0,
 ERS025639,Wu_0,
 ERS025640,Zu_0,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > ath19.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > ath19.yml
 ```
 
 Download.
@@ -1021,7 +1061,7 @@ screen -L -dmS bwa_Ler_0 bash /home/wangq/data/dna-seq/ath19/bash/bwa.Ler_0.sh
 # ...
 ```
 
-### dpgp
+## dpgp
 
 Grab information.
 
@@ -1029,7 +1069,7 @@ Grab information.
 mkdir -p ~/data/dna-seq/dpgp/sra
 cd ~/data/dna-seq/dpgp/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRX058145,CK1,
 SRX058153,CO15N,
 SRX058161,ED10N,
@@ -1052,9 +1092,9 @@ SRX058391,ZL130,
 SRX058293,ZO12,
 SRX058373,ZS37,
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > dpgp.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > dpgp.yml
 ```
 
 Download.
@@ -1068,7 +1108,7 @@ aria2c -x 9 -s 3 -c -i dpgp.ftp.txt
 md5sum --check dpgp.md5.txt
 ```
 
-### japonica24
+## japonica24
 
 Grab information.
 
@@ -1076,7 +1116,7 @@ Grab information.
 mkdir -p ~/data/dna-seq/japonica24/sra
 cd ~/data/dna-seq/japonica24/sra
 
-cat << EOF |
+cat << EOF > source.csv
 #TEJ
 SRS086330,IRGC1107,
 SRS086334,IRGC2540,
@@ -1110,9 +1150,9 @@ SRS086340,IRGC31856,
 # IRGC43397 is admixed
 # So there are 23 japonica accessions
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > japonica24.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > japonica24.yml
 ```
 
 Download.
@@ -1126,7 +1166,7 @@ aria2c -x 9 -s 3 -c -i japonica24.ftp.txt
 md5sum --check japonica24.md5.txt
 ```
 
-### dgrp
+## dgrp
 
 Grab information.
 
@@ -1184,7 +1224,7 @@ perl ~/Scripts/sra/sra_prep.pl dgrp.yml --md5
 #md5sum --check dgrp.md5.txt
 ```
 
-### Glycine soja
+## Glycine soja
 
 Grab information.
 
@@ -1192,12 +1232,12 @@ Grab information.
 mkdir -p ~/data/dna-seq/glycine_soja/sra
 cd ~/data/dna-seq/glycine_soja/sra
 
-cat << EOF |
+cat << EOF > source.csv
 SRP000993,glycine_soja,野生大豆
 EOF
-    perl ~/Scripts/sra/sra_info.pl stdin \
-    > glycine_soja.yml
 
+perl ~/Scripts/sra/sra_info.pl source.csv \
+    > glycine_soja.yml
 ```
 
 Download.
@@ -1211,7 +1251,7 @@ perl ~/Scripts/sra/sra_prep.pl glycine_soja.yml --md5 -p illumina
 #md5sum --check ath_example.md5.txt
 ```
 
-## Unused projects
+# Unused projects
 
 * Glycine max Genome sequencing: SRP015830, PRJNA175477
 * 10_000_diploid_yeast_genomes: ERP000547, PRJEB2446
