@@ -679,7 +679,7 @@ done
 cd ~/data/dna-seq/e_coli/superreads/
 
 bash ~/Scripts/sra/sr_stat.sh 1 header \
-    > ~/data/dna-seq/e_coli/superreads/stat.md
+    > ~/data/dna-seq/e_coli/superreads/stat1.md
 
 for d in {MiSeq,trimmed,filter}_{50000,100000,150000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,1200000,1400000,1600000,1800000,2000000,3000000,4000000,5000000};
 do
@@ -690,10 +690,10 @@ do
     fi
 
     bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
-        >> ~/data/dna-seq/e_coli/superreads/stat.md
+        >> ~/data/dna-seq/e_coli/superreads/stat1.md
 done
 
-cat stat.md
+cat stat1.md
 ```
 
 | Name            | fqSize | faSize | Length | Kmer |    EstG | #reads |   RunTime |    SumSR | SR/EstG |
@@ -1081,8 +1081,10 @@ done
 #brew install mummer
 #brew install homebrew/versions/gnuplot4
 
-nucmer -l 200 NC_000913.fa ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa
-mummerplot -png out.delta -p pacbio --medium
+cp ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa falcon.fa
+
+nucmer -l 200 NC_000913.fa falcon.fa
+mummerplot -png out.delta -p falcon --medium
 
 # mummerplot files
 rm *.[fr]plot
@@ -1090,7 +1092,13 @@ rm out.delta
 rm *.gp
 ```
 
+## Dmel
+
+果蝇的 paralog 比例为 0.0531
+
 ## Atha Ler-0-2, SRR616965
+
+拟南芥的 paralog 比例为 0.1115.
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
@@ -1103,6 +1111,8 @@ perl ~/Scripts/sra/superreads.pl \
 ```
 
 ## Cele N2, DRR008443
+
+线虫的 paralog 比例为 0.0472.
 
 * Real:
 
@@ -1120,10 +1130,18 @@ perl ~/Scripts/sra/superreads.pl \
     * S: 3,176,158,837
     * C: 29,148,069
 
+* Trimmed90, 90-110 bp
+
+    * N50: 110
+    * S: 3,072,256,253
+    * C: 28,077,771
+
 ```bash
 faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_1.fastq.gz
 
 faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.sickle.fq.gz
+
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq.gz
 
 cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa \
     ~/data/alignment/Ensembl/Cele/MtDNA.fa.skip \
@@ -1149,8 +1167,7 @@ do
     DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
     mkdir -p ${DIR_COUNT}
     
-    if [ -e ${DIR_COUNT}/R1.fq.gz ];
-    then
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
         continue     
     fi
     
@@ -1175,8 +1192,7 @@ do
     DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed_${count}/"
     mkdir -p ${DIR_COUNT}
     
-    if [ -e ${DIR_COUNT}/R1.fq.gz ];
-    then
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
         continue     
     fi
     
@@ -1189,26 +1205,62 @@ do
 done
 ```
 
+* Trimmed90
+
+```bash
+mkdir -p ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90
+
+# sickle (pair end)
+sickle pe \
+    -t sanger -l 90 -q 20 \
+    -f ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.scythe.fq.gz \
+    -r ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_2.scythe.fq.gz \
+    -o ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq \
+    -p ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_2.sickle.fq \
+    -s ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_single.sickle.fq
+
+find ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/ -type f -name "*.sickle.fq" \
+    | xargs pigz
+
+cd ~/data/dna-seq/cele_n2/superreads/
+
+for count in 10000000 15000000 20000000 25000000 30000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed90_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_2.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
 ### cele_n2: Generate super-reads
 
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in original_10000000 original_15000000 original_20000000 original_25000000 original_30000000 \
-    trimmed_10000000 trimmed_15000000 trimmed_20000000 trimmed_25000000 trimmed_30000000;
+for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
 do
     echo
-    echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${count}/"
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
 
-    if [ ! -d ${DIR_COUNT} ];
-    then
+    if [ ! -d ${DIR_COUNT} ]; then
         echo "${DIR_COUNT} doesn't exist"
         continue;     
     fi
     
-    if [ -e ${DIR_COUNT}/pe.cor.fa ];
-    then
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
         echo "pe.cor.fa already presents"
         continue     
     fi
@@ -1222,25 +1274,158 @@ do
 done
 ```
 
+Stats of super-reads
+
+```bash
+cd ~/data/dna-seq/cele_n2/superreads/
+
+REAL_G=100286401
+
+bash ~/Scripts/sra/sr_stat.sh 1 header \
+    > ~/data/dna-seq/cele_n2/superreads/stat1.md
+
+bash ~/Scripts/sra/sr_stat.sh 2 header \
+    > ~/data/dna-seq/cele_n2/superreads/stat2.md
+
+for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+do
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
+        >> ~/data/dna-seq/cele_n2/superreads/stat1.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
+        >> ~/data/dna-seq/cele_n2/superreads/stat2.md
+done
+
+cat stat1.md
+cat stat2.md
+```
+
 ### cele_n2: Create anchors
 
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in original_10000000 original_15000000 original_20000000 original_25000000 original_30000000 \
-    trimmed_10000000 trimmed_15000000 trimmed_20000000 trimmed_25000000 trimmed_30000000;
+for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
 do
     echo
-    echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${count}/"
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
 
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ];
-    then
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
     fi
     
     rm -fr ${DIR_COUNT}/sr
     bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 16 false 80
 done
-
 ```
+
+Stats of anchors
+
+```bash
+cd ~/data/dna-seq/cele_n2/superreads/
+
+bash ~/Scripts/sra/sr_stat.sh 3 header \
+    > ~/data/dna-seq/cele_n2/superreads/stat3.md
+
+bash ~/Scripts/sra/sr_stat.sh 4 header \
+    > ~/data/dna-seq/cele_n2/superreads/stat4.md
+
+for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+do
+    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
+        >> ~/data/dna-seq/cele_n2/superreads/stat3.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
+        >> ~/data/dna-seq/cele_n2/superreads/stat4.md
+done
+
+cat stat3.md
+cat stat4.md
+```
+
+### Results of DRR008443
+
+| Name               | fqSize | faSize | Length | Kmer |     EstG |  #reads |   RunTime |     SumSR | SR/EstG |
+|:-------------------|-------:|-------:|-------:|-----:|---------:|--------:|----------:|----------:|--------:|
+| original_10000000  |   4.4G |   2.4G |    110 |   77 | 94405489 | 4514485 | 0:18'09'' | 128624782 |    1.36 |
+| original_15000000  |   6.6G |   3.6G |    110 |   77 | 94715939 | 3950049 | 0:25'14'' | 172917944 |    1.83 |
+| original_20000000  |   8.8G |   4.7G |    110 |   77 | 95009944 | 4703366 | 0:32'52'' | 220727549 |    2.32 |
+| original_25000000  |    11G |   5.9G |    110 |   77 | 95144116 | 5790505 | 0:38'46'' | 241332415 |    2.54 |
+| original_30000000  |    14G |   7.1G |    110 |   77 | 95413408 | 6929191 | 0:47'26'' | 257614098 |    2.70 |
+| trimmed_10000000   |   4.4G |   2.4G |    108 |   77 | 93967317 | 4922532 | 0:18'22'' | 122414436 |    1.30 |
+| trimmed_15000000   |   6.6G |   3.5G |    108 |   77 | 94227914 | 4366126 | 0:25'04'' | 146604089 |    1.56 |
+| trimmed_20000000   |   8.7G |   4.7G |    107 |   77 | 94347283 | 4995221 | 0:30'54'' | 177827217 |    1.88 |
+| trimmed_25000000   |    11G |   5.8G |    107 |   77 | 94487936 | 5976897 | 0:38'10'' | 200157634 |    2.12 |
+| trimmed_30000000   |    13G |   6.8G |    107 |   77 | 94605989 | 6881557 | 0:43'46'' | 214657271 |    2.27 |
+| trimmed90_10000000 |   4.4G |   2.4G |    109 |   77 | 93858829 | 4661446 | 0:17'36'' | 122158822 |    1.30 |
+| trimmed90_15000000 |   6.6G |   3.5G |    108 |   77 | 94156388 | 4176053 | 0:23'21'' | 147310564 |    1.56 |
+| trimmed90_20000000 |   8.8G |   4.7G |    108 |   77 | 94286339 | 4821201 | 0:31'08'' | 177020385 |    1.88 |
+| trimmed90_25000000 |    11G |   5.8G |    108 |   77 | 94428289 | 5756927 | 0:38'18'' | 198896723 |    2.11 |
+| trimmed90_30000000 |    13G |   6.6G |    108 |   77 | 94517849 | 6393797 | 0:41'27'' | 210872908 |    2.23 |
+
+| Name               | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs |  RealG | CovFq | CovFa |   EstG |   SumSR | Est/Real | SumSR/Real | N50SR |
+|:-------------------|--------:|--------:|-------------:|----------:|----------:|-------:|------:|------:|-------:|--------:|---------:|-----------:|------:|
+| original_10000000  |   2.05G |   2.03G |       0.0109 |     3.57M |    0.0017 | 95.64M |  21.9 |  21.7 | 90.03M | 122.67M |     0.94 |       1.28 |  2029 |
+| original_15000000  |   3.07G |   3.04G |       0.0107 |      5.3M |    0.0017 | 95.64M |  32.9 |  32.6 | 90.33M | 164.91M |     0.94 |       1.72 |  6502 |
+| original_20000000  |    4.1G |   4.05G |       0.0106 |     7.03M |    0.0017 | 95.64M |  43.9 |  43.4 | 90.61M |  210.5M |     0.95 |       2.20 |  8110 |
+| original_25000000  |   5.12G |   5.07G |       0.0106 |     8.78M |    0.0017 | 95.64M |  54.8 |  54.3 | 90.74M | 230.15M |     0.95 |       2.41 |  7701 |
+| original_30000000  |   6.15G |   6.08G |       0.0106 |     10.5M |    0.0017 | 95.64M |  65.8 |  65.1 | 90.99M | 245.68M |     0.95 |       2.57 |  6691 |
+| trimmed_10000000   |   2.03G |   2.03G |       0.0011 |   773.46K |    0.0004 | 95.64M |  21.7 |  21.7 | 89.61M | 116.74M |     0.94 |       1.22 |  1871 |
+| trimmed_15000000   |   3.04G |   3.04G |       0.0010 |     1.11M |    0.0004 | 95.64M |  32.6 |  32.5 | 89.86M | 139.81M |     0.94 |       1.46 |  5472 |
+| trimmed_20000000   |   4.05G |   4.05G |       0.0010 |     1.48M |    0.0004 | 95.64M |  43.4 |  43.4 | 89.98M | 169.59M |     0.94 |       1.77 |  8032 |
+| trimmed_25000000   |   5.07G |   5.06G |       0.0009 |     1.83M |    0.0004 | 95.64M |  54.3 |  54.2 | 90.11M | 190.89M |     0.94 |       2.00 |  8293 |
+| trimmed_30000000   |   5.91G |    5.9G |       0.0009 |     2.13M |    0.0004 | 95.64M |  63.3 |  63.2 | 90.22M | 204.71M |     0.94 |       2.14 |  7909 |
+| trimmed90_10000000 |   2.04G |   2.03G |       0.0011 |   742.88K |    0.0003 | 95.64M |  21.8 |  21.8 | 89.51M |  116.5M |     0.94 |       1.22 |  1992 |
+| trimmed90_15000000 |   3.06G |   3.05G |       0.0010 |     1.07M |    0.0003 | 95.64M |  32.7 |  32.7 | 89.79M | 140.49M |     0.94 |       1.47 |  5656 |
+| trimmed90_20000000 |   4.07G |   4.07G |       0.0009 |     1.41M |    0.0003 | 95.64M |  43.6 |  43.6 | 89.92M | 168.82M |     0.94 |       1.77 |  8086 |
+| trimmed90_25000000 |   5.09G |   5.09G |       0.0009 |     1.75M |    0.0003 | 95.64M |  54.5 |  54.5 | 90.05M | 189.68M |     0.94 |       1.98 |  8237 |
+| trimmed90_30000000 |   5.72G |   5.71G |       0.0009 |     1.96M |    0.0003 | 95.64M |  61.2 |  61.2 | 90.14M |  201.1M |     0.94 |       2.10 |  8013 |
+
+| Name               |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |
+|:-------------------|---------:|-----------:|-----------:|------:|----------:|-------:|
+| original_10000000  | 20000000 |   17850257 |     0.8925 |  2029 | 128624782 | 206021 |
+| original_15000000  | 30000000 |   26809584 |     0.8937 |  6502 | 172917944 | 199831 |
+| original_20000000  | 40000000 |   35768418 |     0.8942 |  8110 | 220727549 | 235086 |
+| original_25000000  | 50000000 |   44716604 |     0.8943 |  7701 | 241332415 | 269431 |
+| original_30000000  | 60000000 |   53683251 |     0.8947 |  6691 | 257614098 | 309542 |
+| trimmed_10000000   | 20000000 |   19252195 |     0.9626 |  1871 | 122414436 | 182546 |
+| trimmed_15000000   | 30000000 |   28896681 |     0.9632 |  5472 | 146604089 | 147202 |
+| trimmed_20000000   | 40000000 |   38534767 |     0.9634 |  8032 | 177827217 | 153437 |
+| trimmed_25000000   | 50000000 |   48181917 |     0.9636 |  8293 | 200157634 | 167004 |
+| trimmed_30000000   | 58296138 |   56188361 |     0.9638 |  7909 | 214657271 | 180694 |
+| trimmed90_10000000 | 20000000 |   19279660 |     0.9640 |  1992 | 122158822 | 176013 |
+| trimmed90_15000000 | 30000000 |   28939783 |     0.9647 |  5656 | 147310564 | 143857 |
+| trimmed90_20000000 | 40000000 |   38592933 |     0.9648 |  8086 | 177020385 | 148874 |
+| trimmed90_25000000 | 50000000 |   48254390 |     0.9651 |  8237 | 198896723 | 162462 |
+| trimmed90_30000000 | 56155542 |   54202292 |     0.9652 |  8013 | 210872908 | 172232 |
+
+| Name               | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:-------------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| original_10000000  |      3293 |  63653531 |   23416 |       3426 |   10275929 |     3396 |       569 |  54695322 |  179209 |
+| original_15000000  |      8263 |  32269369 |    5997 |      10407 |   30834060 |     4502 |      4715 | 109814515 |  189332 |
+| original_20000000  |      8608 |   8560469 |    1483 |      11254 |   22531744 |     2952 |      7666 | 189635336 |  230651 |
+| original_25000000  |      9339 |   4152246 |     684 |       9974 |   15606024 |     2164 |      7453 | 221574145 |  266583 |
+| original_30000000  |      8121 |   2182076 |     406 |       9077 |   11437166 |     1720 |      6568 | 243994856 |  307416 |
+| trimmed_10000000   |      3050 |  61693766 |   23827 |       3498 |    9304882 |     3056 |       550 |  51415788 |  155663 |
+| trimmed_15000000   |      6924 |  47781063 |   10352 |       9053 |   24959317 |     4231 |      3113 |  73863709 |  132619 |
+| trimmed_20000000   |      8210 |  27689673 |    5136 |      11530 |   29686983 |     4021 |      7001 | 120450561 |  144280 |
+| trimmed_25000000   |      8253 |  16827614 |    3070 |      10926 |   27673190 |     3694 |      7722 | 155656830 |  160240 |
+| trimmed_30000000   |      7460 |  11505843 |    2240 |      10265 |   24930981 |     3445 |      7544 | 178220447 |  175009 |
+| trimmed90_10000000 |      3213 |  61970383 |   23094 |       3558 |    9397603 |     3014 |       564 |  50790836 |  149905 |
+| trimmed90_15000000 |      6985 |  47116315 |   10232 |       9091 |   25266931 |     4232 |      3342 |  74927318 |  129393 |
+| trimmed90_20000000 |      8242 |  28104963 |    5196 |      11343 |   29216944 |     4008 |      7084 | 119698478 |  139670 |
+| trimmed90_25000000 |      8038 |  17823911 |    3287 |      10932 |   27132570 |     3648 |      7700 | 153940242 |  155527 |
+| trimmed90_30000000 |      7590 |  13168217 |    2536 |      10214 |   25377251 |     3520 |      7640 | 172327440 |  166176 |
