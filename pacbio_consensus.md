@@ -708,6 +708,16 @@ EOF
 fc_run fc_run.cfg
 ```
 
+### Scer S288c
+
+From [this project](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
+
+```
+SAMEA4461733
+ftp://ftp.sra.ebi.ac.uk/vol1/ERA707/ERA707839/pacbio_hdf5/m150415_222327_00127_c100782992550000001823173608251511_s1_p0.1.bax.h5
+```
+
+
 ### 其它模式生物
 
 用这篇文章里提供的样例, doi:10.1038/sdata.2014.45.
