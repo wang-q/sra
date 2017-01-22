@@ -336,7 +336,8 @@ sickle se \
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [sickle] failed >> [% base_dir %]/fail.log && exit 255
 echo "* End sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
-find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" | parallel -j [% parallel %] gzip -f
+find [% item.dir %]/[% lane.srr %]/trimmed/ -type f -name "*.sickle.fq" \
+    | parallel --no-run-if-empty -j 1 pigz -p [% parallel %]
 echo "* Gzip sickle [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
 [% END -%]
@@ -1667,79 +1668,6 @@ EOF
     return;
 }
 
-sub soap_head {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-#!/bin/bash
-start_time=`date +%s`
-
-cd [% base_dir %]
-
-if [ ! -d [% item.dir %] ];
-then
-    mkdir [% item.dir %];
-fi;
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
-sub soap_srr_dump_pe {
-    my $self = shift;
-    my $item = shift;
-
-    my $tt = Template->new;
-
-    my $text = <<'EOF';
-#----------------------------------------------------------#
-# srr dump
-#----------------------------------------------------------#
-
-[% FOREACH lane IN item.lanes -%]
-# lane [% lane.srr %]
-mkdir [% item.dir %]/[% lane.srr %]
-
-# sra to fastq (pair end)
-[% bin_dir.stk %]/fastq-dump [% lane.file %] \
-    --split-files -O [% item.dir %]/[% lane.srr %]
-[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
-
-[% END -%]
-
-EOF
-    my $output;
-    $tt->process(
-        \$text,
-        {   base_dir => $self->base_dir,
-            item     => $item,
-            bin_dir  => $self->bin_dir,
-            data_dir => $self->data_dir,
-            ref_file => $self->ref_file,
-            parallel => $self->parallel,
-            memory   => $self->memory,
-            tmpdir   => $self->tmpdir,
-        },
-        \$output
-    ) or die Template->error;
-
-    $self->{bash} .= $output;
-    return;
-}
-
 sub soap_kmerfreq {
     my $self = shift;
     my $item = shift;
@@ -1944,8 +1872,8 @@ cd [% base_dir %]
 
 ### Clean
 # find [% data_dir.proc %] -type d -name "*fastqc" | sort | xargs rm -fr
+# find [% data_dir.proc %] -type f -name "*fastqc.zip" | sort | xargs rm
 # find [% data_dir.proc %] -type f -name "*fastq.gz" | sort | grep -v trimmed | xargs rm
-# find [% data_dir.proc %] -type f -name "*fastq.zip" | sort | grep -v trimmed | xargs rm
 # find [% data_dir.proc %] -type f -name "*matches.txt" | sort | xargs rm
 
 EOF
