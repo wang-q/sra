@@ -145,17 +145,11 @@ bbmap.sh \
     outm=unambiguous.sam outu=unmapped.sam
 
 java -jar ~/share/picard-tools-1.128/picard.jar \
-    CleanSam \
-    INPUT=unambiguous.sam \
-    OUTPUT=_clean.bam
-java -jar ~/share/picard-tools-1.128/picard.jar \
     SortSam \
-    INPUT=_clean.bam \
-    OUTPUT=_sort.bam \
+    INPUT=unambiguous.sam \
+    OUTPUT=unambiguous.sort.bam \
     SORT_ORDER=coordinate \
     VALIDATION_STRINGENCY=LENIENT
-rm _clean.bam
-mv _sort.bam unambiguous.sort.bam
 
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
     | perl -nlae '
@@ -199,17 +193,11 @@ bbmap.sh \
     outm=ambiguous.sam outu=unmapped2.sam
 
 java -jar ~/share/picard-tools-1.128/picard.jar \
-    CleanSam \
-    INPUT=ambiguous.sam \
-    OUTPUT=_clean.bam
-java -jar ~/share/picard-tools-1.128/picard.jar \
     SortSam \
-    INPUT=_clean.bam \
-    OUTPUT=_sort.bam \
+    INPUT=ambiguous.sam \
+    OUTPUT=ambiguous.sort.bam \
     SORT_ORDER=coordinate \
     VALIDATION_STRINGENCY=LENIENT
-rm _clean.bam
-mv _sort.bam ambiguous.sort.bam
 
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
     | perl -nlae '
@@ -285,9 +273,9 @@ faops some -l 0 -i superReadSequences.fasta anchor.txt stdout \
 rm unique2.cover.csv unique2.txt
 
 #----------------------------#
-# record unique regions
+# Record unique regions
 #----------------------------#
-log_info "record unique regions"
+log_info "Record unique regions"
 
 cat pe.anchor2.fa \
     | perl -nl -MPath::Tiny -e '
@@ -349,11 +337,17 @@ cat pe.others.fa \
     > pe.others.record.fa
 
 #----------------------------#
-# clear intermediate files
+# Clear intermediate files
 #----------------------------#
-log_info "clear intermediate files"
+log_info "Clear intermediate files"
 
-find . -type f -name "ambiguous.sam" | xargs rm
-find . -type f -name "unambiguous.sam" | xargs rm
-find . -type f -name "unmapped.sam" | xargs rm
-find . -type f -name "pe.unmapped.fa" | xargs rm
+find . -type f -name "ambiguous.sam" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "unambiguous.sam" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "unmapped.sam" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "pe.unmapped.fa" | parallel --no-run-if-empty -j 1 rm
+
+#----------------------------#
+# Done
+#----------------------------#
+touch anchor.success
+log_info "Done."
