@@ -1,3 +1,31 @@
+[TOC levels=1-3]: #
+
+# Table of Contents
+- [[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例](#masurca-安装与样例)
+- [特点](#特点)
+- [版本](#版本)
+- [依赖](#依赖)
+- [安装](#安装)
+- [样例数据](#样例数据)
+    - [Rhodobacter sphaeroides (球形红细菌)](#rhodobacter-sphaeroides-球形红细菌)
+        - [Illumina PE, Short Jump and Sanger4](#illumina-pe-short-jump-and-sanger4)
+        - [Rhodobacter sphaeroides with `superreads.pl`](#rhodobacter-sphaeroides-with-superreadspl)
+        - [结果比较](#结果比较)
+    - [E. coli sampling](#e-coli-sampling)
+        - [Download](#download)
+        - [Down sampling](#down-sampling)
+        - [Generate super-reads](#generate-super-reads)
+        - [Stats of super-reads](#stats-of-super-reads)
+        - [Create anchors](#create-anchors)
+    - [Dmel](#dmel)
+    - [Atha Ler-0-2, SRR616965](#atha-ler-0-2-srr616965)
+    - [Cele N2, DRR008443](#cele-n2-drr008443)
+        - [cele_n2: Down sampling](#cele_n2-down-sampling)
+        - [cele_n2: Generate super-reads](#cele_n2-generate-super-reads)
+        - [cele_n2: Create anchors](#cele_n2-create-anchors)
+        - [Results of DRR008443](#results-of-drr008443)
+
+
 # [MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
 
 doi:10.1093/bioinformatics/btt476
@@ -854,9 +882,9 @@ cat stat2.md
 * 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
 * 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
 * trim 的效果比 filter 好. 可能是留下了更多二代测序效果较差的位置. 最大的 EstG, trim 的更接近真实值
-    * Real    - 4641652
+    * Real - 4641652
     * Trimmed - 4621800 (EstG)
-    * Filter  - 4577674 (EstG)
+    * Filter - 4577674 (EstG)
 
 ### Create anchors
 
