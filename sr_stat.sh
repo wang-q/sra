@@ -142,7 +142,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
 
 elif [ "${STAT_TASK}" = "3" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s |  %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR" "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
@@ -157,8 +157,8 @@ elif [ "${STAT_TASK}" = "3" ]; then
             ${COUNT_COR} \
             ${COUNT_STRICT} \
             $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
-            $( faops n50 -H -N 50 -S -C superReadSequences.fasta )
-            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
+            $( faops n50 -H -N 50 -S -C superReadSequences.fasta ) \
+            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR/sr not exists"
     fi
