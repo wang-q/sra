@@ -1,7 +1,7 @@
 [TOC levels=1-3]: #
 
 # Table of Contents
-- [[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例](#masurca-安装与样例)
+- [Name](#name)
 - [特点](#特点)
 - [版本](#版本)
 - [依赖](#依赖)
@@ -18,15 +18,19 @@
         - [Stats of super-reads](#stats-of-super-reads)
         - [Create anchors](#create-anchors)
     - [Dmel](#dmel)
-    - [Atha Ler-0-2, SRR616965](#atha-ler-0-2-srr616965)
-    - [Cele N2, DRR008443](#cele-n2-drr008443)
+    - [Atha Ler-0-2, SRR611087](#atha-ler-0-2-srr611087)
+        - [Atha: Down sampling](#atha-down-sampling)
+    - [Cele N2,](#cele-n2)
         - [cele_n2: Down sampling](#cele_n2-down-sampling)
         - [cele_n2: Generate super-reads](#cele_n2-generate-super-reads)
         - [cele_n2: Create anchors](#cele_n2-create-anchors)
+        - [Results of ERR1039478](#results-of-err1039478)
         - [Results of DRR008443](#results-of-drr008443)
 
 
-# [MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
+# Name
+
+[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
 
 doi:10.1093/bioinformatics/btt476
 
@@ -1124,21 +1128,252 @@ rm *.gp
 
 果蝇的 paralog 比例为 0.0531
 
-## Atha Ler-0-2, SRR616965
+## Atha Ler-0-2, SRR611087
 
 拟南芥的 paralog 比例为 0.1115.
 
-```bash
-mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
-cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
+* Real:
 
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
-    -s 450 -d 50 -p 16
+    * S: 119,667,750
+
+* Original:
+
+    * N50: 100
+    * S: 5,079,145,000
+    * C: 50,791,450
+
+* Trimmed, 80-100 bp
+
+    * N50: 100
+    * S: 4,941,998,283
+    * C: 50,161,122
+
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/
+
+# sickle (pair end)
+#FastQ paired records kept: 91969660 (45984830 pairs)
+#FastQ single records kept: 4044959 (from PE1: 3144227, from PE2: 900732)
+#FastQ paired records discarded: 1523322 (761661 pairs)
+#FastQ single records discarded: 4044959 (from PE1: 900732, from PE2: 3144227)
+sickle pe \
+    -t sanger -l 80 -q 20 \
+    -f trimmed/SRR611087_1.scythe.fq.gz \
+    -r trimmed/SRR611087_2.scythe.fq.gz \
+    -o trimmed/R1.sickle.fq \
+    -p trimmed/R2.sickle.fq \
+    -s trimmed/single.sickle.fq
+
+find . -type f -name "*.sickle.fq" \
+    | parallel --no-run-if-empty -j 1 pigz -p 16
+
+# 
+faops n50 -S -C ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/SRR611087_1.fastq.gz
+
+faops n50 -S -C ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/trimmed/SRR611087_1.sickle.fq.gz
+
+cat ~/data/alignment/Ensembl/Atha/{1,2,3,4,5}.fa \
+    ~/data/alignment/Ensembl/Atha/Mt.fa.skip \
+    ~/data/alignment/Ensembl/Atha/Pt.fa.skip \
+    > ~/data/dna-seq/atha_ler_0/ref/genome.fa
+faops size ~/data/dna-seq/atha_ler_0/ref/genome.fa \
+    > ~/data/dna-seq/atha_ler_0/ref/chr.sizes
+
+faops n50 -S -C ~/data/dna-seq/atha_ler_0/ref/genome.fa
+
 ```
 
-## Cele N2, DRR008443
+### atha_ler_0: Down sampling
+
+* Trimmed
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+for count in 10000000 20000000 30000000 40000000 50000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/trimmed_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/trimmed/R1.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR611087/trimmed/R2.sickle.fq.gz ${count} \
+        | gzip > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### atha_ler_0: Generate super-reads
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        echo "${DIR_COUNT} doesn't exist"
+        continue;     
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "pe.cor.fa already presents"
+        continue     
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 450 -d 50 -p 16
+    popd > /dev/null
+done
+```
+
+Stats of super-reads
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+REAL_G=119667750
+
+bash ~/Scripts/sra/sr_stat.sh 1 header \
+    > ~/data/dna-seq/atha_ler_0/superreads/stat1.md
+
+bash ~/Scripts/sra/sr_stat.sh 2 header \
+    > ~/data/dna-seq/atha_ler_0/superreads/stat2.md
+
+for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
+do
+    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
+        >> ~/data/dna-seq/atha_ler_0/superreads/stat1.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
+        >> ~/data/dna-seq/atha_ler_0/superreads/stat2.md
+done
+
+cat stat1.md
+cat stat2.md
+```
+
+### atha_ler_0: Create anchors
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 16 false 80
+done
+```
+
+Stats of anchors
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+bash ~/Scripts/sra/sr_stat.sh 3 header \
+    > ~/data/dna-seq/atha_ler_0/superreads/stat3.md
+
+bash ~/Scripts/sra/sr_stat.sh 4 header \
+    > ~/data/dna-seq/atha_ler_0/superreads/stat4.md
+
+for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
+do
+    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
+        >> ~/data/dna-seq/atha_ler_0/superreads/stat3.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
+        >> ~/data/dna-seq/atha_ler_0/superreads/stat4.md
+done
+
+cat stat3.md
+cat stat4.md
+```
+
+### Results of Ler-0-2 SRR611087
+
+| Name             | fqSize | faSize | Length | Kmer |      EstG |   #reads |   RunTime |     SumSR | SR/EstG |
+|:-----------------|-------:|-------:|-------:|-----:|----------:|---------:|----------:|----------:|--------:|
+| trimmed_10000000 |   4.0G |   2.2G |     99 |   71 | 109553409 | 14621680 | 0:18'42'' | 149883264 |    1.37 |
+| trimmed_20000000 |   8.1G |   4.3G |     99 |   71 | 115109156 | 23959077 | 0:47'49'' | 165694773 |    1.44 |
+| trimmed_30000000 |    13G |   6.4G |     99 |   71 | 117211699 | 29102967 | 1:28'18'' | 183153206 |    1.56 |
+| trimmed_40000000 |    17G |   8.5G |     99 |   71 | 119222481 | 36697461 | 2:16'24'' | 214842934 |    1.80 |
+| trimmed_50000000 |    19G |   9.8G |     99 |   71 | 120413817 | 41843164 | 2:47'51'' | 235069643 |    1.95 |
+
+| Name             | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs |   RealG | CovFq | CovFa |    EstG |   SumSR | Est/Real | SumSR/Real | N50SR |
+|:-----------------|--------:|--------:|-------------:|----------:|----------:|--------:|------:|------:|--------:|--------:|---------:|-----------:|------:|
+| trimmed_10000000 |   1.86G |   1.83G |       0.0132 |     1.17M |    0.0006 | 114.12M |  16.7 |  16.4 | 104.48M | 142.94M |     0.92 |       1.25 |   219 |
+| trimmed_20000000 |   3.71G |   3.67G |       0.0122 |     1.89M |    0.0005 | 114.12M |  33.3 |  32.9 | 109.78M | 158.02M |     0.96 |       1.38 |   853 |
+| trimmed_30000000 |   5.57G |    5.5G |       0.0119 |     2.65M |    0.0005 | 114.12M |  50.0 |  49.4 | 111.78M | 174.67M |     0.98 |       1.53 |  2597 |
+| trimmed_40000000 |   7.42G |   7.34G |       0.0117 |     3.38M |    0.0004 | 114.12M |  66.6 |  65.8 |  113.7M | 204.89M |     1.00 |       1.80 |  4813 |
+| trimmed_50000000 |   8.53G |   8.44G |       0.0115 |      3.8M |    0.0004 | 114.12M |  76.6 |  75.7 | 114.84M | 224.18M |     1.01 |       1.96 |  5616 |
+
+| Name             |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |   RunTime |
+|:-----------------|---------:|-----------:|-----------:|------:|----------:|-------:|----------:|
+| trimmed_10000000 | 20000000 |   18679241 |     0.9340 |   219 | 149883264 | 743902 | 0:15'22'' |
+| trimmed_20000000 | 40000000 |   37700045 |     0.9425 |   853 | 165694773 | 441815 | 0:33'52'' |
+| trimmed_30000000 | 60000000 |   56740235 |     0.9457 |  2597 | 183153206 | 422754 | 0:58'45'' |
+| trimmed_40000000 | 80000000 |   75829134 |     0.9479 |  4813 | 214842934 | 479384 | 1:16'51'' |
+| trimmed_50000000 | 91969660 |   87268629 |     0.9489 |  5616 | 235069643 | 520760 | 1:27'35'' |
+
+| Name             | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:-----------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| trimmed_10000000 |      1162 |   1125310 |     925 |       1717 |      42040 |       24 |       217 | 148715914 |  742953 |
+| trimmed_20000000 |      2036 |  64236455 |   33284 |       2267 |    3007022 |     1335 |       363 |  98451296 |  407196 |
+| trimmed_30000000 |      5814 |  78937319 |   18666 |       5760 |   15931644 |     3574 |       244 |  88284243 |  400514 |
+| trimmed_40000000 |      9934 |  53969975 |    8065 |      11160 |   34196134 |     4443 |       692 | 126676825 |  466876 |
+| trimmed_50000000 |     10887 |  40425834 |    5527 |      12557 |   39642813 |     4506 |      1292 | 155000996 |  510727 |
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+#find . -type f -name "pe.linking.fa" | xargs rm
+find . -type f -name "pe.linking.frg" | xargs rm
+find . -type f -name "superReadSequences_shr.frg" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
+
+## Cele N2,
 
 线虫的 paralog 比例为 0.0472.
 
@@ -1148,9 +1383,9 @@ perl ~/Scripts/sra/superreads.pl \
 
 * Original:
 
-    * N50: 110
-    * S: 3,584,972,820
-    * C: 32,590,662
+    * N50: 146
+    * S: 4,884,291,350
+    * C: 34,518,470
 
 * Trimmed, 80-110 bp
 
@@ -1158,18 +1393,27 @@ perl ~/Scripts/sra/superreads.pl \
     * S: 3,176,158,837
     * C: 29,148,069
 
-* Trimmed90, 90-110 bp
-
-    * N50: 110
-    * S: 3,072,256,253
-    * C: 28,077,771
+[Insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp.
 
 ```bash
-faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_1.fastq.gz
+cd ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/
 
-faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.sickle.fq.gz
+# sickle (pair end)
+sickle pe \
+    -t sanger -l 120 -q 20 \
+    -f trimmed/ERR1039478_1.scythe.fq.gz \
+    -r trimmed/ERR1039478_2.scythe.fq.gz \
+    -o trimmed/R1.sickle.fq \
+    -p trimmed/R2.sickle.fq \
+    -s trimmed/single.sickle.fq
 
-faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq.gz
+find . -type f -name "*.sickle.fq" \
+    | parallel --no-run-if-empty -j 1 pigz -p 16
+
+# 
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_1.fastq.gz
+
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/ERR1039478_1.sickle.fq.gz
 
 cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa \
     ~/data/alignment/Ensembl/Cele/MtDNA.fa.skip \
@@ -1200,10 +1444,10 @@ do
     fi
     
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_1.fastq.gz ${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_1.fastq.gz ${count} \
         | gzip > ${DIR_COUNT}/R1.fq.gz
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/DRR008443_2.fastq.gz ${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_2.fastq.gz ${count} \
         | gzip > ${DIR_COUNT}/R2.fq.gz
 done
 ```
@@ -1225,49 +1469,10 @@ do
     fi
     
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.sickle.fq.gz ${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/R1.sickle.fq.gz ${count} \
         | gzip > ${DIR_COUNT}/R1.fq.gz
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_2.sickle.fq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R2.fq.gz
-done
-```
-
-* Trimmed90
-
-```bash
-mkdir -p ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90
-
-# sickle (pair end)
-sickle pe \
-    -t sanger -l 90 -q 20 \
-    -f ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_1.scythe.fq.gz \
-    -r ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed/DRR008443_2.scythe.fq.gz \
-    -o ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq \
-    -p ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_2.sickle.fq \
-    -s ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_single.sickle.fq
-
-find ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/ -type f -name "*.sickle.fq" \
-    | xargs pigz
-
-cd ~/data/dna-seq/cele_n2/superreads/
-
-for count in 10000000 15000000 20000000 25000000 30000000;
-do
-    echo
-    echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/trimmed90_${count}/"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_1.sickle.fq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R1.fq.gz
-    seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2/DRR008443/trimmed90/DRR008443_2.sickle.fq.gz ${count} \
+        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/R2.sickle.fq.gz ${count} \
         | gzip > ${DIR_COUNT}/R2.fq.gz
 done
 ```
@@ -1297,7 +1502,7 @@ do
     perl ~/Scripts/sra/superreads.pl \
         R1.fq.gz \
         R2.fq.gz \
-        -s 424 -d 40 -p 16
+        -s 200 -d 20 -p 16
     popd > /dev/null
 done
 ```
@@ -1384,7 +1589,29 @@ cat stat3.md
 cat stat4.md
 ```
 
+### Results of ERR1039478
+
+Adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
+
 ### Results of DRR008443
+
+* Original:
+
+    * N50: 110
+    * S: 3,584,972,820
+    * C: 32,590,662
+
+* Trimmed, 80-110 bp
+
+    * N50: 110
+    * S: 3,176,158,837
+    * C: 29,148,069
+
+* Trimmed90, 90-110 bp
+
+    * N50: 110
+    * S: 3,072,256,253
+    * C: 28,077,771
 
 | Name               | fqSize | faSize | Length | Kmer |     EstG |  #reads |   RunTime |     SumSR | SR/EstG |
 |:-------------------|-------:|-------:|-------:|-----:|---------:|--------:|----------:|----------:|--------:|
@@ -1457,3 +1684,19 @@ cat stat4.md
 | trimmed90_20000000 |      8242 |  28104963 |    5196 |      11343 |   29216944 |     4008 |      7084 | 119698478 |  139670 |
 | trimmed90_25000000 |      8038 |  17823911 |    3287 |      10932 |   27132570 |     3648 |      7700 | 153940242 |  155527 |
 | trimmed90_30000000 |      7590 |  13168217 |    2536 |      10214 |   25377251 |     3520 |      7640 | 172327440 |  166176 |
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd ~/data/dna-seq/cele_n2/superreads/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+#find . -type f -name "pe.linking.fa" | xargs rm
+find . -type f -name "pe.linking.frg" | xargs rm
+find . -type f -name "superReadSequences_shr.frg" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
