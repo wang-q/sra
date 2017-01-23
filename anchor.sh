@@ -357,10 +357,10 @@ cat pe.others.fa \
 #----------------------------#
 log_info "Clear intermediate files"
 
-find . -type f -name "ambiguous.sam" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "ambiguous.sam"   | parallel --no-run-if-empty -j 1 rm
 find . -type f -name "unambiguous.sam" | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "unmapped.sam" | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "pe.unmapped.fa" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "unmapped.sam"    | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "pe.unmapped.fa"  | parallel --no-run-if-empty -j 1 rm
 
 #----------------------------#
 # Done
