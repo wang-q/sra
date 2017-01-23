@@ -428,6 +428,7 @@ cd ~/data/dna-seq/cele_n2/sra
 cat << EOF > source.csv
 DRX007633,cele_n2,
 ERX1118232,cele_n2_2,
+SRX770040,cele_n2_3,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v \
