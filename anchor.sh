@@ -101,6 +101,7 @@ ln -s ../work1/superReadSequences.fasta .
 
 faops size superReadSequences.fasta > sr.chr.sizes
 
+log_debug "pe.strict.txt"
 if [ "${TOLERATE_SUBS}" = true ]; then
     # tolerates 1 substitution
     cat pe.cor.fa \
@@ -113,6 +114,7 @@ else
         > pe.strict.txt
 fi
 
+log_debug "pe.strict.fa"
 # Too large for `faops some`
 split -n10 -d pe.strict.txt pe.part
 
@@ -135,8 +137,10 @@ done >> pe.strict.fa
 log_info "unambiguous regions"
 
 # index
+log_debug "bbmap index"
 bbmap.sh ref=superReadSequences.fasta
 
+log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
@@ -144,6 +148,7 @@ bbmap.sh \
     ref=superReadSequences.fasta in=pe.strict.fa \
     outm=unambiguous.sam outu=unmapped.sam
 
+log_debug "sort bam"
 java -jar ~/share/picard-tools-1.128/picard.jar \
     SortSam \
     INPUT=unambiguous.sam \
@@ -151,6 +156,7 @@ java -jar ~/share/picard-tools-1.128/picard.jar \
     SORT_ORDER=coordinate \
     VALIDATION_STRINGENCY=LENIENT
 
+log_debug "genomeCoverageBed"
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
     | perl -nlae '
         $F[3] == 0 and next;
@@ -164,6 +170,7 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
 #----------------------------#
 log_info "ambiguous regions"
 
+log_debug "pe.unmapped.txt"
 cat unmapped.sam \
     | perl -nle '
         /^@/ and next;
@@ -171,6 +178,8 @@ cat unmapped.sam \
         print $fields[0];
     ' \
     > pe.unmapped.txt
+
+log_debug "pe.unmapped.fa"
 
 # Too large for `faops some`
 split -n10 -d pe.unmapped.txt pe.part
@@ -186,12 +195,14 @@ do
     rm pe.part${part}
 done >> pe.unmapped.fa
 
+log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
     ref=superReadSequences.fasta in=pe.unmapped.fa \
     outm=ambiguous.sam outu=unmapped2.sam
 
+log_debug "sort bam"
 java -jar ~/share/picard-tools-1.128/picard.jar \
     SortSam \
     INPUT=ambiguous.sam \
@@ -199,6 +210,7 @@ java -jar ~/share/picard-tools-1.128/picard.jar \
     SORT_ORDER=coordinate \
     VALIDATION_STRINGENCY=LENIENT
 
+log_debug "genomeCoverageBed"
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
     | perl -nlae '
         $F[3] == 0 and next;
@@ -211,12 +223,15 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
 #----------------------------#
 log_info "pe.anchor.fa"
 
+log_debug "unambiguous.cover"
 jrunlist cover unambiguous.cover.txt
 runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
 
+log_debug "ambiguous.cover"
 jrunlist cover ambiguous.cover.txt
 runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
 
+log_debug "unique.cover"
 runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
 runlist stat unique.cover.yml -s sr.chr.sizes -o unique.cover.csv
 
@@ -231,6 +246,7 @@ cat unique.cover.csv \
     | sort -n \
     > anchor.txt
 
+log_debug "pe.anchor.fa"
 faops some -l 0 superReadSequences.fasta anchor.txt pe.anchor.fa
 
 #----------------------------#
