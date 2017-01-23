@@ -1,3 +1,31 @@
+[TOC levels=1-3]: #
+
+# Table of Contents
+- [PacBio consensus](#pacbio-consensus)
+- [文档](#文档)
+    - [[几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)](#几个术语)
+    - [[Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)](#falcon-参数)
+    - [Falcon 结果文件](#falcon-结果文件)
+- [分析平台的历史](#分析平台的历史)
+- [使用 pitchfork 安装 GenomicConsensus 和 falcon](#使用-pitchfork-安装-genomicconsensus-和-falcon)
+    - [安装Linuxbrew](#安装linuxbrew)
+    - [安装最新的第三方依赖.](#安装最新的第三方依赖)
+    - [通过 pitchfork 编译.](#通过-pitchfork-编译)
+    - [直接安装 falcon-integrate, 现在不推荐](#直接安装-falcon-integrate-现在不推荐)
+- [falcon 样例数据](#falcon-样例数据)
+    - [`falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).](#falconexample-里的-e-coli-样例)
+    - [E. coli Bacterial Assembly (P6C4)](#e-coli-bacterial-assembly-p6c4)
+    - [C. elegans](#c-elegans)
+    - [复活草](#复活草)
+    - [Atha Ler-0](#atha-ler-0)
+    - [Scer S288c](#scer-s288c)
+    - [其它模式生物](#其它模式生物)
+- [其它相关的程序](#其它相关的程序)
+    - [PacBio 自产](#pacbio-自产)
+    - [混合组装](#混合组装)
+- [中文资料](#中文资料)
+
+
 # PacBio consensus
 
 现在主流的两种 PacBio 平台
@@ -28,7 +56,7 @@ P 指得是聚合酶, C 是化学试剂.
 | RNA Profiling      |   Poor    |                 贵                  |
 | ChIP-Seq           |   Poor    |                 贵                  |
 
-## 文档
+# 文档
 
 * PacBio 在 github 上的[首页](https://github.com/PacificBiosciences)
 * [Quiver HowTo](https://github.com/PacificBiosciences/GenomicConsensus/blob/master/doc/HowTo.rst)
@@ -49,7 +77,7 @@ P 指得是聚合酶, C 是化学试剂.
         * [Falcon assembly](https://github.com/PacificBiosciences/FALCON/issues/308)
         * [how to set the appropriate config file for larger genome using local mode](https://github.com/PacificBiosciences/FALCON/issues/466)
 
-### [几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)
+## [几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)
 
 * Subreads - 测序仪直接输出的实时序列, SMRTbell 两个接头之间的序列.
 * CCS - 对于较短的模板, 聚合酶在会在环形的 SMRTbell 上环绕多次, 即对同一序列测序多次. 得到的保守序列即为 CCS.
@@ -57,7 +85,7 @@ P 指得是聚合酶, C 是化学试剂.
 * `.subreads.bam` - 可直接用于分析的 subreads.
 * `.scraps.bam` - 接头, 标签和可能有问题的 subreads.
 
-### [Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
+## [Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)
 
 * input_fofn - 输入的 fasta 文件路径
 * input_type - `raw` for subreads, `preads` for error corrected reads
@@ -84,7 +112,7 @@ P 指得是聚合酶, C 是化学试剂.
       overlap of a given length cutoff, you can plot the distribution of the number of overlaps to
       make a better decision.
 
-###  Falcon 结果文件
+##  Falcon 结果文件
 
 * `daligner`
     * `0-rawreads/job_*`
@@ -105,7 +133,7 @@ P 指得是聚合酶, C 是化学试剂.
     * `sg_edges_list` - 原始 reads 之间的联系, 也就是组装 string graph 里的 edges. 可以用它将 reads 映射回
       contigs
 
-## 分析平台的历史
+# 分析平台的历史
 
 GenomicConsensus 是 PacBio 的组合程序包 SMRT Analysis Software (SMRTanalysis) 的一部分. 用于 consensus 和
 variant calling. SMRTanalysis 的当前版本为 v2.3.0, 发表时间为2014年. v3.0 好像已经跳票, v3.2
@@ -149,9 +177,9 @@ Quiver 没关系了. 因此, 我们不能直接从最新的代码中得到可以
 PacBio 也知道它的程序是一团乱麻, 给了一个从源码安装的方法,
 [pitchfork](https://github.com/PacificBiosciences/pitchfork), 还很酷地表示, 这是 unsupported.
 
-## 使用 pitchfork 安装 GenomicConsensus 和 falcon
+# 使用 pitchfork 安装 GenomicConsensus 和 falcon
 
-### 安装Linuxbrew
+## 安装Linuxbrew
 
 ```bash
 echo "==> Install dependencies"
@@ -181,7 +209,7 @@ else
 fi
 ```
 
-### 安装最新的第三方依赖.
+## 安装最新的第三方依赖.
 
 ```bash
 brew install md5sha1sum
@@ -210,7 +238,7 @@ echo "==> Install wang-q/tap"
 brew install faops
 ```
 
-### 通过 pitchfork 编译.
+## 通过 pitchfork 编译.
 
 ```bash
 mkdir -p ~/share
@@ -273,7 +301,7 @@ make
 
 ```
 
-### 直接安装 falcon-integrate, 现在不推荐
+## 直接安装 falcon-integrate, 现在不推荐
 
 [wiki page](https://github.com/PacificBiosciences/FALCON-integrate/wiki/Installation)
 
@@ -295,7 +323,7 @@ make -j all
 
 编译完成后, 会生成`fc_env`目录, 里面是可执行文件. `tree -L 2 fc_env`, `6 directories, 79 files`.
 
-## falcon 样例数据
+# falcon 样例数据
 
 falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载的, 在墙内无法按说明文件里的提示来使用.
 
@@ -316,7 +344,7 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
     find $HOME/data/pacbio -type d -name 'job_*' | xargs rm -fr
     ```
 
-### `falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
+## `falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).
 
 * 过墙下载以下三个文件
 
@@ -396,7 +424,7 @@ EOF
 time fc_run fc_run.cfg
 ```
 
-### E. coli Bacterial Assembly (P6C4)
+## E. coli Bacterial Assembly (P6C4)
 
 https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
 
@@ -494,7 +522,7 @@ time fc_run fc_run.cfg
 faops n50 -C 2-asm-falcon/p_ctg.fa
 ```
 
-### C. elegans
+## C. elegans
 
 https://github.com/PacificBiosciences/DevNet/wiki/C.-elegans-data-set
 
@@ -524,7 +552,7 @@ rsync -avP wangq@45.79.80.100:data/pacbio/rawdata/ ~/data/pacbio/rawdata
 faops n50 -S -C *.subreads.fasta.gz
 ```
 
-### 复活草
+## 复活草
 
 * 预处理
 
@@ -602,7 +630,7 @@ EOF
 fc_run fc_run.cfg
 ```
 
-### Atha Ler-0
+## Atha Ler-0
 
 * 三代原始数据
 
@@ -708,7 +736,7 @@ EOF
 fc_run fc_run.cfg
 ```
 
-### Scer S288c
+## Scer S288c
 
 From [this project](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
 
@@ -718,32 +746,28 @@ ftp://ftp.sra.ebi.ac.uk/vol1/ERA707/ERA707839/pacbio_hdf5/m150415_222327_00127_c
 ```
 
 
-### 其它模式生物
+## 其它模式生物
 
 用这篇文章里提供的样例, doi:10.1038/sdata.2014.45.
 
-## 其它相关的程序
+# 其它相关的程序
 
-### PacBio 自产
+## PacBio 自产
 
 * HGAP: Hierarchical Genome Assembly Process，层次基因组组装, 以相对较长的读长数据为种子 (Seeding Reads),
   以相对较短的读长数据用于内部纠错. 这个时候得到的读长数据足够长也足够准确, 完全可以用于 de novo 组装,
   而无需二代数据帮忙.
 * PBJelly: 用于gapclosing,
   [这里有简介.](https://github.com/alvaralmstedt/Tutorials/wiki/Gap-closing-with-PBJelly)
-* PacBio CLI tools, 用于转换 PacBio Sequel 生成的 .bam 文件, 只能在 macOS 下使用
-    * `brew install PacificBiosciences/tools/*tool-name*`
-    * bam2fasta
-    * bam2fastq
 
-### 混合组装
+## 混合组装
 
 * [DBG2LOC](http://www.nature.com/articles/srep31900) - 加上纯二代程序 Platanus (SOAP/ABySS)
 * ectools: 用二代的 contigs 代替 reads 来校正三代
 * LoRDEC - Celera Assembler
 * [quickmerge](https://github.com/mahulchak/quickmerge) - 合并纯三代组装与二三代混合组装
 
-## 中文资料
+# 中文资料
 
 [生物通上有个专题](http://www.ebiotrade.com/custom/ebiotrade/zt/130503/index.htm), 有点老,
 但基本的内容还是不错的.
