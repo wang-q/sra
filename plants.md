@@ -1,8 +1,30 @@
-# Plants 2+3
+[TOC levels=1-3]: #
 
-## super-reads
+# Table of Contents
+- [Name](#name)
+- [super-reads](#super-reads)
+    - [Ler-0-1, SRR3166543](#ler-0-1-srr3166543)
+    - [Ler-0-2, SRR611087](#ler-0-2-srr611087)
+    - [Ler-0-2, SRR616965](#ler-0-2-srr616965)
+    - [F63, Closterium sp., 新月藻](#f63-closterium-sp-新月藻)
+    - [F295, Cosmarium botrytis, 葡萄鼓藻](#f295-cosmariumbotrytis-葡萄鼓藻)
+    - [F340, Zygnema extenue, 亚小双星藻](#f340-zygnema-extenue-亚小双星藻)
+    - [F354, Spirogyra gracilis, 纤细水绵](#f354-spirogyragracilis-纤细水绵)
+    - [F357, Botryococcus braunii, 布朗葡萄藻](#f357-botryococcus-braunii-布朗葡萄藻)
+    - [F1084, Staurastrum sp., 角星鼓藻](#f1084-staurastrumsp-角星鼓藻)
+    - [moli, 茉莉](#moli-茉莉)
+    - [Otho, Oropetium thomaeum, 复活草](#otho-oropetium-thomaeum-复活草)
+    - [Summary of SR](#summary-of-sr)
+- [Anchors](#anchors)
 
-###  Ler-0-1, SRR3166543
+
+# Name
+
+Plants 2+3
+
+# super-reads
+
+##  Ler-0-1, SRR3166543
 
 `-s 300 -d 30` are guessed.
 
@@ -16,7 +38,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### Ler-0-2, SRR611087
+## Ler-0-2, SRR611087
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR611087
@@ -28,7 +50,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 450 -d 50 -p 16
 ```
 
-### Ler-0-2, SRR616965
+## Ler-0-2, SRR616965
 
 ```bash
 mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
@@ -40,7 +62,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 450 -d 50 -p 16
 ```
 
-### F63, Closterium sp., 新月藻
+## F63, Closterium sp., 新月藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F63
@@ -52,7 +74,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### F295, Cosmarium botrytis, 葡萄鼓藻
+## F295, Cosmarium botrytis, 葡萄鼓藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F295
@@ -64,7 +86,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### F340, Zygnema extenue, 亚小双星藻
+## F340, Zygnema extenue, 亚小双星藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F340
@@ -76,7 +98,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### F354, Spirogyra gracilis, 纤细水绵
+## F354, Spirogyra gracilis, 纤细水绵
 
 转录本杂合度 0.35%
 
@@ -90,7 +112,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### F357, Botryococcus braunii, 布朗葡萄藻
+## F357, Botryococcus braunii, 布朗葡萄藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F357
@@ -102,7 +124,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### F1084, Staurastrum sp., 角星鼓藻
+## F1084, Staurastrum sp., 角星鼓藻
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F1084
@@ -114,7 +136,7 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16
 ```
 
-### moli, 茉莉
+## moli, 茉莉
 
 SR had failed twice due to the calculating results from awk were larger than the MAX_INT
 
@@ -150,14 +172,14 @@ perl ~/Scripts/sra/superreads.pl \
     -s 300 -d 30 -p 16 --jf 10_000_000_000
 ```
 
-### Otho, Oropetium thomaeum, 复活草
+## Otho, Oropetium thomaeum, 复活草
 
 ```bash
 cd ~/zlc/Oropetium_thomaeum/illumina/masurca
 
 ```
 
-### Summary of SR
+## Summary of SR
 
 | Name       | fq size | fa size | Length | Kmer | Est. Genome |    #reads |   Run time |     Sum SR | SR/Est.G |
 |:-----------|--------:|--------:|-------:|-----:|------------:|----------:|-----------:|-----------:|---------:|
@@ -200,7 +222,7 @@ Thoughts:
 * 有多个因素会影响 SR/Est.G. 细菌与单倍体会趋向于 2, paralog 与杂合会趋向于 4.
 * 50 倍的二代数据并不充分, 与 100 倍之间还是有明显的差异的. 覆盖数不够也会导致 SR/Est.G 低于真实值.
 
-## Anchors
+# Anchors
 
 ```bash
 
@@ -257,4 +279,3 @@ find . -type f -name "*.tmp" | xargs rm
 #find . -type f -name "pe.renamed.fastq" | xargs rm
 
 ```
-
