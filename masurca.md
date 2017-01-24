@@ -1,7 +1,14 @@
+# [MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
+
+doi:10.1093/bioinformatics/btt476
+
+[MaSuRCA_QuickStartGuide](ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA_QuickStartGuide.pdf)
+
+
 [TOC levels=1-3]: #
 
 # Table of Contents
-- [Name](#name)
+- [[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例](#masurca-安装与样例)
 - [特点](#特点)
 - [版本](#版本)
 - [依赖](#依赖)
@@ -11,30 +18,31 @@
         - [Illumina PE, Short Jump and Sanger4](#illumina-pe-short-jump-and-sanger4)
         - [Rhodobacter sphaeroides with `superreads.pl`](#rhodobacter-sphaeroides-with-superreadspl)
         - [结果比较](#结果比较)
+- [Super-reads and anchors](#super-reads-and-anchors)
     - [E. coli sampling](#e-coli-sampling)
-        - [Download](#download)
-        - [Down sampling](#down-sampling)
-        - [Generate super-reads](#generate-super-reads)
-        - [Stats of super-reads](#stats-of-super-reads)
-        - [Create anchors](#create-anchors)
+        - [E. coli: Down sampling](#e-coli-down-sampling)
+        - [E. coli: Generate super-reads](#e-coli-generate-super-reads)
+        - [E. coli: Create anchors](#e-coli-create-anchors)
+    - [Scer S288c](#scer-s288c)
+        - [S288c: Down sampling](#s288c-down-sampling)
+        - [S288c: Generate super-reads](#s288c-generate-super-reads)
+        - [S288c: Create anchors](#s288c-create-anchors)
+        - [Results of S288c](#results-of-s288c)
     - [Dmel](#dmel)
     - [Atha Ler-0-2, SRR611087](#atha-ler-0-2-srr611087)
-        - [Atha: Down sampling](#atha-down-sampling)
-    - [Cele N2,](#cele-n2)
+        - [atha_ler_0: Down sampling](#atha_ler_0-down-sampling)
+        - [atha_ler_0: Generate super-reads](#atha_ler_0-generate-super-reads)
+        - [atha_ler_0: Create anchors](#atha_ler_0-create-anchors)
+        - [Results of Ler-0-2 SRR611087](#results-of-ler-0-2-srr611087)
+    - [Cele N2, SRR065390](#cele-n2-srr065390)
         - [cele_n2: Down sampling](#cele_n2-down-sampling)
         - [cele_n2: Generate super-reads](#cele_n2-generate-super-reads)
         - [cele_n2: Create anchors](#cele_n2-create-anchors)
+        - [Results of SRR065390](#results-of-srr065390)
+        - [Results of SRX770040](#results-of-srx770040)
         - [Results of ERR1039478](#results-of-err1039478)
         - [Results of DRR008443](#results-of-drr008443)
 
-
-# Name
-
-[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例
-
-doi:10.1093/bioinformatics/btt476
-
-[MaSuRCA_QuickStartGuide](ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA_QuickStartGuide.pdf)
 
 # 特点
 
@@ -455,6 +463,8 @@ cat stat.md
 
 * 有足够多的 long reads 支持下, 不需要 short jump.
 
+# Super-reads and anchors
+
 ## E. coli sampling
 
 * Real:
@@ -588,7 +598,7 @@ find . -type f -name "*_fastqc.zip" | sort | xargs rm
 find . -type f -name "*matches.txt" | sort | xargs rm
 ```
 
-### Down sampling
+### E. coli: Down sampling
 
 过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
 
@@ -673,7 +683,7 @@ do
 done
 ```
 
-### Generate super-reads
+### E. coli: Generate super-reads
 
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
@@ -888,7 +898,7 @@ cat stat2.md
     * Trimmed - 4621800 (EstG)
     * Filter - 4577674 (EstG)
 
-### Create anchors
+### E. coli: Create anchors
 
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
@@ -1992,6 +2002,58 @@ cat stat4.md
 
 ### Results of SRR065390
 
+| Name              | fqSize | faSize | Length | Kmer |     EstG |  #reads |   RunTime |     SumSR | SR/EstG |
+|:------------------|-------:|-------:|-------:|-----:|---------:|--------:|----------:|----------:|--------:|
+| original_5000000  |   2.1G |   1.1G |    100 |   71 | 92929502 | 4237331 | 0:07'47'' | 114630055 |    1.23 |
+| original_10000000 |   4.1G |   2.2G |    100 |   71 | 98356494 | 4103765 | 0:13'17'' | 124527490 |    1.27 |
+| original_15000000 |   6.1G |   3.3G |    100 |   71 | 98957791 | 3457756 | 0:18'47'' | 136907233 |    1.38 |
+| original_20000000 |   8.1G |   4.4G |    100 |   71 | 99267481 | 3709733 | 0:25'29'' | 169600281 |    1.71 |
+| original_25000000 |    11G |   5.5G |    100 |   71 | 99544508 | 4384492 | 0:32'06'' | 205852690 |    2.07 |
+| trimmed_5000000   |   2.0G |   1.1G |     97 |   71 | 89728970 | 4238244 | 0:08'01'' | 108071815 |    1.20 |
+| trimmed_10000000  |   4.0G |   2.1G |     97 |   71 | 96338023 | 4461952 | 0:14'16'' | 119316625 |    1.24 |
+| trimmed_15000000  |   6.0G |   3.2G |     97 |   71 | 97632827 | 4229480 | 0:19'53'' | 125977170 |    1.29 |
+| trimmed_20000000  |   7.9G |   4.3G |     97 |   71 | 98140587 | 4497438 | 0:23'54'' | 138081063 |    1.41 |
+| trimmed_25000000  |   9.6G |   5.2G |     97 |   71 | 98401080 | 4956541 | 0:28'33'' | 152036528 |    1.55 |
+
+| Name              | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs |  RealG | CovFq | CovFa |   EstG |   SumSR | Est/Real | SumSR/Real | N50SR |
+|:------------------|--------:|--------:|-------------:|----------:|----------:|-------:|------:|------:|-------:|--------:|---------:|-----------:|------:|
+| original_5000000  | 953.67M | 917.48M |       0.0380 |      3.6M |    0.0039 | 95.64M |  10.0 |   9.6 | 88.62M | 109.32M |     0.93 |       1.14 |   225 |
+| original_10000000 |   1.86G |    1.8G |       0.0319 |     7.19M |    0.0039 | 95.64M |  19.9 |  19.3 |  93.8M | 118.76M |     0.98 |       1.24 |   852 |
+| original_15000000 |   2.79G |   2.71G |       0.0314 |    10.75M |    0.0039 | 95.64M |  29.9 |  29.0 | 94.37M | 130.56M |     0.99 |       1.37 |  2548 |
+| original_20000000 |   3.73G |   3.61G |       0.0313 |    14.32M |    0.0039 | 95.64M |  39.9 |  38.6 | 94.67M | 161.74M |     0.99 |       1.69 |  5041 |
+| original_25000000 |   4.66G |   4.51G |       0.0312 |    17.86M |    0.0039 | 95.64M |  49.9 |  48.3 | 94.93M | 196.32M |     0.99 |       2.05 |  6399 |
+| trimmed_5000000   | 934.54M |  924.9M |       0.0103 |   720.84K |    0.0008 | 95.64M |   9.8 |   9.7 | 85.57M | 103.07M |     0.89 |       1.08 |   232 |
+| trimmed_10000000  |   1.83G |   1.81G |       0.0058 |     1.22M |    0.0007 | 95.64M |  19.5 |  19.4 | 91.88M | 113.79M |     0.96 |       1.19 |   732 |
+| trimmed_15000000  |   2.74G |   2.72G |       0.0053 |     1.79M |    0.0006 | 95.64M |  29.3 |  29.2 | 93.11M | 120.14M |     0.97 |       1.26 |  1625 |
+| trimmed_20000000  |   3.65G |   3.63G |       0.0051 |     2.37M |    0.0006 | 95.64M |  39.1 |  38.9 | 93.59M | 131.68M |     0.98 |       1.38 |  2742 |
+| trimmed_25000000  |   4.44G |   4.42G |       0.0051 |     2.87M |    0.0006 | 95.64M |  47.5 |  47.3 | 93.84M | 144.99M |     0.98 |       1.52 |  3679 |
+
+| Name              |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |   RunTime |
+|:------------------|---------:|-----------:|-----------:|------:|----------:|-------:|----------:|
+| original_5000000  | 10000000 |    7602249 |     0.7602 |   225 | 114630055 | 553678 | 0:09'56'' |
+| original_10000000 | 20000000 |   15354601 |     0.7677 |   852 | 124527490 | 265450 | 0:13'20'' |
+| original_15000000 | 30000000 |   23067089 |     0.7689 |  2548 | 136907233 | 179006 | 0:16'53'' |
+| original_20000000 | 40000000 |   30773095 |     0.7693 |  5041 | 169600281 | 176764 | 0:22'13'' |
+| original_25000000 | 50000000 |   38488018 |     0.7698 |  6399 | 205852690 | 196932 | 0:29'24'' |
+| trimmed_5000000   | 10000000 |    9262666 |     0.9263 |   232 | 108071815 | 515466 | 0:08'19'' |
+| trimmed_10000000  | 20000000 |   18710792 |     0.9355 |   732 | 119316625 | 289489 | 0:12'53'' |
+| trimmed_15000000  | 30000000 |   28105632 |     0.9369 |  1625 | 125977170 | 200138 | 0:16'23'' |
+| trimmed_20000000  | 40000000 |   37490526 |     0.9373 |  2742 | 138081063 | 170549 | 0:22'34'' |
+| trimmed_25000000  | 48649982 |   45610597 |     0.9375 |  3679 | 152036528 | 162520 | 0:27'03'' |
+
+| Name              | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:------------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| original_5000000  |      1189 |    875539 |     702 |       1554 |      58965 |       38 |       223 | 113695551 |  552938 |
+| original_10000000 |      1744 |  44247800 |   25614 |       1886 |    3818241 |     2046 |       482 |  76461449 |  237790 |
+| original_15000000 |      3845 |  61350580 |   19927 |       3890 |   15783908 |     4784 |       773 |  59772745 |  154295 |
+| original_20000000 |      6562 |  39170711 |    8611 |       8018 |   28677979 |     5306 |      3411 | 101751591 |  162847 |
+| original_25000000 |      7708 |  19947221 |    3779 |       9172 |   27177977 |     4439 |      5663 | 158727492 |  188714 |
+| trimmed_5000000   |      1175 |   1454889 |    1183 |          0 |          0 |        0 |       228 | 106616926 |  514283 |
+| trimmed_10000000  |      1698 |  38258120 |   22577 |       2027 |    2770249 |     1367 |       425 |  78288256 |  265545 |
+| trimmed_15000000  |      2819 |  57157408 |   23279 |       3193 |    9709459 |     3375 |       532 |  59110303 |  173484 |
+| trimmed_20000000  |      4024 |  54819040 |   17605 |       4704 |   16850986 |     4409 |       869 |  66411037 |  148535 |
+| trimmed_25000000  |      4658 |  46567378 |   13569 |       6449 |   23488038 |     4979 |      1947 |  81981112 |  143972 |
+
 ### Results of SRX770040
 
 [Insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp.
@@ -2107,3 +2169,4 @@ find . -type f -name "readPositionsInSuperReads" | xargs rm
 find . -type f -name "*.tmp" | xargs rm
 #find . -type f -name "pe.renamed.fastq" | xargs rm
 ```
+
