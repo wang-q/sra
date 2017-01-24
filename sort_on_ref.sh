@@ -80,41 +80,47 @@ OUT_BASE=${3:-sort}
 # Run
 #----------------------------#
 # create tmp dir
-mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+MY_TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 
+log_info "Temp dir: ${MY_TMP_DIR}"
+
+log_info "To positive strands"
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f ${FA_FILE} -g ${REF_FILE} \
-    --length 500 -o ${mytmpdir}/replace.tsv
+    --length 500 -o ${MY_TMP_DIR}/replace.tsv
 
-cat ${mytmpdir}/replace.tsv \
+cat ${MY_TMP_DIR}/replace.tsv \
     | perl -nla -e '/\(\-\)/ and print $F[0];' \
-    > ${mytmpdir}/rc.list
+    > ${MY_TMP_DIR}/rc.list
 
-faops some -l 0 -i ${FA_FILE} ${mytmpdir}/rc.list stdout \
-    > ${mytmpdir}/strand.fa
-faops some ${FA_FILE} ${mytmpdir}/rc.list stdout \
+faops some -l 0 -i ${FA_FILE} ${MY_TMP_DIR}/rc.list stdout \
+    > ${MY_TMP_DIR}/strand.fa
+faops some ${FA_FILE} ${MY_TMP_DIR}/rc.list stdout \
     | faops rc -l 0 stdin stdout \
-    >> ${mytmpdir}/strand.fa
+    >> ${MY_TMP_DIR}/strand.fa
 
-# recreate replace.tsv. now all positive strands
+log_info "Recreate replace.tsv"
+# now all positive strands
 perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f ${mytmpdir}/strand.fa -g ${REF_FILE} \
-    --length 500 -o ${mytmpdir}/replace.tsv
+    -f ${MY_TMP_DIR}/strand.fa -g ${REF_FILE} \
+    --length 500 -o ${MY_TMP_DIR}/replace.tsv
 
-faops filter -b ${mytmpdir}/strand.fa ${mytmpdir}/strand.fas
+log_info "Replace headers"
+# pretend to be a fas file
+faops filter -b ${MY_TMP_DIR}/strand.fa ${MY_TMP_DIR}/strand.fas
+fasops replace ${MY_TMP_DIR}/strand.fas ${MY_TMP_DIR}/replace.tsv -o ${MY_TMP_DIR}/replace.fas
 
-fasops replace ${mytmpdir}/strand.fas ${mytmpdir}/replace.tsv -o ${mytmpdir}/replace.fas
+log_info "Sort"
+faops size ${MY_TMP_DIR}/replace.fas | cut -f 1 > ${MY_TMP_DIR}/heads.list
+# rangeops would remove invalid headers
+rangeops sort ${MY_TMP_DIR}/heads.list -o stdout > ${MY_TMP_DIR}/heads.sort
+# append invalid headers
+grep -Fx -f ${MY_TMP_DIR}/heads.sort -v ${MY_TMP_DIR}/heads.list >> ${MY_TMP_DIR}/heads.sort
 
-faops size ${mytmpdir}/replace.fas | cut -f 1 > ${mytmpdir}/heads.list
-rangeops sort ${mytmpdir}/heads.list -o stdout > ${mytmpdir}/heads.sort
-grep -Fx -f ${mytmpdir}/heads.sort -v ${mytmpdir}/heads.list >> ${mytmpdir}/heads.sort
+faops order -l 0 ${MY_TMP_DIR}/replace.fas ${MY_TMP_DIR}/heads.sort ${MY_TMP_DIR}/sort.fa
 
-for word in $( cat ${mytmpdir}/heads.sort ); do
-    faops some -l 0 ${mytmpdir}/replace.fas <(echo ${word}) stdout
-done > ${mytmpdir}/sort.fa
-
-mv ${mytmpdir}/sort.fa ${OUT_BASE}.fa
-mv ${mytmpdir}/replace.tsv ${OUT_BASE}.replace.tsv
+mv ${MY_TMP_DIR}/sort.fa ${OUT_BASE}.fa
+mv ${MY_TMP_DIR}/replace.tsv ${OUT_BASE}.replace.tsv
 
 # clean tmp dir
-rm -fr ${mytmpdir}
+rm -fr ${MY_TMP_DIR}
