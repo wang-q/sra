@@ -457,8 +457,6 @@ cat stat.md
 
 ## E. coli sampling
 
-### Download
-
 * Real:
 
     * S: 4,641,652
@@ -705,7 +703,7 @@ do
 done
 ```
 
-### Stats of super-reads
+Stats of super-reads
 
 ```bash
 cd ~/data/dna-seq/e_coli/superreads/
@@ -1124,9 +1122,306 @@ rm out.delta
 rm *.gp
 ```
 
+## Scer S288c
+
+酿酒酵母的 paralog 比例为 0.058.
+
+* Real:
+
+    * S: 12,157,105
+
+* Original:
+
+    * N50: 151
+    * S: 1,469,540,607
+    * C: 9,732,057
+
+* Trimmed:
+
+    * N50: 151
+    * S: 1,336,727,027
+    * C: 8,884,270
+
+```bash
+# genome
+mkdir -p ~/data/dna-seq/scer_yjx_2016/ref
+cat ~/data/alignment/Ensembl/S288c/{I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI}.fa \
+    ~/data/alignment/Ensembl/S288c/Mito.fa.skip \
+    > ~/data/dna-seq/scer_yjx_2016/ref/genome.fa
+faops size ~/data/dna-seq/scer_yjx_2016/ref/genome.fa \
+    > ~/data/dna-seq/scer_yjx_2016/ref/chr.sizes
+
+faops n50 -S -C ~/data/dna-seq/scer_yjx_2016/ref/genome.fa
+
+# ENA hasn't synced with SRA for PRJNA340312
+# Downloading with prefetch from sratoolkit
+mkdir -p ~/data/dna-seq/scer_yjx_2016/sra
+cd ~/data/dna-seq/scer_yjx_2016/sra
+prefetch --progress 0.5 SRR4074255
+
+mkdir -p ~/data/dna-seq/scer_yjx_2016/process/S288c
+fastq-dump SRR4074255 \
+    --split-files \
+    -O ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255
+
+find ~/data/dna-seq/scer_yjx_2016/process/ -type f -name "*.fastq" | parallel -j 1 pigz -p 8
+
+cd ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255
+fastqc -t 8 \
+    SRR4074255_1.fastq.gz \
+    SRR4074255_2.fastq.gz
+
+# trim
+cat <<EOF > ~/data/dna-seq/scer_yjx_2016/ref/illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>solexa-forward
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+>nextera-forward-read-contam
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+>nextera-reverse-read-contam
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+>solexa-reverse
+AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+
+EOF
+
+mkdir -p ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/trimmed
+cd ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255
+
+# scythe (pair end)
+scythe \
+    SRR4074255_1.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a ~/data/dna-seq/scer_yjx_2016/ref/illumina_adapters.fa \
+    -m trimmed/R1.matches.txt \
+    --quiet \
+    | pigz -p 8 -c \
+    > trimmed/R1.scythe.fq.gz
+
+scythe \
+    SRR4074255_2.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a ~/data/dna-seq/scer_yjx_2016/ref/illumina_adapters.fa \
+    -m trimmed/R2.matches.txt \
+    --quiet \
+    | pigz -p 8 -c \
+    > trimmed/R2.scythe.fq.gz
+
+# sickle (pair end)
+#FastQ paired records kept: 17768540 (8884270 pairs)
+#FastQ single records kept: 488931 (from PE1: 443998, from PE2: 44933)
+#FastQ paired records discarded: 717712 (358856 pairs)
+#FastQ single records discarded: 488931 (from PE1: 44933, from PE2: 443998)
+sickle pe \
+    -t sanger -l 120 -q 20 \
+    -f trimmed/R1.scythe.fq.gz \
+    -r trimmed/R2.scythe.fq.gz \
+    -o trimmed/R1.sickle.fq \
+    -p trimmed/R2.sickle.fq \
+    -s trimmed/single.sickle.fq
+
+find . -type f -name "*.sickle.fq" | parallel -j 1 pigz -p 8
+
+fastqc -t 8 \
+    trimmed/R1.sickle.fq.gz \
+    trimmed/R2.sickle.fq.gz \
+    trimmed/single.sickle.fq.gz
+
+# 
+faops n50 -S -C ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/SRR4074255_1.fastq.gz
+
+faops n50 -S -C ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/trimmed/R1.sickle.fq.gz
+
+# clean
+find . -type d -name "*fastqc" | sort | xargs rm -fr
+find . -type f -name "*_fastqc.zip" | sort | xargs rm
+find . -type f -name "*matches.txt" | sort | xargs rm
+
+```
+
+### S288c: Down sampling
+
+* Original
+
+```bash
+midir -p ~/data/dna-seq/scer_yjx_2016/superreads/
+cd ~/data/dna-seq/scer_yjx_2016/superreads/
+
+for count in 500000 1000000 1500000 2000000 3000000 4000000 5000000 6000000 7000000 8000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/scer_yjx_2016/superreads/original_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/SRR4074255_1.fastq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/SRR4074255_2.fastq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+* Trimmed
+
+```bash
+midir -p ~/data/dna-seq/scer_yjx_2016/superreads/
+cd ~/data/dna-seq/scer_yjx_2016/superreads/
+
+for count in 500000 1000000 1500000 2000000 3000000 4000000 5000000 6000000 7000000 8000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/scer_yjx_2016/superreads/trimmed_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/trimmed/R1.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/scer_yjx_2016/process/S288c/SRR4074255/trimmed/R2.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### S288c: Generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/scer_yjx_2016/superreads/
+cd ${BASE_DIR}
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        echo "${DIR_COUNT} doesn't exist"
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 16
+    popd > /dev/null
+done
+```
+
+Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/scer_yjx_2016/superreads/
+cd ${BASE_DIR}
+
+REAL_G=12157105
+
+bash ~/Scripts/sra/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+bash ~/Scripts/sra/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat1.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat2.md
+done
+
+cat stat1.md
+cat stat2.md
+```
+
+### S288c: Create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/scer_yjx_2016/superreads/
+cd ${BASE_DIR}
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 16 false 120
+done
+```
+
+Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/scer_yjx_2016/superreads/
+cd ${BASE_DIR}
+
+bash ~/Scripts/sra/sr_stat.sh 3 header \
+    > ${BASE_DIR}/stat3.md
+
+bash ~/Scripts/sra/sr_stat.sh 4 header \
+    > ${BASE_DIR}/stat4.md
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat3.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat4.md
+done
+
+cat stat3.md
+cat stat4.md
+```
+
+### Results of S288c
+
+
 ## Dmel
 
-果蝇的 paralog 比例为 0.0531
+果蝇的 paralog 比例为 0.0531.
 
 ## Atha Ler-0-2, SRR611087
 
