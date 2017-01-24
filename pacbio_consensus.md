@@ -740,6 +740,15 @@ fc_run fc_run.cfg
 
 From [this project](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
 
+```bash
+cd ~/data/pacbio/rawdata/
+perl ~/Scripts/download/list.pl -u https://yjx1217.github.io/Yeast_PacBio_2016/data/
+perl ~/Scripts/download/download.pl -a -i Yeast_PacBio_2016_data.yml
+
+proxychains4 aria2c -x 9 -s 3 -c -i ~/data/pacbio/rawdata/Yeast_PacBio_2016_data.yml.txt
+
+```
+
 ```
 SAMEA4461733
 ftp://ftp.sra.ebi.ac.uk/vol1/ERA707/ERA707839/pacbio_hdf5/m150415_222327_00127_c100782992550000001823173608251511_s1_p0.1.bax.h5
