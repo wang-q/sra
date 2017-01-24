@@ -1373,7 +1373,30 @@ find . -type f -name "*.tmp" | xargs rm
 #find . -type f -name "pe.renamed.fastq" | xargs rm
 ```
 
-## Cele N2,
+Dotplot of pe.anchor.fa.
+
+http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
+
+```bash
+cd ~/data/dna-seq/atha_ler_0/superreads/
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/sra/sort_on_ref.sh trimmed_30000000/sr/pe.${part}.fa ../ref/genome.fa pe.${part}
+    nucmer -l 200 ../ref/genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+#brew install mummer
+#brew install homebrew/versions/gnuplot4
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+```
+
+## Cele N2, SRR065390
 
 线虫的 paralog 比例为 0.0472.
 
@@ -1383,37 +1406,23 @@ find . -type f -name "*.tmp" | xargs rm
 
 * Original:
 
-    * N50: 146
-    * S: 4,884,291,350
-    * C: 34,518,470
+    * N50: 100
+    * S: 3,380,854,600
+    * C: 33,808,546
 
-* Trimmed, 80-110 bp
+* Trimmed, 80-100 bp
 
-    * N50: 110
-    * S: 3,176,158,837
-    * C: 29,148,069
-
-[Insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp.
+    * N50: 100
+    * S: 2,389,553,628
+    * C: 24,324,991
 
 ```bash
-cd ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/
-
-# sickle (pair end)
-sickle pe \
-    -t sanger -l 120 -q 20 \
-    -f trimmed/ERR1039478_1.scythe.fq.gz \
-    -r trimmed/ERR1039478_2.scythe.fq.gz \
-    -o trimmed/R1.sickle.fq \
-    -p trimmed/R2.sickle.fq \
-    -s trimmed/single.sickle.fq
-
-find . -type f -name "*.sickle.fq" \
-    | parallel --no-run-if-empty -j 1 pigz -p 16
+cd ~/data/dna-seq/cele_n2/process/cele_n2_2/SRR065390/
 
 # 
-faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_1.fastq.gz
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/SRR065390_1.fastq.gz
 
-faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/ERR1039478_1.sickle.fq.gz
+faops n50 -S -C ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/trimmed/SRR065390_1.sickle.fq.gz
 
 cat ~/data/alignment/Ensembl/Cele/{I,II,III,IV,V,X}.fa \
     ~/data/alignment/Ensembl/Cele/MtDNA.fa.skip \
@@ -1422,6 +1431,8 @@ faops size ~/data/dna-seq/cele_n2/ref/genome.fa \
     > ~/data/dna-seq/cele_n2/ref/chr.sizes
 
 faops n50 -S -C ~/data/dna-seq/cele_n2/ref/genome.fa
+
+find 
 ```
 
 ### cele_n2: Down sampling
@@ -1432,7 +1443,7 @@ faops n50 -S -C ~/data/dna-seq/cele_n2/ref/genome.fa
 mkdir -p ~/data/dna-seq/cele_n2/superreads/
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in 10000000 15000000 20000000 25000000 30000000;
+for count in 5000000 10000000 15000000 20000000 25000000;
 do
     echo
     echo "==> Reads ${count}"
@@ -1444,11 +1455,11 @@ do
     fi
     
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_1.fastq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R1.fq.gz
+        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/SRR065390_1.fastq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/ERR1039478_2.fastq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R2.fq.gz
+        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/SRR065390_2.fastq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
 done
 ```
 
@@ -1457,7 +1468,7 @@ done
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for count in 10000000 15000000 20000000 25000000 30000000;
+for count in 5000000 10000000 15000000 20000000 25000000;
 do
     echo
     echo "==> Reads ${count}"
@@ -1469,11 +1480,11 @@ do
     fi
     
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/R1.sickle.fq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R1.fq.gz
+        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/trimmed/SRR065390_1.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
     seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_2/ERR1039478/trimmed/R2.sickle.fq.gz ${count} \
-        | gzip > ${DIR_COUNT}/R2.fq.gz
+        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/trimmed/SRR065390_2.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
 done
 ```
 
@@ -1482,7 +1493,7 @@ done
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
 do
     echo
     echo "==> Reads ${d}"
@@ -1520,7 +1531,7 @@ bash ~/Scripts/sra/sr_stat.sh 1 header \
 bash ~/Scripts/sra/sr_stat.sh 2 header \
     > ~/data/dna-seq/cele_n2/superreads/stat2.md
 
-for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
 do
     DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
     
@@ -1544,7 +1555,7 @@ cat stat2.md
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
 do
     echo
     echo "==> Reads ${d}"
@@ -1564,13 +1575,15 @@ Stats of anchors
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
+REAL_G=100286401
+
 bash ~/Scripts/sra/sr_stat.sh 3 header \
     > ~/data/dna-seq/cele_n2/superreads/stat3.md
 
 bash ~/Scripts/sra/sr_stat.sh 4 header \
     > ~/data/dna-seq/cele_n2/superreads/stat4.md
 
-for d in {original,trimmed,trimmed90}_{10000000,15000000,20000000,25000000,30000000};
+for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
 do
     DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/${d}/"
     
@@ -1581,13 +1594,21 @@ do
     bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
         >> ~/data/dna-seq/cele_n2/superreads/stat3.md
     
-    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} ${REAL_G} \
         >> ~/data/dna-seq/cele_n2/superreads/stat4.md
 done
 
 cat stat3.md
 cat stat4.md
 ```
+
+### Results of SRR065390
+
+
+
+### Results of SRX770040
+
+[Insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp.
 
 ### Results of ERR1039478
 
