@@ -102,7 +102,7 @@ while ( my $row = $csv->getline($csv_fh) ) {
         ? $master->{$name}
         : {};
     for (@srx) {
-        $sample->{$_} = erx_worker($_);
+        $sample->{$_} = erx_worker( $_, $opt->{verbose} );
     }
     $master->{$name} = $sample;
     warn "\n";
@@ -191,7 +191,8 @@ sub srs_worker {
 }
 
 sub erx_worker {
-    my $term = shift;
+    my $term    = shift;
+    my $verbose = shift;
 
     my $mech = WWW::Mechanize->new;
     $mech->stack_depth(0);    # no history to save memory
@@ -204,6 +205,7 @@ sub erx_worker {
         . "library_name,library_layout,nominal_length,library_source,library_selection,"
         . "read_count,base_count,sra_md5,sra_ftp&download=txt";
     my $url = $url_part1 . $term . $url_part2;
+    warn "$url\n" if $verbose;
 
     $mech->get($url);
     my @lines = split /\n/, $mech->content;
