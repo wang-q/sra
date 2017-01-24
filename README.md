@@ -378,6 +378,41 @@ bash bash/tri.sophora_japonica.sh
 
 # *De novo* dna-seq projects (dn_dna_*.pl)
 
+## Scer S288c
+
+Grab information and download.
+
+```bash
+mkdir -p ~/data/dna-seq/scer_yjx_2016/sra
+cd ~/data/dna-seq/scer_yjx_2016/sra
+
+cat << EOF > source.csv
+SRX2058864,S288c,Scer
+SRX2058865,DBVPG6044,Scer
+SRX2058866,DBVPG6765,Scer
+SRX2058867,SK1,Scer
+SRX2058894,Y12,Scer
+SRX2058905,YPS128,Scer
+SRX2058909,UWOPS03-461,Scer
+SRX2058910,CBS432,Spar
+SRX2058911,N44,Spar
+SRX2058915,YPS138,Spar
+SRX2058916,UFRJ50816,Spar
+SRX2058917,UWOPS91-917,Spar
+EOF
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
+    > sra_info.yml
+
+# check before running these
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+```
+
+
 ## Atha Ler-0
 
 Grab information.
