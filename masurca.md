@@ -1575,8 +1575,6 @@ Stats of anchors
 ```bash
 cd ~/data/dna-seq/cele_n2/superreads/
 
-REAL_G=100286401
-
 bash ~/Scripts/sra/sr_stat.sh 3 header \
     > ~/data/dna-seq/cele_n2/superreads/stat3.md
 
@@ -1594,7 +1592,7 @@ do
     bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
         >> ~/data/dna-seq/cele_n2/superreads/stat3.md
     
-    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} ${REAL_G} \
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
         >> ~/data/dna-seq/cele_n2/superreads/stat4.md
 done
 
@@ -1603,8 +1601,6 @@ cat stat4.md
 ```
 
 ### Results of SRR065390
-
-
 
 ### Results of SRX770040
 
