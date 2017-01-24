@@ -167,19 +167,22 @@ elif [ "${STAT_TASK}" = "4" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             "Name" \
-            "N50Anchor" "SumAnchor" "#anchor" \
-            "N50Anchor2" "SumAnchor2" "#anchor2" \
-            "N50Others" "SumOthers" "#others"
+            "NG50Anchor" "SumAnchor" "#anchor" \
+            "NG50Anchor2" "SumAnchor2" "#anchor2" \
+            "NG50Others" "SumOthers" "#others"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+    elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
+        log_warn "Need a integer for GENOME_SIZE"
+        exit 1;
     elif [ -d "${RESULT_DIR}/sr" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
 
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             $( basename $( dirname $(pwd) ) ) \
-            $( faops n50 -H -N 50 -S -C pe.anchor.fa ) \
-            $( faops n50 -H -N 50 -S -C pe.anchor2.fa ) \
-            $( faops n50 -H -N 50 -S -C pe.others.fa )
+            $( faops n50 -H -N 50 -S -C ${GENOME_SIZE} pe.anchor.fa ) \
+            $( faops n50 -H -N 50 -S -C ${GENOME_SIZE} pe.anchor2.fa ) \
+            $( faops n50 -H -N 50 -S -C ${GENOME_SIZE} pe.others.fa )
     else
         log_warn "RESULT_DIR/sr not exists"
     fi
