@@ -1520,9 +1520,224 @@ cat stat4.md
 | trimmed_7000000  |      5915 |    482738 |     103 |       8153 |    3054084 |      449 |      5935 |  25535528 |   15419 |
 | trimmed_8000000  |      6036 |    331219 |      73 |       6958 |    2316110 |      382 |      5224 |  28313408 |   18384 |
 
-## Dmel
+## Dmel iso-1 (ycnbwsp), SRR306628
 
 果蝇的 paralog 比例为 0.0531.
+
+
+* Real:
+
+    * N50: 25,286,936
+    * S: 137,567,477
+    * C: 8
+
+* Original:
+
+    * N50: 151
+    * S: 1,469,540,607
+    * C: 9,732,057
+
+* Trimmed:
+
+    * N50: 151
+    * S: 1,336,727,027
+    * C: 8,884,270
+
+```bash
+# genome
+mkdir -p ~/data/dna-seq/dmel_ycnbwsp/ref
+cat ~/data/alignment/Ensembl/Dmel/{2L,2R,3L,3R,X}.fa \
+    ~/data/alignment/Ensembl/Dmel/4.fa.skip \
+    ~/data/alignment/Ensembl/Dmel/Y.fa.skip \
+    ~/data/alignment/Ensembl/Dmel/dmel_mitochondrion_genome.fa.skip \
+    > ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa
+faops size ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa \
+    > ~/data/dna-seq/dmel_ycnbwsp/ref/chr.sizes
+
+faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa
+
+# Downloading with prefetch from sratoolkit
+mkdir -p ~/data/dna-seq/dmel_ycnbwsp/sra
+cd ~/data/dna-seq/dmel_ycnbwsp/sra
+prefetch --progress 0.5 SRR306628
+
+mkdir -p ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE
+fastq-dump SRR306628 \
+    --split-files \
+    -O ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
+
+find ~/data/dna-seq/dmel_ycnbwsp/process/ -type f -name "*.fastq" | parallel -j 1 pigz -p 8
+
+cd ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
+fastqc -t 8 \
+    SRR306628_1.fastq.gz \
+    SRR306628_2.fastq.gz
+
+# trim
+cat <<EOF > ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>solexa-forward
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+>nextera-forward-read-contam
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+>nextera-reverse-read-contam
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+>solexa-reverse
+AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+
+EOF
+
+mkdir -p ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed
+cd ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
+
+# scythe (pair end)
+scythe \
+    SRR4074255_1.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa \
+    -m trimmed/R1.matches.txt \
+    --quiet \
+    | pigz -p 8 -c \
+    > trimmed/R1.scythe.fq.gz
+
+scythe \
+    SRR4074255_2.fastq.gz \
+    -q sanger \
+    -M 20 \
+    -a ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa \
+    -m trimmed/R2.matches.txt \
+    --quiet \
+    | pigz -p 8 -c \
+    > trimmed/R2.scythe.fq.gz
+
+# sickle (pair end)
+#FastQ paired records kept: 17768540 (8884270 pairs)
+#FastQ single records kept: 488931 (from PE1: 443998, from PE2: 44933)
+#FastQ paired records discarded: 717712 (358856 pairs)
+#FastQ single records discarded: 488931 (from PE1: 44933, from PE2: 443998)
+sickle pe \
+    -t sanger -l 120 -q 20 \
+    -f trimmed/R1.scythe.fq.gz \
+    -r trimmed/R2.scythe.fq.gz \
+    -o trimmed/R1.sickle.fq \
+    -p trimmed/R2.sickle.fq \
+    -s trimmed/single.sickle.fq
+
+find . -type f -name "*.sickle.fq" | parallel -j 1 pigz -p 8
+
+fastqc -t 8 \
+    trimmed/R1.sickle.fq.gz \
+    trimmed/R2.sickle.fq.gz \
+    trimmed/single.sickle.fq.gz
+
+# 
+faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/SRR306628_1.fastq.gz
+
+faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/R1.sickle.fq.gz
+
+# clean
+find . -type d -name "*fastqc" | sort | xargs rm -fr
+find . -type f -name "*_fastqc.zip" | sort | xargs rm
+find . -type f -name "*matches.txt" | sort | xargs rm
+
+```
+
+### Dmel iso-1: Down sampling
+
+* Trimmed
+
+```bash
+cd ~/data/dna-seq/dmel_ycnbwsp/superreads/
+
+for count in 5000000 10000000 15000000 20000000 25000000;
+do
+    echo
+    echo "==> Reads ${count}"
+    DIR_COUNT="$HOME/data/dna-seq/dmel_ycnbwsp/superreads/trimmed_${count}/"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    seqtk sample -s${count} \
+        ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/SRR306628_1.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
+    seqtk sample -s${count} \
+        ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/SRR306628_2.sickle.fq.gz ${count} \
+        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
+done
+```
+
+### Dmel iso-1: Generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/dmel_ycnbwsp/superreads/
+cd ${BASE_DIR}
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        echo "${DIR_COUNT} doesn't exist"
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 335 -d 33 -p 16
+    popd > /dev/null
+done
+```
+
+Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/dmel_ycnbwsp/superreads/
+cd ${BASE_DIR}
+
+REAL_G=12157105
+
+bash ~/Scripts/sra/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+bash ~/Scripts/sra/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat1.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat2.md
+done
+
+cat stat1.md
+cat stat2.md
+```
 
 ## Atha Ler-0-2, SRR611087
 
