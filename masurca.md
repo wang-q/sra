@@ -467,6 +467,8 @@ cat stat.md
 
 ## E. coli sampling
 
+Escherichia coli str. K-12 substr. MG1655 的 paralog 比例为 0.0323.
+
 * Real:
 
     * S: 4,641,652
