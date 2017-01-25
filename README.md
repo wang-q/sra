@@ -493,6 +493,53 @@ find . -type f -name "*_fastqc.zip" | sort | xargs rm
 find . -type f -name "*matches.txt" | sort | xargs rm
 ```
 
+## Dmel iso-1
+
+Grab information and download.
+
+https://www.ncbi.nlm.nih.gov/Traces/study/?WebEnv=NCID_1_30627556_130.14.22.76_5555_1485202367_2381182026_0MetA0_S_HStore&query_key=73
+
+```bash
+mkdir -p ~/data/dna-seq/dmel_iso_1/sra
+cd ~/data/dna-seq/dmel_iso_1/sra
+
+cat << EOF > source.csv
+SRX081846,ycnbwsp_3-HE,
+SRX063977,ycnbwsp_4,
+SRX063980,ycnbwsp_9-HE,
+SRX063981,ycnbwsp_10-HE,
+SRX063982,ycnbwsp_11-HE,
+SRX063983,ycnbwsp_12-HE,
+SRX063984,ycnbwsp_13-HE,
+SRX063985,ycnbwsp_14-HE,
+EOF
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
+    > sra_info.yml
+
+# check before running these
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+```
+
+Generate bash files and run.
+
+```bash
+perl ~/Scripts/sra/dn_dna.pl \
+    -b ~/data/dna-seq/dmel_iso_1 \
+    -c ~/data/dna-seq/dmel_iso_1/sra/sra_info.csv
+
+cd ~/data/dna-seq/dmel_iso_1
+
+
+find . -type d -name "*fastqc" | sort | xargs rm -fr
+find . -type f -name "*_fastqc.zip" | sort | xargs rm
+find . -type f -name "*matches.txt" | sort | xargs rm
+```
+
 ## Setaria italica
 
 Grab information.
