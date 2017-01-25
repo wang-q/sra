@@ -137,17 +137,21 @@ cp [% lane.file.0 %] [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz
 [% IF lane.layout == 'PAIRED' -%]
 # sra to fastq (pair end)
 fastq-dump [% lane.file %] \
-    --split-files --gzip -O [% item.dir %]/[% lane.srr %] \
+    --split-files -O [% item.dir %]/[% lane.srr %] \
 [% ELSE -%]
 # sra to fastq (single end)
 fastq-dump [% lane.file %] \
-    --gzip -O [% item.dir %]/[% lane.srr %] \
+    -O [% item.dir %]/[% lane.srr %] \
 [% END -%]
     2>&1 | tee -a [% data_dir.log %]/srr_dump.log ; ( exit ${PIPESTATUS} )
 [% END -%]
 
 [ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [fastq dump] failed >> [% base_dir %]/fail.log && exit 255
 echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
+
+find [% item.dir %]/[% lane.srr %]/ -type f -name "*.fastq" \
+    | parallel --no-run-if-empty -j 1 pigz -p [% parallel %]
+echo "* Gzip sra fastq [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
 
 [% END -%]
 
@@ -274,7 +278,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.matches.txt \
     --quiet \
-    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
+    | pigz -p [% parallel %] -cc > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
 
 scythe \
     [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
@@ -283,7 +287,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.matches.txt \
     --quiet \
-    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz
+    | pigz -p [% parallel %] -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz
 
 [% ELSE -%]
 # scythe (single end)
@@ -294,7 +298,7 @@ scythe \
     -a [% ref_file.adapters %] \
     -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].matches.txt \
     --quiet \
-    | gzip -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
+    | pigz -p [% parallel %] -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
 
 [% END -%]
 
