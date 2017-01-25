@@ -1096,7 +1096,7 @@ find . -type f -name "*.tmp" | xargs rm
 
 ```
 
-Dotplot of pe.anchor.fa.
+### E. coli: Quality assessment
 
 http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
 
@@ -1520,6 +1520,26 @@ cat stat4.md
 | trimmed_7000000  |      5915 |    482738 |     103 |       8153 |    3054084 |      449 |      5935 |  25535528 |   15419 |
 | trimmed_8000000  |      6036 |    331219 |      73 |       6958 |    2316110 |      382 |      5224 |  28313408 |   18384 |
 
+
+### S288c: Quality assessment
+
+```bash
+cd ~/data/dna-seq/scer_yjx_2016/superreads/
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/sra/sort_on_ref.sh trimmed_4000000/sr/pe.${part}.fa ../ref/genome.fa pe.${part}
+    nucmer -l 200 ../ref/genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+```
+
+
 ## Dmel iso-1 (ycnbwsp), SRR306628
 
 果蝇的 paralog 比例为 0.0531.
@@ -1533,98 +1553,40 @@ cat stat4.md
 
 * Original:
 
-    * N50: 151
-    * S: 1,469,540,607
-    * C: 9,732,057
+    * N50: 146
+    * S: 6,426,336,000
+    * C: 44,016,000
 
 * Trimmed:
 
-    * N50: 151
-    * S: 1,336,727,027
-    * C: 8,884,270
+    * N50: 146
+    * S: 3,675,899,439
+    * C: 25,742,237
 
 ```bash
 # genome
-mkdir -p ~/data/dna-seq/dmel_ycnbwsp/ref
+mkdir -p ~/data/dna-seq/dmel_iso_1/ref
 cat ~/data/alignment/Ensembl/Dmel/{2L,2R,3L,3R,X}.fa \
     ~/data/alignment/Ensembl/Dmel/4.fa.skip \
     ~/data/alignment/Ensembl/Dmel/Y.fa.skip \
     ~/data/alignment/Ensembl/Dmel/dmel_mitochondrion_genome.fa.skip \
-    > ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa
-faops size ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa \
-    > ~/data/dna-seq/dmel_ycnbwsp/ref/chr.sizes
+    > ~/data/dna-seq/dmel_iso_1/ref/genome.fa
+faops size ~/data/dna-seq/dmel_iso_1/ref/genome.fa \
+    > ~/data/dna-seq/dmel_iso_1/ref/chr.sizes
 
-faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/ref/genome.fa
-
-# Downloading with prefetch from sratoolkit
-mkdir -p ~/data/dna-seq/dmel_ycnbwsp/sra
-cd ~/data/dna-seq/dmel_ycnbwsp/sra
-prefetch --progress 0.5 SRR306628
-
-mkdir -p ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE
-fastq-dump SRR306628 \
-    --split-files \
-    -O ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
-
-find ~/data/dna-seq/dmel_ycnbwsp/process/ -type f -name "*.fastq" | parallel -j 1 pigz -p 8
-
-cd ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
-fastqc -t 8 \
-    SRR306628_1.fastq.gz \
-    SRR306628_2.fastq.gz
-
-# trim
-cat <<EOF > ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa
->multiplexing-forward
-GATCGGAAGAGCACACGTCT
->solexa-forward
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
->truseq-forward-contam
-AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
->truseq-reverse-contam
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
->nextera-forward-read-contam
-CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
->nextera-reverse-read-contam
-CTGTCTCTTATACACATCTGACGCTGCCGACGA
->solexa-reverse
-AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
-
-EOF
-
-mkdir -p ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed
-cd ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628
-
-# scythe (pair end)
-scythe \
-    SRR4074255_1.fastq.gz \
-    -q sanger \
-    -M 20 \
-    -a ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa \
-    -m trimmed/R1.matches.txt \
-    --quiet \
-    | pigz -p 8 -c \
-    > trimmed/R1.scythe.fq.gz
-
-scythe \
-    SRR4074255_2.fastq.gz \
-    -q sanger \
-    -M 20 \
-    -a ~/data/dna-seq/dmel_ycnbwsp/ref/illumina_adapters.fa \
-    -m trimmed/R2.matches.txt \
-    --quiet \
-    | pigz -p 8 -c \
-    > trimmed/R2.scythe.fq.gz
+faops n50 -S -C ~/data/dna-seq/dmel_iso_1/ref/genome.fa
 
 # sickle (pair end)
-#FastQ paired records kept: 17768540 (8884270 pairs)
-#FastQ single records kept: 488931 (from PE1: 443998, from PE2: 44933)
-#FastQ paired records discarded: 717712 (358856 pairs)
-#FastQ single records discarded: 488931 (from PE1: 44933, from PE2: 443998)
+#FastQ paired records kept: 51484474 (25742237 pairs)
+#FastQ single records kept: 11634965 (from PE1: 8163557, from PE2: 3471408)
+#FastQ paired records discarded: 13277596 (6638798 pairs)
+#FastQ single records discarded: 11634965 (from PE1: 3471408, from PE2: 8163557)
+
+cd ~/data/dna-seq/dmel_iso_1/process/ycnbwsp_3-HE/SRR306628/
 sickle pe \
     -t sanger -l 120 -q 20 \
-    -f trimmed/R1.scythe.fq.gz \
-    -r trimmed/R2.scythe.fq.gz \
+    -f trimmed/SRR306628_1.scythe.fq.gz \
+    -r trimmed/SRR306628_2.scythe.fq.gz \
     -o trimmed/R1.sickle.fq \
     -p trimmed/R2.sickle.fq \
     -s trimmed/single.sickle.fq
@@ -1637,9 +1599,9 @@ fastqc -t 8 \
     trimmed/single.sickle.fq.gz
 
 # 
-faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/SRR306628_1.fastq.gz
+faops n50 -S -C ~/data/dna-seq/dmel_iso_1/process/ycnbwsp_3-HE/SRR306628/SRR306628_1.fastq.gz
 
-faops n50 -S -C ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/R1.sickle.fq.gz
+faops n50 -S -C ~/data/dna-seq/dmel_iso_1/process/ycnbwsp_3-HE/SRR306628/trimmed/R1.sickle.fq.gz
 
 # clean
 find . -type d -name "*fastqc" | sort | xargs rm -fr
@@ -1653,13 +1615,13 @@ find . -type f -name "*matches.txt" | sort | xargs rm
 * Trimmed
 
 ```bash
-cd ~/data/dna-seq/dmel_ycnbwsp/superreads/
+cd ~/data/dna-seq/dmel_iso_1/superreads/
 
 for count in 5000000 10000000 15000000 20000000 25000000;
 do
     echo
     echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/dmel_ycnbwsp/superreads/trimmed_${count}/"
+    DIR_COUNT="$HOME/data/dna-seq/dmel_iso_1/superreads/trimmed_${count}/"
     mkdir -p ${DIR_COUNT}
     
     if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
@@ -1667,10 +1629,10 @@ do
     fi
     
     seqtk sample -s${count} \
-        ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/SRR306628_1.sickle.fq.gz ${count} \
+        ~/data/dna-seq/dmel_iso_1/process/ycnbwsp_3-HE/SRR306628/trimmed/R1.sickle.fq.gz ${count} \
         | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
     seqtk sample -s${count} \
-        ~/data/dna-seq/dmel_ycnbwsp/process/ycnbwsp_3-HE/SRR306628/trimmed/SRR306628_2.sickle.fq.gz ${count} \
+        ~/data/dna-seq/dmel_iso_1/process/ycnbwsp_3-HE/SRR306628/trimmed/R2.sickle.fq.gz ${count} \
         | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
 done
 ```
@@ -1678,10 +1640,10 @@ done
 ### Dmel iso-1: Generate super-reads
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/dmel_ycnbwsp/superreads/
+BASE_DIR=$HOME/data/dna-seq/dmel_iso_1/superreads/
 cd ${BASE_DIR}
 
-for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     echo
     echo "==> Reads ${d}"
@@ -1709,10 +1671,10 @@ done
 Stats of super-reads
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/dmel_ycnbwsp/superreads/
+BASE_DIR=$HOME/data/dna-seq/dmel_iso_1/superreads/
 cd ${BASE_DIR}
 
-REAL_G=12157105
+REAL_G=137567477
 
 bash ~/Scripts/sra/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
@@ -1720,7 +1682,7 @@ bash ~/Scripts/sra/sr_stat.sh 1 header \
 bash ~/Scripts/sra/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in {original,trimmed}_{500000,1000000,1500000,2000000,3000000,4000000,5000000,6000000,7000000,8000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -1738,6 +1700,92 @@ done
 cat stat1.md
 cat stat2.md
 ```
+
+### Dmel iso-1: Create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/dmel_iso_1/superreads/
+cd ${BASE_DIR}
+
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/sra/anchor.sh ${DIR_COUNT} 16 false 80
+done
+```
+
+Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/dmel_iso_1/superreads/
+cd ${BASE_DIR}
+
+bash ~/Scripts/sra/sr_stat.sh 3 header \
+    > ${BASE_DIR}/stat3.md
+
+bash ~/Scripts/sra/sr_stat.sh 4 header \
+    > ${BASE_DIR}/stat4.md
+
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat3.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat4.md
+done
+
+cat stat3.md
+cat stat4.md
+```
+
+### Results of Dmel iso-1, SRR306628
+
+| Name             | fqSize | faSize | Length | Kmer |      EstG |  #reads |   RunTime |     SumSR | SR/EstG |
+|:-----------------|-------:|-------:|-------:|-----:|----------:|--------:|----------:|----------:|--------:|
+| trimmed_5000000  |   2.8G |   1.5G |    140 |   95 | 101616171 | 2011642 | 0:10'43'' | 118886672 |    1.17 |
+| trimmed_10000000 |   5.6G |   3.0G |    139 |   93 | 116605924 | 2410962 | 0:18'05'' | 150111568 |    1.29 |
+| trimmed_15000000 |   8.4G |   4.5G |    139 |   93 | 123211364 | 2965273 | 0:28'16'' | 171076322 |    1.39 |
+| trimmed_20000000 |    12G |   5.9G |    138 |   91 | 127406531 | 3568605 | 0:39'55'' | 193257821 |    1.52 |
+| trimmed_25000000 |    14G |   7.4G |    137 |   91 | 130471378 | 4310106 | 0:46'54'' | 214192281 |    1.64 |
+
+| Name             | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs |   RealG | CovFq | CovFa |    EstG |   SumSR | Est/Real | SumSR/Real | N50SR |
+|:-----------------|--------:|--------:|-------------:|----------:|----------:|--------:|------:|------:|--------:|--------:|---------:|-----------:|------:|
+| trimmed_5000000  |   1.32G |   1.29G |       0.0191 |     1.95M |    0.0015 | 131.19M |  10.3 |  10.1 |  96.91M | 113.38M |     0.74 |       0.86 |   508 |
+| trimmed_10000000 |   2.64G |   2.61G |       0.0102 |     3.88M |    0.0015 | 131.19M |  20.6 |  20.4 |  111.2M | 143.16M |     0.85 |       1.09 |   976 |
+| trimmed_15000000 |   3.96G |   3.93G |       0.0080 |     5.78M |    0.0014 | 131.19M |  30.9 |  30.7 |  117.5M | 163.15M |     0.90 |       1.24 |  1386 |
+| trimmed_20000000 |   5.28G |   5.24G |       0.0070 |     7.64M |    0.0014 | 131.19M |  41.2 |  40.9 |  121.5M | 184.31M |     0.93 |       1.40 |  1785 |
+| trimmed_25000000 |    6.6G |   6.56G |       0.0065 |     9.47M |    0.0014 | 131.19M |  51.5 |  51.2 | 124.43M | 204.27M |     0.95 |       1.56 |  1953 |
+
+| Name             |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |   RunTime |
+|:-----------------|---------:|-----------:|-----------:|------:|----------:|-------:|----------:|
+| trimmed_5000000  | 10000000 |    8162877 |     0.8163 |   508 | 118886672 | 298918 | 0:06'00'' |
+| trimmed_10000000 | 20000000 |   16496969 |     0.8248 |   976 | 150111568 | 253222 | 0:14'58'' |
+| trimmed_15000000 | 30000000 |   24841652 |     0.8281 |  1386 | 171076322 | 245682 | 0:17'26'' |
+| trimmed_20000000 | 40000000 |   33212165 |     0.8303 |  1785 | 193257821 | 250002 | 0:26'06'' |
+| trimmed_25000000 | 50000000 |   41599006 |     0.8320 |  1953 | 214192281 | 267520 | 0:25'51'' |
+
+| Name             | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:-----------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| trimmed_5000000  |      1706 |  21860206 |   12645 |       1669 |    3069540 |     1726 |       407 |  93956926 |  284547 |
+| trimmed_10000000 |      2263 |  51567954 |   24256 |       3206 |    8171316 |     3232 |       483 |  90372298 |  225734 |
+| trimmed_15000000 |      2676 |  59798540 |   24990 |       4211 |   12587890 |     3985 |       544 |  98689892 |  216707 |
+| trimmed_20000000 |      2970 |  59249666 |   22921 |       4986 |   17988668 |     4742 |       672 | 116019487 |  222339 |
+| trimmed_25000000 |      3094 |  54681296 |   20563 |       5134 |   21395516 |     5329 |       830 | 138115469 |  241628 |
 
 ## Atha Ler-0-2, SRR611087
 
