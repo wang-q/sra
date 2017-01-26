@@ -465,6 +465,22 @@ cat stat.md
 
 # Super-reads and anchors
 
+* E. coli K-12 MG1655
+    * [x] Illumina
+    * [x] PacBio
+* Scer S288c
+    * [x] Illumina
+    * [x] PacBio
+* Dmel iso-1
+    * [x] Illumina
+    * [ ] PacBio
+* Atha Ler-0
+    * [x] Illumina
+    * [x] PacBio
+* Cele N2
+    * [x] Illumina
+    * [ ] PacBio
+
 ## E. coli sampling
 
 Escherichia coli str. K-12 substr. MG1655 的 paralog 比例为 0.0323.
