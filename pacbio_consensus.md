@@ -45,16 +45,16 @@ P 指得是聚合酶, C 是化学试剂.
 | Instrument price         |     $700k     |  $350k   |
 | Run price                |     $400      |   $850   |
 
-|                    |  Sequel   |                 原因                 |
-|:-------------------|:---------:|:-----------------------------------:|
-| Human Whole Genome |  Ok/Good  | 贵; 低偏向, 长读长, 利于鉴定结构变异及组装 |
-| Small Genome       |   Good    |        长读长, 只需要较低的通量         |
-| Targeted           |   Good    |        长读长, 只需要较低的通量         |
-| Transcriptome      | Poor/Good |      贵; 但二代没法得到全长的转录本       |
-| Metagenomics       |  Poor/Ok  |        贵; 但利于 de novo 组装        |
-| Exome              |   Poor    |        贵; 长读长对外显子没有用处        |
-| RNA Profiling      |   Poor    |                 贵                  |
-| ChIP-Seq           |   Poor    |                 贵                  |
+|                    |  Sequel   |                  原因                   |
+|:-------------------|:---------:|:--------------------------------------:|
+| Human Whole Genome |  Ok/Good  | 贵; 低偏向, 长读长, 利于鉴定结构变异及组装  |
+| Small Genome       |   Good    |         长读长, 只需要较低的通量          |
+| Targeted           |   Good    |         长读长, 只需要较低的通量          |
+| Transcriptome      | Poor/Good |       贵; 但二代没法得到全长的转录本       |
+| Metagenomics       |  Poor/Ok  |         贵; 但利于 de novo 组装          |
+| Exome              |   Poor    |        贵; 长读长对外显子没有用处         |
+| RNA Profiling      |   Poor    |                   贵                   |
+| ChIP-Seq           |   Poor    |                   贵                   |
 
 # 文档
 
