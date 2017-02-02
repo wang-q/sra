@@ -1,7 +1,11 @@
+# PacBio consensus
+
+
 [TOC levels=1-3]: #
 
 # Table of Contents
 - [PacBio consensus](#pacbio-consensus)
+- [RS II 与 Sequel 对比](#rs-ii-与-sequel-对比)
 - [文档](#文档)
     - [[几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)](#几个术语)
     - [[Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)](#falcon-参数)
@@ -25,8 +29,7 @@
     - [混合组装](#混合组装)
 - [中文资料](#中文资料)
 
-
-# PacBio consensus
+# RS II 与 Sequel 对比
 
 现在主流的两种 PacBio 平台
 [RS II 与 Sequel 对比](http://allseq.com/knowledge-bank/sequencing-platforms/pacific-biosciences/)
@@ -858,14 +861,15 @@ overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10
 
 EOF
 
-#real    104m51.013s
-#user    450m44.099s
-#sys     501m49.603s
+#real    189m32.405s
+#user    1246m43.891s
+#sys     1409m58.985s
 time fc_run fc_run.cfg
 
-#N50     4641042
-#C       1
-faops n50 -C 2-asm-falcon/p_ctg.fa
+#N50     33889
+#S       1117524
+#C       54
+faops n50 -S -C 2-asm-falcon/p_ctg.fa
 ```
 
 ## 其它模式生物
