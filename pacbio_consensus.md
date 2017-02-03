@@ -335,8 +335,8 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 注意:
 
 * fasta 文件**必须**以 `.fasta` 为扩展名
-* fasta 文件中的序列名称, 必须符合 falcon 的要求, 即 sra 默认名称**不符合要求**, 错误提示为 `Pacbio header line
-  format error`
+* fasta 文件中的序列名称, 必须符合 falcon (fasta2DB of dazz_db) 的要求, 即 sra 默认名称**不符合要求**,
+  错误提示为 `Pacbio header line format error`
 * [这里](https://github.com/PacificBiosciences/FALCON/issues/251)有个脚本帮助解决这个问题. 已经放到本地,
   `falcon_name_fasta.pl`
 
@@ -523,6 +523,31 @@ time fc_run fc_run.cfg
 #N50     4641042
 #C       1
 faops n50 -C 2-asm-falcon/p_ctg.fa
+```
+
+## E. coli canu
+
+```bash
+mkdir -p ~/data/pacbio/rawdata/ecoli_canu
+cd ~/data/pacbio/rawdata/ecoli_canu
+
+curl -L -o p6.25x.fastq http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p6_25x.filtered.fastq
+
+# canu requires gnuplot 5 while mummer requires gnuplot 4
+brew install canu
+brew install gnuplot
+brew unlink gnuplot
+brew install gnuplot4
+brew unlink gnuplot4
+brew link gnuplot4
+```
+
+```bash
+canu \
+    -p ecoli -d ecoli-auto \
+    gnuplot=$HOME/.linuxbrew/Cellar/gnuplot/5.0.5_2/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw p6.25x.fastq
 ```
 
 ## C. elegans
@@ -833,10 +858,10 @@ input_type = raw
 #input_type = preads
 
 # The length cutoff used for seed reads used for initial mapping
-length_cutoff = 12000
+length_cutoff = 8000
 
 # The length cutoff used for seed reads used for pre-assembly
-length_cutoff_pr = 12000
+length_cutoff_pr = 8000
 
 # Cluster queue setting
 sge_option_da =
@@ -861,14 +886,14 @@ overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10
 
 EOF
 
-#real    189m32.405s
-#user    1246m43.891s
-#sys     1409m58.985s
+#real    274m19.701s
+#user    2202m51.987s
+#sys     1737m17.436s
 time fc_run fc_run.cfg
 
-#N50     33889
-#S       1117524
-#C       54
+#N50     791352
+#S       12094794
+#C       39
 faops n50 -S -C 2-asm-falcon/p_ctg.fa
 ```
 
