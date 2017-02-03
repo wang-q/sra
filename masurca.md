@@ -1145,7 +1145,7 @@ rm *.gp
   either the subject or target block.
 * Let the program automatically select a value of *t* that meets a given memory usage limit
   specified (in Gb) by the `-M` parameter
-
+* one or more interval tracks specified with the `-m` option (m for mask)
 
 ```bash
 cd ~/zlc/Ecoli/anchorAlign
@@ -1171,7 +1171,7 @@ DBdust myDB
 if [ -e myDB.las ]; then
     rm myDB.las
 fi
-HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 > job.sh
+HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
 bash job.sh
 
 #LAshow myDB.db myDB.las 
@@ -1267,7 +1267,7 @@ DBdust myDB
 if [ -e myDB.las ]; then
     rm myDB.las
 fi
-HPC.daligner myDB > job.sh
+HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
 bash job.sh
 
 # If the -o option is set then only alignments that are *proper overlaps* 
