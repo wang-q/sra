@@ -114,15 +114,10 @@ for my $orig_seq1 (@orig_seqs) {
         = length( $data_ref->{'orig_seqname'}->{$orig_seq1}->{'sequence'} );
 }
 
-my $seq_count = @orig_seqs;
-my $DIGITS    = length($seq_count);
-
 for my $orig_seq2 (@orig_seqs) {
     $i++;
     my $serial_no = $i;
-    my $sf_format = '%0' . $DIGITS . 'u';
-    $serial_no = sprintf( $sf_format, $serial_no )
-        or die "Can't zero-pad serial number $serial_no\n";
+    $serial_no = sprintf( '%u', $serial_no );
 
     my $new_name
         = $prefix . q{/}
