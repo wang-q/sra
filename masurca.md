@@ -1151,6 +1151,9 @@ rm *.gp
 cd ~/zlc/Ecoli/anchorAlign
 
 bash ~/Scripts/sra/link_anchor.sh 0_14.anchor.fasta 0_14.pac.fasta 0_14
+bash ~/Scripts/sra/link_anchor.sh 9_2.anchor.fasta 9_2.pac.fasta 9_2
+bash ~/Scripts/sra/link_anchor.sh 3_66.anchor.fasta 3_66.pac.fasta 3_66
+bash ~/Scripts/sra/link_anchor.sh 12_66.anchor.fasta 12_66.pac.fasta 12_66
 
 ```
 
