@@ -46,13 +46,11 @@ if ( !$infile ) {
 }
 
 if ( $prefix =~ /\W/xms ) {
-    die
-        "Cannot accept prefix with space or non-word characters (such as \".\"): $prefix\n";
+    die "Cannot accept prefix with space or non-word characters (such as \".\"): $prefix\n";
 }
 
 if ( $outfile =~ /[^\w\.]/xms ) {
-    die
-        "Cannot accept outfile with space or non-standard characters: $outfile\n";
+    die "Cannot accept outfile with space or non-standard characters: $outfile\n";
 }
 
 # Have human-readable default value:
@@ -74,22 +72,19 @@ my @orig_seqs    = ();
 
 my $data_ref = {};
 
-# Accept either a stream from '-' or a standard file.
-my $INFILE;
-if ( $infile eq '-' ) {
-
-    # Special case: get the stdin handle
-    $INFILE = *STDIN{IO};
+# Accept either a stream from 'stdin' or a standard file.
+my $in_fh;
+if ( lc $infile eq 'stdin' ) {
+    $in_fh = *STDIN{IO};
 }
 else {
-    # Standard case: open the file
-    open $INFILE, '<', $infile;
+    open $in_fh, '<', $infile;
 }
 
-open my $OUTFILE, '>', $outfile;
-open my $TABLE,   '>', $table;
+open my $out_fh,   '>', $outfile;
+open my $table_fh, '>', $table;
 
-while ( my $input = <$INFILE> ) {
+while ( my $input = <$in_fh> ) {
     chomp $input;
     if ( $input =~ /\A > (\S+) /xms ) {
         $orig_seqname = $1;
@@ -112,7 +107,7 @@ while ( my $input = <$INFILE> ) {
         }
     }
 }
-close $INFILE;
+close $in_fh;
 
 for my $orig_seq1 (@orig_seqs) {
     $data_ref->{'orig_seqname'}->{$orig_seq1}->{'length'}
@@ -134,22 +129,20 @@ for my $orig_seq2 (@orig_seqs) {
         . $serial_no . q{/0_}
         . $data_ref->{'orig_seqname'}->{$orig_seq2}->{'length'};
 
-    print $OUTFILE '>' . "$new_name\n";
-    print $TABLE "$orig_seq2\t$new_name\n";
-    my @output_lines = unpack(
-        "a60" x (
-            $data_ref->{'orig_seqname'}->{$orig_seq2}->{'length'} / 60 + 1 ),
-        $data_ref->{'orig_seqname'}->{$orig_seq2}->{'sequence'}
-    );
+    print $out_fh '>' . "$new_name\n";
+    print $table_fh "$orig_seq2\t$new_name\n";
+    my @output_lines
+        = unpack( "a60" x ( $data_ref->{'orig_seqname'}->{$orig_seq2}->{'length'} / 60 + 1 ),
+        $data_ref->{'orig_seqname'}->{$orig_seq2}->{'sequence'} );
     for my $output_line (@output_lines) {
         if ( $output_line =~ /\S/ ) {
-            print $OUTFILE "$output_line\n";
+            print $out_fh "$output_line\n";
         }
     }
 }
 
-close $OUTFILE;
-close $TABLE;
+close $out_fh;
+close $table_fh;
 
 #----------------------------------------------------------#
 # Subroutines
