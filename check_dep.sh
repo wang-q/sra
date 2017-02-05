@@ -39,6 +39,7 @@ hash runlist 2>/dev/null || {
 # link_anchor.sh
 #----------------------------#
 # faops
+# runlist
 
 hash fasta2DB 2>/dev/null || {
     echo >&2 "DAZZ_DB is required but it's not installed.";
