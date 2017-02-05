@@ -178,24 +178,13 @@ bash job.sh
 
 # If the -o option is set then only alignments that are *proper overlaps*
 # (a sequence end occurs at the each end of the alignment) are displayed.
-LAshow -co myDB.db myDB.las > cns.co.txt
+LAshow -o myDB.db myDB.las > show.txt
 
 log_info "Create outputs"
 popd
 mv ${MY_TMP_DIR}/renamed.rc.fasta ${OUT_BASE}.renamed.fasta
-mv ${MY_TMP_DIR}/cns.co.txt ${OUT_BASE}.cns.co.txt
+mv ${MY_TMP_DIR}/show.txt ${OUT_BASE}.show.txt
 mv ${MY_TMP_DIR}/old2new_names.txt ${OUT_BASE}.names.txt
 
 # clean tmp dir
 rm -fr ${MY_TMP_DIR}
-
-#LA4Falcon -H8000 -fo myDB.db myDB.las > cns.8000.txt
-#LA4Falcon -fo myDB.db myDB.las > cns.all.txt
-
-## 140
-#LAdump -o myDB.db myDB.las "1-${COUNT_ANCHOR}" \
-#    | grep "^P" | wc -l
-#
-## 169
-#LAdump myDB.db myDB.las "1-${COUNT_ANCHOR}" \
-#    | grep "^P" | wc -l
