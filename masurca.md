@@ -1155,6 +1155,28 @@ bash ~/Scripts/sra/link_anchor.sh 9_2.anchor.fasta 9_2.pac.fasta 9_2
 bash ~/Scripts/sra/link_anchor.sh 3_66.anchor.fasta 3_66.pac.fasta 3_66
 bash ~/Scripts/sra/link_anchor.sh 12_66.anchor.fasta 12_66.pac.fasta 12_66
 
+# Exceeded memory bound: 502169772
+#poa -preserve_seqorder -read_fasta 9_2.renamed.fasta -clustal 9_2.aln -hb ~/Scripts/sra/poa-blosum80.mat 
+
+cp 9_2.renamed.fasta myDB.pp.fasta
+
+DBrm myDB
+fasta2DB myDB myDB.pp.fasta
+DBdust myDB
+
+if [ -e myDB.las ]; then
+    rm myDB.las
+fi
+HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
+bash job.sh
+rm job.sh
+
+LAshow -o myDB.db myDB.las | sed 's/,//g'
+LA4Falcon -o myDB.db myDB.las
+
+# pip install pysam biopython
+python ~/Scripts/sra/nanocorrect.py myDB all > corrected.fasta
+
 ```
 
 ## Scer S288c
