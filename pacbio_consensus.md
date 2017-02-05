@@ -580,6 +580,10 @@ rsync -avP wangq@45.79.80.100:data/pacbio/rawdata/ ~/data/pacbio/rawdata
 faops n50 -S -C *.subreads.fasta.gz
 ```
 
+## Atha Col-0
+
+https://www.ncbi.nlm.nih.gov/sra?LinkName=biosample_sra&from_uid=4539665
+
 ## 复活草
 
 * 预处理
