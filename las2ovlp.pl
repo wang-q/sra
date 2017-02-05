@@ -76,16 +76,15 @@ while ( my $line = <$in_fh> ) {
         .*$
     }x or next;
 
-    my $f_id = $1;
-    my $g_id = $2;
-    my $ori  = $3;
-    my $f_B  = $4;
-    my $f_E  = $5;
-    my $g_B  = $6;
-    my $g_E  = $7;
-    my $idt  = $8;
+    my $f_id  = $1;
+    my $g_id  = $2;
+    my $g_ori = $3 eq "n" ? 0 : 1;
+    my $f_B   = $4;
+    my $f_E   = $5;
+    my $g_B   = $6;
+    my $g_E   = $7;
+    my $idt   = 100 - $8;
 
-    my $g_ori = $ori eq "n" ? 0 : 1;
     my $ovlp_len = $f_E - $f_B;
 
     printf "%d\t%d\t%d\t%.1f", $f_id, $g_id, $ovlp_len, $idt;
