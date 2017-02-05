@@ -33,39 +33,6 @@ log_debug () {
 }
 
 #----------------------------#
-# External dependencies
-#----------------------------#
-hash faops 2>/dev/null || {
-    echo >&2 "faops is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
-    exit 1;
-}
-
-hash fasta2DB 2>/dev/null || {
-    echo >&2 "DAZZ_DB is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/dazz_db@20161112";
-    exit 1;
-}
-
-hash daligner 2>/dev/null || {
-    echo >&2 "daligner is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/daligner@20170203";
-    exit 1;
-}
-
-perl -MAlignDB::IntSpan -e "1" 2>/dev/null || {
-    echo >&2 "AlignDB::IntSpan is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm AlignDB::IntSpan";
-    exit 1;
-}
-
-perl -MGraph -e "1" 2>/dev/null || {
-    echo >&2 "Graph is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm Graph";
-    exit 1;
-}
-
-#----------------------------#
 # Parameters
 #----------------------------#
 ANCHOR_FILE=$1

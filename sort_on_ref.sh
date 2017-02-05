@@ -33,33 +33,6 @@ log_debug () {
 }
 
 #----------------------------#
-# External dependencies
-#----------------------------#
-hash faops 2>/dev/null || {
-    echo >&2 "faops is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
-    exit 1;
-}
-
-hash sparsemem 2>/dev/null || {
-    echo >&2 "sparsemem is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/sparsemem";
-    exit 1;
-}
-
-hash fasops 2>/dev/null || {
-    echo >&2 "fasops is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm App::Fasops";
-    exit 1;
-}
-
-hash rangeops 2>/dev/null || {
-    echo >&2 "rangeops is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm App::Rangeops";
-    exit 1;
-}
-
-#----------------------------#
 # Parameters
 #----------------------------#
 FA_FILE=$1

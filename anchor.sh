@@ -33,39 +33,6 @@ log_debug () {
 }
 
 #----------------------------#
-# External dependencies
-#----------------------------#
-hash faops 2>/dev/null || {
-    echo >&2 "faops is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
-    exit 1;
-}
-
-hash bbmap.sh 2>/dev/null || {
-    echo >&2 "bbmap.sh is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/bbtools";
-    exit 1;
-}
-
-hash genomeCoverageBed 2>/dev/null || {
-    echo >&2 "genomeCoverageBed is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/bedtools";
-    exit 1;
-}
-
-hash jrunlist 2>/dev/null || {
-    echo >&2 "jrunlist is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/jrunlist";
-    exit 1;
-}
-
-hash runlist 2>/dev/null || {
-    echo >&2 "runlist is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm App::RL";
-    exit 1;
-}
-
-#----------------------------#
 # Parameters
 #----------------------------#
 RESULT_DIR=$1

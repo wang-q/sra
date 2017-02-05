@@ -33,21 +33,6 @@ log_debug () {
 }
 
 #----------------------------#
-# External dependencies
-#----------------------------#
-hash faops 2>/dev/null || {
-    echo >&2 "faops is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
-    exit 1;
-}
-
-perl -MNumber::Format -e "1" 2>/dev/null || {
-    echo >&2 "Number::Format is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm Number::Format";
-    exit 1;
-}
-
-#----------------------------#
 # Parameters
 #----------------------------#
 STAT_TASK=$1
