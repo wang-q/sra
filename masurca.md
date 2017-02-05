@@ -1171,8 +1171,34 @@ HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
 bash job.sh
 rm job.sh
 
-LAshow -o myDB.db myDB.las | sed 's/,//g'
-LA4Falcon -o myDB.db myDB.las
+LA4Falcon -o myDB.db myDB.las 1-2
+LA4Falcon -mo myDB.db myDB.las 1-2
+
+perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta <(LAshow -o myDB.db myDB.las 1)
+perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt
+
+
+perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt > 9_2.ovlp
+#is_dag: 1
+perl ~/Scripts/sra/ovlp2graph.pl 9_2.ovlp
+
+perl ~/Scripts/sra/las2ovlp.pl 0_14.renamed.fasta 0_14.show.txt > 0_14.ovlp
+#is_dag: 0
+perl ~/Scripts/sra/ovlp2graph.pl 0_14.ovlp
+#is_dag: 1
+perl ~/Scripts/sra/ovlp2graph.pl 0_14.ovlp --range 1-14
+
+perl ~/Scripts/sra/las2ovlp.pl 3_66.renamed.fasta 3_66.show.txt > 3_66.ovlp
+#is_dag: 0
+perl ~/Scripts/sra/ovlp2graph.pl 3_66.ovlp
+#is_dag: 1
+perl ~/Scripts/sra/ovlp2graph.pl 3_66.ovlp --range 1-66
+
+perl ~/Scripts/egaz/sparsemem_exact.pl \
+    -f 3_66.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
+    --length 500 -o replace.tsv
+
+
 
 # pip install pysam biopython
 python ~/Scripts/sra/nanocorrect.py myDB all > corrected.fasta
