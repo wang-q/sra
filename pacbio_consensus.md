@@ -549,6 +549,138 @@ canu \
     genomeSize=4.8m \
     -pacbio-raw p6.25x.fastq
 ```
+## Scer S288c
+
+From [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
+[study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949),
+and [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878).
+
+P6C4.
+
+`.bax.h5` files to `.subreads.bam`, then to `fasta`.
+
+```bash
+mkdir -p ~/data/pacbio/rawdata/S288c
+cd ~/data/pacbio/rawdata/S288c
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
+
+EOF
+
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+source ~/share/pitchfork/deployment/setup-env.sh
+
+mkdir -p ~/data/pacbio/rawdata/S288c/untar
+cd ~/data/pacbio/rawdata/S288c
+tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
+tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
+tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
+tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
+
+# bax2bam
+mkdir -p ~/data/pacbio/rawdata/S288c/bam
+cd ~/data/pacbio/rawdata/S288c/bam
+
+for movie in m150412 m150415 m150417 m150421;
+do 
+    bax2bam ~/data/pacbio/rawdata/S288c/untar/${movie}*.bax.h5
+done
+
+# bam to fasta
+mkdir -p ~/data/pacbio/rawdata/S288c/fasta
+
+for movie in m150412 m150415 m150417 m150421;
+do 
+    samtools fasta \
+        ~/data/pacbio/rawdata/S288c/bam/${movie}*.subreads.bam \
+        > ~/data/pacbio/rawdata/S288c/fasta/${movie}.fasta
+done
+
+#N50     8248
+#S       2585714835
+#C       600574
+faops n50 -S -C ~/data/pacbio/rawdata/S288c/fasta/*.fasta
+```
+
+Assembled genomes and annotations.
+
+```bash
+cd ~/data/pacbio/rawdata/
+perl ~/Scripts/download/list.pl -u https://yjx1217.github.io/Yeast_PacBio_2016/data/
+perl ~/Scripts/download/download.pl -a -i Yeast_PacBio_2016_data.yml
+
+proxychains4 aria2c -x 9 -s 3 -c -i ~/data/pacbio/rawdata/Yeast_PacBio_2016_data.yml.txt
+```
+
+运行 falcon.
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+if [ -d $HOME/data/pacbio/S288c_p6c4 ];
+then
+    rm -fr $HOME/data/pacbio/S288c_p6c4
+fi
+mkdir -p $HOME/data/pacbio/S288c_p6c4
+cd $HOME/data/pacbio/S288c_p6c4
+find $HOME/data/pacbio/rawdata/S288c/fasta -name "*.fasta" > input.fofn
+
+cat <<EOF > fc_run.cfg
+[General]
+job_type = local
+
+# list of files of the initial bas.h5 files
+input_fofn = input.fofn
+
+input_type = raw
+#input_type = preads
+
+# The length cutoff used for seed reads used for initial mapping
+length_cutoff = 8000
+
+# The length cutoff used for seed reads used for pre-assembly
+length_cutoff_pr = 8000
+
+# Cluster queue setting
+sge_option_da =
+sge_option_la =
+sge_option_pda =
+sge_option_pla =
+sge_option_fc =
+sge_option_cns =
+
+pa_concurrent_jobs = 4
+ovlp_concurrent_jobs = 4
+
+pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
+
+pa_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50
+
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 2
+
+overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 2
+
+EOF
+
+#real    274m19.701s
+#user    2202m51.987s
+#sys     1737m17.436s
+time fc_run fc_run.cfg
+
+#N50     791352
+#S       12094794
+#C       39
+faops n50 -S -C 2-asm-falcon/p_ctg.fa
+```
 
 ## C. elegans
 
@@ -768,138 +900,6 @@ EOF
 fc_run fc_run.cfg
 ```
 
-## Scer S288c
-
-From [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
-[study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949),
-and [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878).
-
-P6C4.
-
-`.bax.h5` files to `.subreads.bam`, then to `fasta`.
-
-```bash
-mkdir -p ~/data/pacbio/rawdata/S288c
-cd ~/data/pacbio/rawdata/S288c
-
-# download from sra
-cat <<EOF > hdf5.txt
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
-
-EOF
-
-aria2c -x 9 -s 3 -c -i hdf5.txt
-
-# untar
-source ~/share/pitchfork/deployment/setup-env.sh
-
-mkdir -p ~/data/pacbio/rawdata/S288c/untar
-cd ~/data/pacbio/rawdata/S288c
-tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
-tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
-tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
-tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
-
-# bax2bam
-mkdir -p ~/data/pacbio/rawdata/S288c/bam
-cd ~/data/pacbio/rawdata/S288c/bam
-
-for movie in m150412 m150415 m150417 m150421;
-do 
-    bax2bam ~/data/pacbio/rawdata/S288c/untar/${movie}*.bax.h5
-done
-
-# bam to fasta
-mkdir -p ~/data/pacbio/rawdata/S288c/fasta
-
-for movie in m150412 m150415 m150417 m150421;
-do 
-    samtools fasta \
-        ~/data/pacbio/rawdata/S288c/bam/${movie}*.subreads.bam \
-        > ~/data/pacbio/rawdata/S288c/fasta/${movie}.fasta
-done
-
-#N50     8248
-#S       2585714835
-#C       600574
-faops n50 -S -C ~/data/pacbio/rawdata/S288c/fasta/*.fasta
-```
-
-Assembled genomes and annotations.
-
-```bash
-cd ~/data/pacbio/rawdata/
-perl ~/Scripts/download/list.pl -u https://yjx1217.github.io/Yeast_PacBio_2016/data/
-perl ~/Scripts/download/download.pl -a -i Yeast_PacBio_2016_data.yml
-
-proxychains4 aria2c -x 9 -s 3 -c -i ~/data/pacbio/rawdata/Yeast_PacBio_2016_data.yml.txt
-```
-
-运行 falcon.
-
-```bash
-source ~/share/pitchfork/deployment/setup-env.sh
-
-if [ -d $HOME/data/pacbio/S288c_p6c4 ];
-then
-    rm -fr $HOME/data/pacbio/S288c_p6c4
-fi
-mkdir -p $HOME/data/pacbio/S288c_p6c4
-cd $HOME/data/pacbio/S288c_p6c4
-find $HOME/data/pacbio/rawdata/S288c/fasta -name "*.fasta" > input.fofn
-
-cat <<EOF > fc_run.cfg
-[General]
-job_type = local
-
-# list of files of the initial bas.h5 files
-input_fofn = input.fofn
-
-input_type = raw
-#input_type = preads
-
-# The length cutoff used for seed reads used for initial mapping
-length_cutoff = 8000
-
-# The length cutoff used for seed reads used for pre-assembly
-length_cutoff_pr = 8000
-
-# Cluster queue setting
-sge_option_da =
-sge_option_la =
-sge_option_pda =
-sge_option_pla =
-sge_option_fc =
-sge_option_cns =
-
-pa_concurrent_jobs = 4
-ovlp_concurrent_jobs = 4
-
-pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
-
-pa_DBsplit_option = -x500 -s50
-ovlp_DBsplit_option = -x500 -s50
-
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 2
-
-overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 2
-
-EOF
-
-#real    274m19.701s
-#user    2202m51.987s
-#sys     1737m17.436s
-time fc_run fc_run.cfg
-
-#N50     791352
-#S       12094794
-#C       39
-faops n50 -S -C 2-asm-falcon/p_ctg.fa
-```
 
 ## 其它模式生物
 
