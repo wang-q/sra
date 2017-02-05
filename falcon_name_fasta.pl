@@ -34,13 +34,13 @@ Modified by Qiang Wang.
 
 GetOptions(
     'help|?' => sub { Getopt::Long::HelpMessage(0) },
-    'infile|i=s'  => \( my $infile  = q{} ),
-    'outfile|o=s' => \( my $outfile = q{} ),
-    'prefix|p=s'  => \( my $prefix  = q{} ),
-    'table|t=s'   => \( my $table   = q{} ),
+    'in|i=s'     => \( my $in_fn    = q{} ),
+    'out|o=s'    => \( my $out_fn   = q{} ),
+    'prefix|p=s' => \( my $prefix   = q{} ),
+    'table|t=s'  => \( my $table_fn = q{} ),
 ) or Getopt::Long::HelpMessage(1);
 
-if ( !$infile ) {
+if ( !$in_fn ) {
     warn "Need input file.\n";
     Getopt::Long::HelpMessage(0);
 }
@@ -49,19 +49,19 @@ if ( $prefix =~ /\W/xms ) {
     die "Cannot accept prefix with space or non-word characters (such as \".\"): $prefix\n";
 }
 
-if ( $outfile =~ /[^\w\.]/xms ) {
-    die "Cannot accept outfile with space or non-standard characters: $outfile\n";
+if ( $out_fn =~ /[^\w\.]/xms ) {
+    die "Cannot accept outfile with space or non-standard characters: $out_fn\n";
 }
 
 # Have human-readable default value:
 $prefix ||= 'falcon_read';
 $prefix = safename($prefix);
 
-$outfile ||= "$infile.outfile";
-$outfile = safename($outfile);
+$out_fn ||= "$in_fn.outfile";
+$out_fn = safename($out_fn);
 
-$table ||= 'old2new_names.txt';
-$table = safename($table);
+$table_fn ||= 'old2new_names.txt';
+$table_fn = safename($table_fn);
 
 #----------------------------------------------------------#
 # Run
@@ -74,19 +74,19 @@ my $data_ref = {};
 
 # Accept either a stream from 'stdin' or a standard file.
 my $in_fh;
-if ( lc $infile eq 'stdin' ) {
+if ( lc $in_fn eq 'stdin' ) {
     $in_fh = *STDIN{IO};
 }
 else {
-    open $in_fh, '<', $infile;
+    open $in_fh, '<', $in_fn;
 }
 
-open my $out_fh,   '>', $outfile;
-open my $table_fh, '>', $table;
+open my $out_fh,   '>', $out_fn;
+open my $table_fh, '>', $table_fn;
 
-while ( my $input = <$in_fh> ) {
-    chomp $input;
-    if ( $input =~ /\A > (\S+) /xms ) {
+while ( my $line = <$in_fh> ) {
+    chomp $line;
+    if ( $line =~ /\A > (\S+) /xms ) {
         $orig_seqname = $1;
         if ( exists $data_ref->{'orig_seqname'}->{$orig_seqname} ) {
             die "Redundant sequence name: $orig_seqname\n";
@@ -94,16 +94,16 @@ while ( my $input = <$in_fh> ) {
         $data_ref->{'orig_seqname'}->{$orig_seqname}->{'seen'} = 1;
         push @orig_seqs, $orig_seqname;
     }
-    elsif ( $input =~ / \A \s* [A-Za-z] /xms ) {
-        $input =~ s/\s//g;
-        if ( $input =~ / [^ACGTNacgtn] /xms ) {
-            die "Can't parse: $input\n";
+    elsif ( $line =~ / \A \s* [A-Za-z] /xms ) {
+        $line =~ s/\s//g;
+        if ( $line =~ / [^ACGTNacgtn] /xms ) {
+            die "Can't parse: $line\n";
         }
-        $data_ref->{'orig_seqname'}->{$orig_seqname}->{'sequence'} .= $input;
+        $data_ref->{'orig_seqname'}->{$orig_seqname}->{'sequence'} .= $line;
     }
     else {
-        if ( $input !~ /\A \s* \z/xms ) {
-            die "Can't parse: $input\n";
+        if ( $line !~ /\A \s* \z/xms ) {
+            die "Can't parse: $line\n";
         }
     }
 }
