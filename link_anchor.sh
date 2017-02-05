@@ -129,23 +129,23 @@ COUNT_ALL=$(faops n50 -N 0 -H -C renamed.fasta | xargs echo)
 LAdump -o myDB.db myDB.las "1-${COUNT_ANCHOR}" \
     | grep "^P" \
     | COUNT_ALL=${COUNT_ALL} perl -nla -F"\s+" -MAlignDB::IntSpan -MGraph -e '
-        BEGIN{
+        BEGIN {
             our $copy = $ENV{COUNT_ALL};
             our $graph = Graph->new( directed => 0 );
         }
 
-        $graph->set_edge_attribute($F[1], $F[2], q{strand}, $F[3]);
+        $graph->set_edge_attribute( $F[1], $F[2], q{strand}, $F[3] );
 
-        END{
-            my $assigned  = AlignDB::IntSpan->new(1);
-            my $unhandled = AlignDB::IntSpan->new->add_pair(2, $copy);
+        END {
+            my $assigned = AlignDB::IntSpan->new(1);
+            my $unhandled = AlignDB::IntSpan->new->add_pair( 2, $copy );
 
-            $graph->set_vertex_attribute(1, q{strand}, q{n});
+            $graph->set_vertex_attribute( 1, q{strand}, q{n} );
 
             my $prev_size = $assigned->size;
-            my $cur_loop = 0; # existing point
+            my $cur_loop  = 0;                 # existing point
             while ( $assigned->size < $copy ) {
-                if ($prev_size == $assigned->size) {
+                if ( $prev_size == $assigned->size ) {
                     $cur_loop++;
                     last if $cur_loop > 10;
                 }
@@ -162,14 +162,14 @@ LAdump -o myDB.db myDB.las "1-${COUNT_ANCHOR}" \
                         my $i_strand = $graph->get_vertex_attribute( $i, q{strand} );
                         my $edge_strand = $graph->get_edge_attribute( $i, $j, q{strand} );
                         if ( $edge_strand eq q{n} ) {
-                            $graph->set_vertex_attribute($j, q{strand}, $i_strand);
+                            $graph->set_vertex_attribute( $j, q{strand}, $i_strand );
                         }
                         else {
                             if ( $i_strand eq q{n} ) {
-                                $graph->set_vertex_attribute($j, q{strand}, q{c});
+                                $graph->set_vertex_attribute( $j, q{strand}, q{c} );
                             }
                             else {
-                                $graph->set_vertex_attribute($j, q{strand}, q{n});
+                                $graph->set_vertex_attribute( $j, q{strand}, q{n} );
                             }
                         }
                         $unhandled->remove($j);
@@ -179,9 +179,9 @@ LAdump -o myDB.db myDB.las "1-${COUNT_ANCHOR}" \
             }
 
             my @negs;
-            for my $i (sort {$a <=> $b} $graph->vertices) {
+            for my $i ( sort { $a <=> $b } $graph->vertices ) {
                 my $i_strand = $graph->get_vertex_attribute( $i, q{strand} );
-                push @negs, $i if ($i_strand eq q{c});
+                push @negs, $i if ( $i_strand eq q{c} );
             }
 
             system(qq{DBshow -n myDB @negs});
