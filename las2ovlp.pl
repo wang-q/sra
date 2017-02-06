@@ -50,7 +50,7 @@ for (@ARGV) {
 #----------------------------------------------------------#
 # start
 #----------------------------------------------------------#
-my $len_of = get_len( $ARGV[0] );
+my $len_of = get_len_from_header( $ARGV[0] );
 print STDERR "Get @{[scalar keys %{$len_of}]} records of sequence length\n";
 
 my $in_fh;
@@ -116,7 +116,7 @@ close $in_fh;
 
 exit;
 
-sub get_len {
+sub get_len_from_header {
     my $fa_fn = shift;
 
     my %len_of;
