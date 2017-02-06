@@ -16,7 +16,7 @@ use Path::Tiny qw();
 # GetOpt section
 #----------------------------------------------------------#
 my $usage_desc = <<EOF;
-LAS outputs to ovelaps
+LAshow outputs to ovelaps
 
 Usage: perl %c [options] <fasta file> <LAshow outputs>
 EOF
@@ -91,7 +91,7 @@ while ( my $line = <$in_fh> ) {
 
     my $ovlp_len = $f_E - $f_B;
 
-    printf "%d\t%d\t%d\t%.2f", $f_id, $g_id, $ovlp_len, $identity;
+    printf "%d\t%d\t%d\t%.3f", $f_id, $g_id, $ovlp_len, $identity;
     printf "\t%d\t%d\t%d\t%d", 0, $f_B, $f_E, $len_of->{$f_id};
     printf "\t%d\t%d\t%d\t%d", $g_ori, $g_B, $g_E, $len_of->{$g_id};
 
