@@ -64,11 +64,6 @@ if ( $opt->{range} ) {
 my $ovlps = [];
 my %contained;
 
-my $read_range = AlignDB::IntSpan->new;
-if ( $opt->{range} ) {
-    $read_range->add_runlist( $opt->{range} );
-}
-
 #----------------------------#
 # load overlaps
 #----------------------------#
@@ -90,10 +85,6 @@ if ( $opt->{range} ) {
         my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
         my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
         my $contained = $fields[12];
-
-        if ( $opt->{range} ) {
-            next unless $read_range->contains($f_id);
-        }
 
         # ignore need self overlapping
         next if $f_id eq $g_id;
