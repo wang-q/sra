@@ -9,6 +9,7 @@ use YAML::Syck qw();
 
 use AlignDB::IntSpan;
 use App::RL::Common;
+use App::Fasops::Common;
 use Graph;
 use Path::Tiny qw();
 
@@ -24,8 +25,7 @@ EOF
 my @opt_spec = (
     [ 'help|h', 'display this message' ],
     [],
-
-    #    [ 'range|r=s', 'ranges of reads', ],
+    [ 'replace|r=s', 'original names of sequences', ],
     { show_defaults => 1, },
 );
 
@@ -47,11 +47,22 @@ for (@ARGV) {
     }
 }
 
+if ( $opt->{replace} ) {
+    if ( !Path::Tiny::path( $opt->{replace} )->is_file ) {
+        $usage->die( { pre_text => "The replace file [$opt->{replace}] doesn't exist.\n" } );
+    }
+}
+
 #----------------------------------------------------------#
 # start
 #----------------------------------------------------------#
 my $len_of = get_len_from_header( $ARGV[0] );
 print STDERR "Get @{[scalar keys %{$len_of}]} records of sequence length\n";
+
+my $replace_of = {};
+if ( $opt->{replace} ) {
+    $replace_of = get_replaces( $opt->{replace} );
+}
 
 my $in_fh;
 if ( lc $ARGV[1] eq 'stdin' ) {
@@ -91,7 +102,9 @@ while ( my $line = <$in_fh> ) {
 
     my $ovlp_len = $f_E - $f_B;
 
-    printf "%d\t%d\t%d\t%.3f", $f_id, $g_id, $ovlp_len, $identity;
+    printf "%s",   exists $replace_of->{$f_id} ? $replace_of->{$f_id}[0] : $f_id;
+    printf "\t%s", exists $replace_of->{$g_id} ? $replace_of->{$g_id}[0] : $g_id;
+    printf "\t%d\t%.3f", $ovlp_len, $identity;
     printf "\t%d\t%d\t%d\t%d", 0, $f_B, $f_E, $len_of->{$f_id};
     printf "\t%d\t%d\t%d\t%d", $g_ori, $g_B, $g_E, $len_of->{$g_id};
 
@@ -140,4 +153,19 @@ sub get_len_from_header {
     close $fa_fh;
 
     return \%len_of;
+}
+
+sub get_replaces {
+    my $fn = shift;
+
+    my $full_replace_of = App::Fasops::Common::read_replaces($fn);
+
+    my $short_replace_of = {};
+    for my $key ( sort %{$full_replace_of} ) {
+        if ( $key =~ /\/(\d+)\/\d+_\d+/ ) {
+            $short_replace_of->{$1} = $full_replace_of->{$key};
+        }
+    }
+
+    return $short_replace_of;
 }
