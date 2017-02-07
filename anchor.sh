@@ -57,17 +57,78 @@ log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
 }
 
 #----------------------------#
-# Prepare files
+# Prepare SR
 #----------------------------#
-log_info "Prepare files"
+log_info "Prepare SR"
 mkdir -p ${RESULT_DIR}/sr
 cd ${RESULT_DIR}/sr
 
 ln -s ../pe.cor.fa .
-ln -s ../work1/superReadSequences.fasta .
+faops filter -a 500 -l 0 ../work1/superReadSequences.fasta SR.filter.fasta
 
-faops size superReadSequences.fasta > sr.chr.sizes
+bash ~/Scripts/sra/overlap.sh SR.filter.fasta 500 .96 SR.ovlp.tsv
 
+cat SR.ovlp.tsv \
+    | perl -nla -F"\t" -e '
+        next unless scalar(@F) == 13;
+
+        # discard contained SR
+        my $f_id = $F[0];
+        my $g_id = $F[1];
+
+        if ($F[12] eq q{contains}) {
+            print $g_id;
+            next;
+        }
+        if ($F[12] eq q{contained}) {
+            print $f_id;
+            next;
+        }
+
+        # discard nearly contained SR
+        my $o_len = $F[2];
+        my $f_len = $F[7];
+        my $g_len = $F[11];
+
+        my $f_r = $o_len / $f_len;
+        my $g_r = $o_len / $g_len;
+
+        if ($f_r <= 0.9 and $g_r > 0.9) {
+            print $g_id;
+            next;
+        }
+
+        if ($g_r <= 0.9 and $f_r > 0.9) {
+            print $f_id;
+            next;
+        }
+
+        if ($f_r > 0.9 and $g_r > 0.9) {
+            if ( $f_len >= $g_len) {
+                print $g_id;
+            }
+            else {
+                print $f_id;
+            }
+            next;
+        }
+
+        # more strict identity
+        next unless $F[3] > 0.99;
+
+        if ($f_len / $g_len > 2 and $g_r > 0.5) {
+            print $g_id;
+        }
+    ' \
+    | sort -n | uniq > SR.discard.txt
+
+faops some -i -l 0 SR.filter.fasta SR.discard.txt SR.clean.fasta
+
+faops size SR.clean.fasta > sr.chr.sizes
+
+#----------------------------#
+# Prepare strict reads
+#----------------------------#
 log_debug "pe.strict.txt"
 if [ "${TOLERATE_SUBS}" = true ]; then
     # tolerates 1 substitution
@@ -105,14 +166,14 @@ log_info "unambiguous regions"
 
 # index
 log_debug "bbmap index"
-bbmap.sh ref=superReadSequences.fasta
+bbmap.sh ref=SR.clean.fasta
 
 log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
     ambiguous=toss \
-    ref=superReadSequences.fasta in=pe.strict.fa \
+    ref=SR.clean.fasta in=pe.strict.fa \
     outm=unambiguous.sam outu=unmapped.sam
 
 log_debug "sort bam"
@@ -167,7 +228,7 @@ log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
-    ref=superReadSequences.fasta in=pe.unmapped.fa \
+    ref=SR.clean.fasta in=pe.unmapped.fa \
     outm=ambiguous.sam outu=unmapped2.sam
 
 log_debug "sort bam"
@@ -215,7 +276,7 @@ cat unique.cover.csv \
     > anchor.txt
 
 log_debug "pe.anchor.fa"
-faops some -l 0 superReadSequences.fasta anchor.txt pe.anchor.fa
+faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
 
 #----------------------------#
 # anchor2
@@ -250,9 +311,9 @@ cat unique2.txt \
     ' \
     > anchor2.txt
 
-faops some -l 0 superReadSequences.fasta anchor2.txt pe.anchor2.fa
+faops some -l 0 SR.fasta anchor2.txt pe.anchor2.fa
 
-faops some -l 0 -i superReadSequences.fasta anchor.txt stdout \
+faops some -l 0 -i SR.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
 
 rm unique2.cover.csv unique2.txt
