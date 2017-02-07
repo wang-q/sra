@@ -184,7 +184,7 @@ log_info "Create outputs"
 popd
 mv ${MY_TMP_DIR}/renamed.rc.fasta ${OUT_BASE}.renamed.fasta
 mv ${MY_TMP_DIR}/show.txt ${OUT_BASE}.show.txt
-mv ${MY_TMP_DIR}/old2new_names.txt ${OUT_BASE}.names.txt
+mv ${MY_TMP_DIR}/stdin.replace.tsv ${OUT_BASE}.replace.tsv
 
 # clean tmp dir
 rm -fr ${MY_TMP_DIR}
