@@ -69,8 +69,8 @@ faops order ${PAC_FILE} \
 log_info "Preprocess reads to format them for dazzler"
 pushd ${MY_TMP_DIR}
 
-if [ -e old2new_names.txt ]; then
-    rm old2new_names.*
+if [ -e stdin.* ]; then
+    rm stdin.*
 fi
 cat anchor.fasta pac.fasta | perl ~/Scripts/sra/falcon_name_fasta.pl -i stdin
 cat stdin.outfile \
