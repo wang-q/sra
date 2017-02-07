@@ -124,6 +124,7 @@ java -jar ~/share/picard-tools-1.128/picard.jar \
     VALIDATION_STRINGENCY=LENIENT
 
 log_debug "genomeCoverageBed"
+# at least two unambiguous reads covered
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
     | perl -nlae '
         $F[3] == 0 and next;
@@ -221,6 +222,7 @@ faops some -l 0 superReadSequences.fasta anchor.txt pe.anchor.fa
 #----------------------------#
 log_info "pe.anchor2.fa & pe.others.fa"
 
+# contiguous unique region longer than 1000
 jrunlist span unique.cover.yml --op excise -n 1000 -o stdout \
     | runlist stat stdin -s sr.chr.sizes -o unique2.cover.csv
 
