@@ -276,7 +276,7 @@ cat unique.cover.csv \
     > anchor.txt
 
 log_debug "pe.anchor.fa"
-faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
+faops some -l 0 SR.clean.fasta anchor.txt pe.anchor.fa
 
 #----------------------------#
 # anchor2
@@ -311,9 +311,9 @@ cat unique2.txt \
     ' \
     > anchor2.txt
 
-faops some -l 0 SR.fasta anchor2.txt pe.anchor2.fa
+faops some -l 0 SR.clean.fasta anchor2.txt pe.anchor2.fa
 
-faops some -l 0 -i SR.fasta anchor.txt stdout \
+faops some -l 0 -i SR.clean.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
 
 rm unique2.cover.csv unique2.txt
