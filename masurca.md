@@ -1200,14 +1200,14 @@ perl ~/Scripts/sra/ovlp_layout.pl 1_4.ovlp.tsv --range 1-4
 # 3 5 10 8 4 9 7 2 11 6 1
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f 0_11.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
-    --length 500 -o 0_11.replace.tsv
+    --length 500 -o 0_11.chr.tsv
 perl ~/Scripts/sra/las2ovlp.pl 0_11.renamed.fasta 0_11.show.txt > 0_11.ovlp.tsv
 perl ~/Scripts/sra/ovlp_layout.pl 0_11.ovlp.tsv --range 1-11
 
 # 16 47 19 51 28 22 15 11 43 5 34 44 4 37 6 9 53 24 40 52 46 23 32 38 55 54 18 31 10 26 2 8 48 36 27 29 30 45 50 33 35 42 41 3 25 20 17 14 7 56 21 13 39 49 12 1
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f 6_56.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
-    --length 500 -o 6_56.replace.tsv
+    --length 500 -o 6_56.chr.tsv
 perl ~/Scripts/sra/las2ovlp.pl 6_56.renamed.fasta 6_56.show.txt > 6_56.ovlp.tsv
 perl ~/Scripts/sra/ovlp_layout.pl 6_56.ovlp.tsv --range 1-56
 
