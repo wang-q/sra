@@ -1134,6 +1134,34 @@ rm out.delta
 rm *.gp
 ```
 
+Overlap--Layout of anchors
+
+```bash
+cd ~/data/dna-seq/e_coli/superreads/
+
+faops filter -a 500 -l 0 trimmed_800000/sr/superReadSequences.fasta SR.filter.fasta
+bash ~/Scripts/sra/overlap.sh SR.filter.fasta 500 .96 SR.ovlp.tsv
+#faops some -i -l 0 SR.filter.fasta SR.discard.txt SR.discard.fasta
+#bash ~/Scripts/sra/overlap.sh SR.discard.fasta 500 .96 SR.ovlp.tsv
+
+bash ~/Scripts/sra/overlap.sh trimmed_800000/sr/pe.anchor.fa 500 .96 overlap.anchor.ovlp.tsv
+bash ~/Scripts/sra/overlap.sh trimmed_800000/sr/pe.anchor2.fa 500 .96 overlap.anchor2.ovlp.tsv
+bash ~/Scripts/sra/overlap.sh trimmed_800000/sr/pe.others.fa 500 0.96 overlap.others.ovlp.tsv
+
+cat trimmed_800000/sr/pe.anchor.fa trimmed_800000/sr/pe.others.fa > temp.fasta
+bash ~/Scripts/sra/overlap.sh temp.fasta 500 .96 overlap.anchor_others.ovlp.tsv
+rm temp.fasta
+
+cat trimmed_800000/sr/pe.anchor.fa trimmed_800000/sr/pe.anchor2.fa > temp.fasta
+bash ~/Scripts/sra/overlap.sh temp.fasta 500 .96 overlap.anchor_anchor2.ovlp.tsv
+rm temp.fasta
+
+cat trimmed_800000/sr/pe.anchor2.fa trimmed_800000/sr/pe.others.fa > temp.fasta
+bash ~/Scripts/sra/overlap.sh temp.fasta 500 .96 overlap.anchor2_others.ovlp.tsv
+rm temp.fasta
+
+```
+
 ### E. coli: link anchors
 
 需要清理 overhang.
@@ -1150,8 +1178,8 @@ rm *.gp
 ```bash
 cd ~/zlc/Ecoli/anchorAlign
 
-bash ~/Scripts/sra/link_anchor.sh 0_14.anchor.fasta 0_14.pac.fasta 0_14
 bash ~/Scripts/sra/link_anchor.sh 9_2.anchor.fasta 9_2.pac.fasta 9_2
+bash ~/Scripts/sra/link_anchor.sh 0_14.anchor.fasta 0_14.pac.fasta 0_14
 bash ~/Scripts/sra/link_anchor.sh 3_66.anchor.fasta 3_66.pac.fasta 3_66
 bash ~/Scripts/sra/link_anchor.sh 12_66.anchor.fasta 12_66.pac.fasta 12_66
 
@@ -1175,28 +1203,31 @@ LA4Falcon -o myDB.db myDB.las 1-2
 LA4Falcon -mo myDB.db myDB.las 1-2
 
 perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta <(LAshow -o myDB.db myDB.las 1)
-perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt
+
+perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt -r 9_2.replace.tsv
 
 
 perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt > 9_2.ovlp.tsv
-#is_dag: 1
-perl ~/Scripts/sra/ovlp2graph.pl 9_2.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 9_2.ovlp.tsv --range 1-2
 
+# 3 10 1 12 9 6 8 5 11 7 4 2 14 13
+perl ~/Scripts/egaz/sparsemem_exact.pl \
+    -f 0_14.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
+    --length 500 -o 0_14.replace.tsv
 perl ~/Scripts/sra/las2ovlp.pl 0_14.renamed.fasta 0_14.show.txt > 0_14.ovlp.tsv
-#is_dag: 0
-perl ~/Scripts/sra/ovlp2graph.pl 0_14.ovlp.tsv
-#is_dag: 1
-perl ~/Scripts/sra/ovlp2graph.pl 0_14.ovlp.tsv --range 1-14
-
-perl ~/Scripts/sra/las2ovlp.pl 3_66.renamed.fasta 3_66.show.txt > 3_66.ovlp.tsv
-#is_dag: 0
-perl ~/Scripts/sra/ovlp2graph.pl 3_66.ovlp.tsv
-#is_dag: 1
-perl ~/Scripts/sra/ovlp2graph.pl 3_66.ovlp.tsv --range 1-66
+perl ~/Scripts/sra/ovlp_layout.pl 0_14.ovlp.tsv --range 1-14
 
 perl ~/Scripts/egaz/sparsemem_exact.pl \
     -f 3_66.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
-    --length 500 -o replace.tsv
+    --length 500 -o 3_66.replace.tsv
+
+perl ~/Scripts/sra/las2ovlp.pl 3_66.renamed.fasta 3_66.show.txt > 3_66.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 3_66.ovlp.tsv --range 1-66
+
+
+perl ~/Scripts/sra/las2ovlp.pl 12_66.renamed.fasta 12_66.show.txt > 12_66.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 12_66.ovlp.tsv --range 1-66
+
 
 
 
