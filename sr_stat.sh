@@ -152,7 +152,6 @@ elif [ "${STAT_TASK}" = "4" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             "Name" \
-            "N50SRclean" "SumSRclean" "#SRclean" \
             "N50Anchor" "SumAnchor" "#anchor" \
             "N50Anchor2" "SumAnchor2" "#anchor2" \
             "N50Others" "SumOthers" "#others"
