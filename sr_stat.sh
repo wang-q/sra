@@ -127,14 +127,14 @@ elif [ "${STAT_TASK}" = "2" ]; then
 
 elif [ "${STAT_TASK}" = "3" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-            "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SR" "SumSR" "#SR" "RunTime"
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+            "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SRclean" "SumSRclean" "#SRclean" "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
 
-        SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y sr.chr.sizes))
+        SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
         COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
         COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | \n" \
@@ -142,7 +142,7 @@ elif [ "${STAT_TASK}" = "3" ]; then
             ${COUNT_COR} \
             ${COUNT_STRICT} \
             $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
-            $( faops n50 -H -N 50 -S -C superReadSequences.fasta ) \
+            $( faops n50 -H -N 50 -S -C SR.clean.fasta ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR/sr not exists"
@@ -152,6 +152,7 @@ elif [ "${STAT_TASK}" = "4" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             "Name" \
+            "N50SRclean" "SumSRclean" "#SRclean" \
             "N50Anchor" "SumAnchor" "#anchor" \
             "N50Anchor2" "SumAnchor2" "#anchor2" \
             "N50Others" "SumOthers" "#others"
