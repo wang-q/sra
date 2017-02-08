@@ -118,12 +118,12 @@ for my $ovlp ( @{$ovlps} ) {
     my $contained = $fields[12];
 
     # skip contained linkers
-    if ( !$anchor_range->contains($f_id) and $contained{$f_id} ) {
-        next;
-    }
-    if ( !$anchor_range->contains($g_id) and $contained{$g_id} ) {
-        next;
-    }
+#    if ( !$anchor_range->contains($f_id) and $contained{$f_id} ) {
+#        next;
+#    }
+#    if ( !$anchor_range->contains($g_id) and $contained{$g_id} ) {
+#        next;
+#    }
 
     if ( $f_B > 0 ) {
 
@@ -212,13 +212,19 @@ print YAML::Syck::Dump {
     $anchor_graph->add_vertex($_) for @nodes;
 
     for my $i ( 0 .. $#nodes ) {
-        for my $j ( 0 .. $#nodes ) {
+        J: for my $j ( 0 .. $#nodes ) {
             next if $i == $j;
             next unless $graph->is_reachable( $nodes[$i], $nodes[$j] );
             $reachable->add( $nodes[$i] );
             $reachable->add( $nodes[$j] );
 
             my @path = $graph->SP_Dijkstra( $nodes[$i], $nodes[$j] );
+            my $count_anthor;
+            for my $p (@path) {
+
+                $count_anthor++ if $anchor_range->contains($p);
+                next J if $count_anthor >= 3;
+            }
 
             printf "%s\t%s\t%s\n", $nodes[$i], $nodes[$j], join( " ", @path );
 
@@ -228,24 +234,51 @@ print YAML::Syck::Dump {
 
     printf "Reachable %s\n", $reachable->runlist;
     printf "Contained %s\n", join( " ", sort { $a <=> $b } keys %contained );
+
     g2gv( $anchor_graph, $ARGV[0] . ".png" );
+    printf "Reduced %d edges\n", transitively_reduce($anchor_graph);
+    g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
 }
 g2gv( $graph, $ARGV[0] . ".all.png" );
+#printf "Reduced %d edges\n", transitively_reduce($graph);
+#g2gv( $graph, $ARGV[0] . ".all.reduced.png" );
 
-sub start_node {
+sub transitively_reduce {
 
     #@type Graph
     my $g = shift;
 
-    # Get node with fewer incoming edges than outgoing edges
-    my %diff_of;
-    for my $node ( $g->vertices ) {
-        $diff_of{$node} = $g->in_degree($node) - $g->out_degree($node);
+    my $count = 0;
+    my $prev_count;
+    while (1) {
+        last if defined $prev_count and $prev_count == $count;
+        $prev_count = $count;
+
+        for my $v ( $g->vertices ) {
+            next if $g->out_degree($v) < 2;
+
+          #            printf "Node %s, in %d, out %d\n", $v, $g->in_degree($v), $g->out_degree($v);
+
+            my @s = sort { $a <=> $b } $g->successors($v);
+
+            #            printf "    Successers %s\n", join( " ", @s );
+
+            for my $i ( 0 .. $#s ) {
+                for my $j ( 0 .. $#s ) {
+                    next if $i == $j;
+                    if ( $g->is_reachable( $s[$i], $s[$j] ) ) {
+                        $g->delete_edge( $v, $s[$j] );
+
+                    #                        printf "    Exiests edge %s -> %s\n", $s[$i], $s[$j];
+                    #                        printf "        So remove edge %s -> %s\n", $v, $s[$j];
+                        $count++;
+                    }
+                }
+            }
+        }
     }
 
-    my ($node) = grep { $diff_of{$_} > 0 } keys %diff_of;
-
-    return $node;
+    return $count;
 }
 
 sub g2gv {
@@ -256,12 +289,12 @@ sub g2gv {
 
     my $gv = GraphViz->new( directed => 1 );
 
-    for my $node ( $g->vertices ) {
-        $gv->add_node($node);
+    for my $v ( $g->vertices ) {
+        $gv->add_node($v);
     }
 
-    for my $edge ( $g->edges ) {
-        $gv->add_edge( @{$edge} );
+    for my $e ( $g->edges ) {
+        $gv->add_edge( @{$e} );
     }
 
     Path::Tiny::path($fn)->spew_raw( $gv->as_png );
