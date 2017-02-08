@@ -1167,56 +1167,49 @@ rm temp.fasta
 ```bash
 cd ~/zlc/Ecoli/anchorAlign
 
-bash ~/Scripts/sra/link_anchor.sh 9_2.anchor.fasta 9_2.pac.fasta 9_2
-bash ~/Scripts/sra/link_anchor.sh 0_14.anchor.fasta 0_14.pac.fasta 0_14
-bash ~/Scripts/sra/link_anchor.sh 3_66.anchor.fasta 3_66.pac.fasta 3_66
-bash ~/Scripts/sra/link_anchor.sh 12_66.anchor.fasta 12_66.pac.fasta 12_66
+bash ~/Scripts/sra/link_anchor.sh 1_4.anchor.fasta 1_4.pac.fasta 1_4
+bash ~/Scripts/sra/link_anchor.sh 0_11.anchor.fasta 0_11.pac.fasta 0_11
+bash ~/Scripts/sra/link_anchor.sh 6_56.anchor.fasta 6_56.pac.fasta 6_56
 
 # Exceeded memory bound: 502169772
 #poa -preserve_seqorder -read_fasta 9_2.renamed.fasta -clustal 9_2.aln -hb ~/Scripts/sra/poa-blosum80.mat 
 
-cp 9_2.renamed.fasta myDB.pp.fasta
+#cp 9_2.renamed.fasta myDB.pp.fasta
+#
+#DBrm myDB
+#fasta2DB myDB myDB.pp.fasta
+#DBdust myDB
+#
+#if [ -e myDB.las ]; then
+#    rm myDB.las
+#fi
+#HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
+#bash job.sh
+#rm job.sh
+#
+#LA4Falcon -o myDB.db myDB.las 1-2
+#
+#perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta <(LAshow -o myDB.db myDB.las 1)
+#
+#perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt -r 9_2.replace.tsv
 
-DBrm myDB
-fasta2DB myDB myDB.pp.fasta
-DBdust myDB
 
-if [ -e myDB.las ]; then
-    rm myDB.las
-fi
-HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
-bash job.sh
-rm job.sh
+perl ~/Scripts/sra/las2ovlp.pl 1_4.renamed.fasta 1_4.show.txt > 1_4.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 1_4.ovlp.tsv --range 1-4
 
-LA4Falcon -o myDB.db myDB.las 1-2
-LA4Falcon -mo myDB.db myDB.las 1-2
-
-perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta <(LAshow -o myDB.db myDB.las 1)
-
-perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt -r 9_2.replace.tsv
-
-
-perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt > 9_2.ovlp.tsv
-perl ~/Scripts/sra/ovlp_layout.pl 9_2.ovlp.tsv --range 1-2
-
-# 3 10 1 12 9 6 8 5 11 7 4 2 14 13
+# 3 5 10 8 4 9 7 2 11 6 1
 perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f 0_14.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
-    --length 500 -o 0_14.replace.tsv
-perl ~/Scripts/sra/las2ovlp.pl 0_14.renamed.fasta 0_14.show.txt > 0_14.ovlp.tsv
-perl ~/Scripts/sra/ovlp_layout.pl 0_14.ovlp.tsv --range 1-14
+    -f 0_11.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
+    --length 500 -o 0_11.replace.tsv
+perl ~/Scripts/sra/las2ovlp.pl 0_11.renamed.fasta 0_11.show.txt > 0_11.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 0_11.ovlp.tsv --range 1-11
 
+# 16 47 19 51 28 22 15 11 43 5 34 44 4 37 6 9 53 24 40 52 46 23 32 38 55 54 18 31 10 26 2 8 48 36 27 29 30 45 50 33 35 42 41 3 25 20 17 14 7 56 21 13 39 49 12 1
 perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f 3_66.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
-    --length 500 -o 3_66.replace.tsv
-
-perl ~/Scripts/sra/las2ovlp.pl 3_66.renamed.fasta 3_66.show.txt > 3_66.ovlp.tsv
-perl ~/Scripts/sra/ovlp_layout.pl 3_66.ovlp.tsv --range 1-66
-
-
-perl ~/Scripts/sra/las2ovlp.pl 12_66.renamed.fasta 12_66.show.txt > 12_66.ovlp.tsv
-perl ~/Scripts/sra/ovlp_layout.pl 12_66.ovlp.tsv --range 1-66
-
+    -f 6_56.renamed.fasta -g ~/data/dna-seq/e_coli/superreads/NC_000913.fa \
+    --length 500 -o 6_56.replace.tsv
+perl ~/Scripts/sra/las2ovlp.pl 6_56.renamed.fasta 6_56.show.txt > 6_56.ovlp.tsv
+perl ~/Scripts/sra/ovlp_layout.pl 6_56.ovlp.tsv --range 1-56
 
 
 
@@ -1832,10 +1825,10 @@ cat stat4.md
 | Name             | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
 |:-----------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
 | trimmed_5000000  |      1735 |  23055463 |   13157 |       1546 |    2765005 |     1627 |       720 |  30137304 |   42213 |
-| trimmed_10000000 |      2387 |  57023497 |   25798 |       2586 |    6406616 |     2853 |       775 |  30002352 |   38907 |
-| trimmed_15000000 |      2876 |  68965532 |   27344 |       3911 |   10644176 |     3570 |       835 |  30414909 |   35387 |
-| trimmed_20000000 |      2970 |  59844852 |   23163 |       5067 |   17479253 |     4572 |      1859 |  68173064 |   50790 |
-| trimmed_25000000 |      3093 |  55378774 |   20830 |       5197 |   20782604 |     5133 |      2265 |  86528120 |   57746 |
+| trimmed_10000000 |      2387 |  57066971 |   25818 |       2582 |    6370433 |     2839 |       775 |  29815589 |   38626 |
+| trimmed_15000000 |      2897 |  69869174 |   27577 |       3872 |   10143524 |     3446 |       832 |  28101755 |   33129 |
+| trimmed_20000000 |      3371 |  74347943 |   26426 |       4564 |   15031178 |     4305 |       919 |  29610525 |   30640 |
+| trimmed_25000000 |      3598 |  72963479 |   24775 |       4851 |   19465663 |     5126 |      1034 |  34705899 |   31977 |
 
 ## Atha Ler-0-2, SRR611087
 
