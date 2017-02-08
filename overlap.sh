@@ -73,13 +73,23 @@ log_info "Make the dazzler DB"
 DBrm myDB
 fasta2DB myDB renamed.fasta
 DBdust myDB
+# each block is of size 50 MB
+DBsplit -s50 myDB
+BLOCK_NUMBER=$(cat myDB.db | perl -nl -e '/^blocks\s+=\s+(\d+)/ and print $1')
 
 log_info "Run daligner"
 if [ -e myDB.las ]; then
     rm myDB.las
 fi
-HPC.daligner myDB -v -M4 -e${OVLP_IDT} -l${OVLP_LEN} -s${OVLP_LEN} -mdust > job.sh
+if [ -e myDB.*.las ]; then
+    rm myDB.*.las
+fi
+
+HPC.daligner myDB -v -M16 -T8 -e${OVLP_IDT} -l${OVLP_LEN} -s${OVLP_LEN} -mdust > job.sh
 bash job.sh
+if [ -e myDB.1.las ]; then
+    LAcat -v myDB.#.las > myDB.las
+fi
 
 # If the -o option is set then only alignments that are *proper overlaps*
 # (a sequence end occurs at the each end of the alignment) are displayed.
