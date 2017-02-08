@@ -1978,13 +1978,14 @@ cat stat2.md
 ### atha_ler_0: Create anchors
 
 ```bash
-cd ~/data/dna-seq/atha_ler_0/superreads/
+BASE_DIR=$HOME/data/dna-seq/atha_ler_0/superreads/
+cd ${BASE_DIR}
 
 for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
 do
     echo
     echo "==> Reads ${d}"
-    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+    DIR_COUNT="${BASE_DIR}/${d}/"
 
     if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
@@ -1998,27 +1999,28 @@ done
 Stats of anchors
 
 ```bash
-cd ~/data/dna-seq/atha_ler_0/superreads/
+BASE_DIR=$HOME/data/dna-seq/atha_ler_0/superreads/
+cd ${BASE_DIR}
 
 bash ~/Scripts/sra/sr_stat.sh 3 header \
-    > ~/data/dna-seq/atha_ler_0/superreads/stat3.md
+    > ${BASE_DIR}/stat3.md
 
 bash ~/Scripts/sra/sr_stat.sh 4 header \
-    > ~/data/dna-seq/atha_ler_0/superreads/stat4.md
+    > ${BASE_DIR}/stat4.md
 
 for d in trimmed_{10000000,20000000,30000000,40000000,50000000};
 do
-    DIR_COUNT="$HOME/data/dna-seq/atha_ler_0/superreads/${d}/"
+    DIR_COUNT="${BASE_DIR}/${d}/"
     
     if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
         continue     
     fi
     
     bash ~/Scripts/sra/sr_stat.sh 3 ${DIR_COUNT} \
-        >> ~/data/dna-seq/atha_ler_0/superreads/stat3.md
+        >> ${BASE_DIR}/stat3.md
     
     bash ~/Scripts/sra/sr_stat.sh 4 ${DIR_COUNT} \
-        >> ~/data/dna-seq/atha_ler_0/superreads/stat4.md
+        >> ${BASE_DIR}/stat4.md
 done
 
 cat stat3.md
