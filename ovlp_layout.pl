@@ -118,37 +118,49 @@ for my $ovlp ( @{$ovlps} ) {
     my $contained = $fields[12];
 
     # skip contained linkers
-#    if ( !$anchor_range->contains($f_id) and $contained{$f_id} ) {
-#        next;
-#    }
-#    if ( !$anchor_range->contains($g_id) and $contained{$g_id} ) {
-#        next;
-#    }
+    #    if ( !$anchor_range->contains($f_id) and $contained{$f_id} ) {
+    #        next;
+    #    }
+    #    if ( !$anchor_range->contains($g_id) and $contained{$g_id} ) {
+    #        next;
+    #    }
 
     if ( $f_B > 0 ) {
 
-        #          f.B        f.E
-        # f ========+---------->
-        # g         -----------+=======>
-        #          g.B        g.E
-        $graph->add_edge( $f_id, $g_id );
+        if ( $f_E == $f_len ) {
+
+            #          f.B        f.E
+            # f ========+---------->
+            # g         -----------+=======>
+            #          g.B        g.E
+            $graph->add_weighted_edge( $f_id, $g_id, $g_len - $g_E );
+        }
+        else {
+            #          f.B        f.E
+            # f ========+----------+=======>
+            # g         ----------->
+            #          g.B        g.E
+            $graph->add_weighted_edge( $g_id, $f_id, $f_len - $f_E );
+        }
     }
     else {
+        if ( $g_E == $g_len ) {
 
-        #          f.B        f.E
-        # f         -----------+=======>
-        # g ========+---------->
-        #          g.B        g.E
-        $graph->add_edge( $g_id, $f_id );
+            #          f.B        f.E
+            # f         -----------+=======>
+            # g ========+---------->
+            #          g.B        g.E
+            $graph->add_weighted_edge( $g_id, $f_id, $f_len - $f_E );
+        }
+        else {
+            #          f.B        f.E
+            # f         ----------->
+            # g ========+----------+=======>
+            #          g.B        g.E
+            $graph->add_weighted_edge( $f_id, $g_id, $g_len - $g_E );
+        }
     }
 }
-
-#if ( $opt->{range} ) {
-#    printf "#ID\tin\tout\n";
-#    for my $node ( $read_range->elements ) {
-#        printf "%s\t%d\t%d\n", $node, $graph->in_degree($node), $graph->out_degree($node);
-#    }
-#}
 
 print YAML::Syck::Dump {
     nodes                 => scalar $graph->vertices,
@@ -163,85 +175,53 @@ print YAML::Syck::Dump {
     isolated_vertices     => scalar $graph->isolated_vertices(),
 };
 
-#print YAML::Syck::Dump [ $graph->weakly_connected_components() ];
-
-#if ( $graph->is_directed_acyclic_graph ) {
-#
-#    #    print YAML::Syck::Dump [ $graph->topological_sort ];
-#    #    my $apsp = $graph->all_pairs_shortest_paths();
-#
-#    #    print YAML::Syck::Dump $apsp;
-#    if ( $opt->{range} ) {
-#        my @nodes = $read_range->elements;
-#        for my $i ( 0 .. $#nodes ) {
-#
-#            #            for my $j ( $i + 1 .. $#nodes ) {
-#            #
-#            #            }
-#        }
-#    }
-#}
-
-#while ( $graph->is_cyclic ) {
-#    my @nodes = sort { $a <=> $b } $graph->find_a_cycle;
-#    print YAML::Syck::Dump \@nodes;
-#
-#    for my $i ( 0 .. $#nodes - 1 ) {
-#        $graph->delete_edge( $nodes[$i],       $nodes[ $i + 1 ], );
-#        $graph->delete_edge( $nodes[ $i + 1 ], $nodes[$i], );
-#    }
-#
-#    for my $i ( 0 .. $#nodes - 1 ) {
-#        $graph->add_edge( $nodes[$i], $nodes[ $i + 1 ], );
-#    }
-#}
-
 {
-
-    #    print YAML::Syck::Dump [ $graph->topological_sort ];
-    #    my $apsp = $graph->all_pairs_shortest_paths();
-
-    #    print YAML::Syck::Dump [ $graph->longest_path() ];
-
-    my $reachable = AlignDB::IntSpan->new;
-
     my $anchor_graph = Graph->new( directed => 1 );
 
-    #    print YAML::Syck::Dump $apsp;
-    my @nodes = $anchor_range->elements;
-    $anchor_graph->add_vertex($_) for @nodes;
+    my @nodes = $graph->vertices;
 
-    for my $i ( 0 .. $#nodes ) {
-        J: for my $j ( 0 .. $#nodes ) {
-            next if $i == $j;
-            next unless $graph->is_reachable( $nodes[$i], $nodes[$j] );
-            $reachable->add( $nodes[$i] );
-            $reachable->add( $nodes[$j] );
+    my @linkers = grep { !$anchor_range->contains($_) } @nodes;
 
-            my @path = $graph->SP_Dijkstra( $nodes[$i], $nodes[$j] );
-            my $count_anthor;
-            for my $p (@path) {
+    for my $l (@linkers) {
+        my @p = grep { $anchor_range->contains($_) } $graph->predecessors($l);
+        my @s = grep { $anchor_range->contains($_) } $graph->successors($l);
 
-                $count_anthor++ if $anchor_range->contains($p);
-                next J if $count_anthor >= 3;
+        for my $p (@p) {
+            for my $s (@s) {
+                printf "    Add by linkers: %s -> %s\n", $p, $s;
+                $anchor_graph->add_edge( $p, $s );
             }
-
-            printf "%s\t%s\t%s\n", $nodes[$i], $nodes[$j], join( " ", @path );
-
-            $anchor_graph->add_edge( $nodes[$i], $nodes[$j] );
         }
+
+        if ( @p > 1 ) {
+            printf "    [%s] predecessors\n", scalar @p;
+            @p = map { $_->[0] }
+                sort { $b->[1] <=> $a->[1] }
+                map { [ $_, $graph->get_edge_weight( $_, $l ) ] } @p;
+            for my $i ( 0 .. $#p - 1 ) {
+                printf "    Add by p distances: %s -> %s\n", $p[$i], $p[ $i + 1 ];
+                $anchor_graph->add_edge( $p[$i], $p[ $i + 1 ] );
+            }
+        }
+
+        if ( @s > 1 ) {
+            printf {STDERR} "* There should be only one successor, as anchors arn't overlapped\n";
+            printf "    [%s] successors\n", scalar @s;
+            @s = map { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map { [ $_, $graph->get_edge_weight( $l, $_, ) ] } @s;
+            for my $i ( 0 .. $#s - 1 ) {
+                printf "    Add by s distances: %s -> %s\n", $s[$i], $s[ $i + 1 ];
+                $anchor_graph->add_edge( $s[$i], $s[ $i + 1 ] );
+            }
+        }
+
     }
-
-    printf "Reachable %s\n", $reachable->runlist;
-    printf "Contained %s\n", join( " ", sort { $a <=> $b } keys %contained );
-
     g2gv( $anchor_graph, $ARGV[0] . ".png" );
     printf "Reduced %d edges\n", transitively_reduce($anchor_graph);
     g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
 }
 g2gv( $graph, $ARGV[0] . ".all.png" );
-#printf "Reduced %d edges\n", transitively_reduce($graph);
-#g2gv( $graph, $ARGV[0] . ".all.reduced.png" );
 
 sub transitively_reduce {
 
