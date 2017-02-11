@@ -5,9 +5,8 @@ doi:10.1093/bioinformatics/btt476
 [MaSuRCA_QuickStartGuide](ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA_QuickStartGuide.pdf)
 
 
-[TOC levels=1-3]: #
+[TOC levels=1-3]: # " "
 
-# Table of Contents
 - [[MaSuRCA](http://www.genome.umd.edu/masurca.html) 安装与样例](#masurca-安装与样例)
 - [特点](#特点)
 - [版本](#版本)
@@ -23,12 +22,19 @@ doi:10.1093/bioinformatics/btt476
         - [E. coli: Down sampling](#e-coli-down-sampling)
         - [E. coli: Generate super-reads](#e-coli-generate-super-reads)
         - [E. coli: Create anchors](#e-coli-create-anchors)
+        - [E. coli: Quality assessment](#e-coli-quality-assessment)
+        - [E. coli: link anchors](#e-coli-link-anchors)
     - [Scer S288c](#scer-s288c)
         - [S288c: Down sampling](#s288c-down-sampling)
         - [S288c: Generate super-reads](#s288c-generate-super-reads)
         - [S288c: Create anchors](#s288c-create-anchors)
         - [Results of S288c](#results-of-s288c)
-    - [Dmel](#dmel)
+        - [S288c: Quality assessment](#s288c-quality-assessment)
+    - [Dmel iso-1 (ycnbwsp), SRR306628](#dmel-iso-1-ycnbwsp-srr306628)
+        - [Dmel iso-1: Down sampling](#dmel-iso-1-down-sampling)
+        - [Dmel iso-1: Generate super-reads](#dmel-iso-1-generate-super-reads)
+        - [Dmel iso-1: Create anchors](#dmel-iso-1-create-anchors)
+        - [Results of Dmel iso-1, SRR306628](#results-of-dmel-iso-1-srr306628)
     - [Atha Ler-0-2, SRR611087](#atha-ler-0-2-srr611087)
         - [atha_ler_0: Down sampling](#atha_ler_0-down-sampling)
         - [atha_ler_0: Generate super-reads](#atha_ler_0-generate-super-reads)
@@ -108,8 +114,7 @@ echo "==> MaSuRCA"
 cd /prepare/resource/
 wget -N ftp://ftp.genome.umd.edu/pub/MaSuRCA/MaSuRCA-3.1.3.tar.gz
 
-if [ -d $HOME/share/MaSuRCA ];
-then
+if [ -d $HOME/share/MaSuRCA ]; then
     rm -fr $HOME/share/MaSuRCA
 fi
 
@@ -119,7 +124,23 @@ tar xvfz /prepare/resource/MaSuRCA-3.1.3.tar.gz
 mv MaSuRCA-* MaSuRCA
 cd MaSuRCA
 sh install.sh
+```
 
+```bash
+echo "==> SuperReads_RNA"
+cd /prepare/resource/
+wget -N ftp://ftp.genome.umd.edu/pub/MaSuRCA/beta/SuperReads_RNA-1.0.1.tar.gz
+
+if [ -d $HOME/share/SuperReads_RNA ]; then
+    rm -fr $HOME/share/SuperReads_RNA
+fi
+
+cd $HOME/share/
+tar xvfz /prepare/resource/SuperReads_RNA-1.0.1.tar.gz
+
+mv SuperReads_RNA-* SuperReads_RNA
+cd SuperReads_RNA
+sh install.sh
 ```
 
 编译完成后, 会生成 `bin` 目录, 里面是可执行文件, `tree bin`.
@@ -499,8 +520,8 @@ curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide
     > NC_000913.fa
 faops n50 -N 0 -S NC_000913.fa
 
-wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
-wget ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
+wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
 
 faops n50 -S -C MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
 
@@ -713,6 +734,31 @@ do
         -s 300 -d 30 -p 8
     popd > /dev/null
 done
+
+mkdir 
+cp -R trimmed_800000 trimmed_800000_sr
+```
+
+Similar results from createSuperReads_RNA, a simplified masurca.
+
+```bash
+mkdir -p ~/data/dna-seq/e_coli/superreads/trimmed_800000_sr
+cd ~/data/dna-seq/e_coli/superreads/trimmed_800000_sr
+cp ../trimmed_800000/*.fq.gz . 
+
+perl ~/Scripts/sra/superreads.pl \
+    -m ~/share/SuperReads_RNA/bin/createSuperReads_RNA \
+    R1.fq.gz \
+    R2.fq.gz \
+    -s 300 -d 30 -p 8
+    
+bash ~/Scripts/sra/sr_stat.sh 1 ~/data/dna-seq/e_coli/superreads/trimmed_800000_sr
+REAL_G=4641652
+
+bash ~/Scripts/sra/sr_stat.sh 2 ~/data/dna-seq/e_coli/superreads/trimmed_800000_sr ${REAL_G}
+
+faops n50 -S -C ~/data/dna-seq/e_coli/superreads/trimmed_800000/work1/superReadSequences.fasta
+faops n50 -S -C ~/data/dna-seq/e_coli/superreads/trimmed_800000_sr/work1/superReadSequences.fasta
 ```
 
 Stats of super-reads
@@ -2141,32 +2187,6 @@ find
 
 ### cele_n2: Down sampling
 
-* Original
-
-```bash
-mkdir -p ~/data/dna-seq/cele_n2/superreads/
-cd ~/data/dna-seq/cele_n2/superreads/
-
-for count in 5000000 10000000 15000000 20000000 25000000;
-do
-    echo
-    echo "==> Reads ${count}"
-    DIR_COUNT="$HOME/data/dna-seq/cele_n2/superreads/original_${count}/"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/SRR065390_1.fastq.gz ${count} \
-        | pigz -p 8 > ${DIR_COUNT}/R1.fq.gz
-    seqtk sample -s${count} \
-        ~/data/dna-seq/cele_n2/process/cele_n2_4/SRR065390/SRR065390_2.fastq.gz ${count} \
-        | pigz -p 8 > ${DIR_COUNT}/R2.fq.gz
-done
-```
-
 * Trimmed
 
 ```bash
@@ -2198,7 +2218,7 @@ done
 BASE_DIR=$HOME/data/dna-seq/cele_n2/superreads/
 cd ${BASE_DIR}
 
-for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     echo
     echo "==> Reads ${d}"
@@ -2237,7 +2257,7 @@ bash ~/Scripts/sra/sr_stat.sh 1 header \
 bash ~/Scripts/sra/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -2262,7 +2282,7 @@ cat stat2.md
 BASE_DIR=$HOME/data/dna-seq/cele_n2/superreads/
 cd ${BASE_DIR}
 
-for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     echo
     echo "==> Reads ${d}"
@@ -2289,7 +2309,7 @@ bash ~/Scripts/sra/sr_stat.sh 3 header \
 bash ~/Scripts/sra/sr_stat.sh 4 header \
     > ${BASE_DIR}/stat4.md
 
-for d in {original,trimmed}_{5000000,10000000,15000000,20000000,25000000};
+for d in trimmed_{5000000,10000000,15000000,20000000,25000000};
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -2336,31 +2356,21 @@ cat stat4.md
 | trimmed_20000000  |   3.65G |   3.63G |       0.0051 |     2.37M |    0.0006 | 95.64M |  39.1 |  38.9 | 93.59M | 131.68M |     0.98 |       1.38 |  2742 |
 | trimmed_25000000  |   4.44G |   4.42G |       0.0051 |     2.87M |    0.0006 | 95.64M |  47.5 |  47.3 | 93.84M | 144.99M |     0.98 |       1.52 |  3679 |
 
-| Name              |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |   RunTime |
-|:------------------|---------:|-----------:|-----------:|------:|----------:|-------:|----------:|
-| original_5000000  | 10000000 |    7602249 |     0.7602 |   225 | 114630055 | 553678 | 0:09'56'' |
-| original_10000000 | 20000000 |   15354601 |     0.7677 |   852 | 124527490 | 265450 | 0:13'20'' |
-| original_15000000 | 30000000 |   23067089 |     0.7689 |  2548 | 136907233 | 179006 | 0:16'53'' |
-| original_20000000 | 40000000 |   30773095 |     0.7693 |  5041 | 169600281 | 176764 | 0:22'13'' |
-| original_25000000 | 50000000 |   38488018 |     0.7698 |  6399 | 205852690 | 196932 | 0:29'24'' |
-| trimmed_5000000   | 10000000 |    9262666 |     0.9263 |   232 | 108071815 | 515466 | 0:08'19'' |
-| trimmed_10000000  | 20000000 |   18710792 |     0.9355 |   732 | 119316625 | 289489 | 0:12'53'' |
-| trimmed_15000000  | 30000000 |   28105632 |     0.9369 |  1625 | 125977170 | 200138 | 0:16'23'' |
-| trimmed_20000000  | 40000000 |   37490526 |     0.9373 |  2742 | 138081063 | 170549 | 0:22'34'' |
-| trimmed_25000000  | 48649982 |   45610597 |     0.9375 |  3679 | 152036528 | 162520 | 0:27'03'' |
+| Name             |  #cor.fa | #strict.fa | strict/cor | N50SRclean | SumSRclean | #SRclean |   RunTime |
+|:-----------------|---------:|-----------:|-----------:|-----------:|-----------:|---------:|----------:|
+| trimmed_5000000  | 10000000 |    9262666 |     0.9263 |        656 |   16860822 |    24892 | 0:03'05'' |
+| trimmed_10000000 | 20000000 |   18710792 |     0.9355 |       1202 |   72403022 |    66063 | 0:08'49'' |
+| trimmed_15000000 | 30000000 |   28105632 |     0.9369 |       2283 |   90455377 |    52811 | 0:15'44'' |
+| trimmed_20000000 | 40000000 |   37490526 |     0.9373 |       3539 |   97262140 |    42272 | 0:19'51'' |
+| trimmed_25000000 | 48649982 |   45610597 |     0.9375 |       4598 |  101631684 |    37314 | 0:23'37'' |
 
-| Name              | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
-|:------------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
-| original_5000000  |      1189 |    875539 |     702 |       1554 |      58965 |       38 |       223 | 113695551 |  552938 |
-| original_10000000 |      1744 |  44247800 |   25614 |       1886 |    3818241 |     2046 |       482 |  76461449 |  237790 |
-| original_15000000 |      3845 |  61350580 |   19927 |       3890 |   15783908 |     4784 |       773 |  59772745 |  154295 |
-| original_20000000 |      6562 |  39170711 |    8611 |       8018 |   28677979 |     5306 |      3411 | 101751591 |  162847 |
-| original_25000000 |      7708 |  19947221 |    3779 |       9172 |   27177977 |     4439 |      5663 | 158727492 |  188714 |
-| trimmed_5000000   |      1175 |   1454889 |    1183 |          0 |          0 |        0 |       228 | 106616926 |  514283 |
-| trimmed_10000000  |      1698 |  38258120 |   22577 |       2027 |    2770249 |     1367 |       425 |  78288256 |  265545 |
-| trimmed_15000000  |      2819 |  57157408 |   23279 |       3193 |    9709459 |     3375 |       532 |  59110303 |  173484 |
-| trimmed_20000000  |      4024 |  54819040 |   17605 |       4704 |   16850986 |     4409 |       869 |  66411037 |  148535 |
-| trimmed_25000000  |      4658 |  46567378 |   13569 |       6449 |   23488038 |     4979 |      1947 |  81981112 |  143972 |
+| Name             | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
+|:-----------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
+| trimmed_5000000  |      1186 |   1595854 |    1281 |       1583 |      26977 |       17 |       636 |  15237991 |   23594 |
+| trimmed_10000000 |      1704 |  40364896 |   23744 |       2000 |    1822284 |      916 |       746 |  30215842 |   41403 |
+| trimmed_15000000 |      2914 |  65293984 |   26036 |       2725 |    5552309 |     2184 |       802 |  19609084 |   24591 |
+| trimmed_20000000 |      4396 |  71508480 |   21534 |       3806 |    9876411 |     2963 |       869 |  15877249 |   17775 |
+| trimmed_25000000 |      5389 |  69644295 |   18143 |       5794 |   16173208 |     3657 |       964 |  15814181 |   15514 |
 
 ### Results of SRX770040
 
@@ -2402,11 +2412,6 @@ Adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
 | trimmed_20000000   |   8.7G |   4.7G |    107 |   77 | 94347283 | 4995221 | 0:30'54'' | 177827217 |    1.88 |
 | trimmed_25000000   |    11G |   5.8G |    107 |   77 | 94487936 | 5976897 | 0:38'10'' | 200157634 |    2.12 |
 | trimmed_30000000   |    13G |   6.8G |    107 |   77 | 94605989 | 6881557 | 0:43'46'' | 214657271 |    2.27 |
-| trimmed90_10000000 |   4.4G |   2.4G |    109 |   77 | 93858829 | 4661446 | 0:17'36'' | 122158822 |    1.30 |
-| trimmed90_15000000 |   6.6G |   3.5G |    108 |   77 | 94156388 | 4176053 | 0:23'21'' | 147310564 |    1.56 |
-| trimmed90_20000000 |   8.8G |   4.7G |    108 |   77 | 94286339 | 4821201 | 0:31'08'' | 177020385 |    1.88 |
-| trimmed90_25000000 |    11G |   5.8G |    108 |   77 | 94428289 | 5756927 | 0:38'18'' | 198896723 |    2.11 |
-| trimmed90_30000000 |    13G |   6.6G |    108 |   77 | 94517849 | 6393797 | 0:41'27'' | 210872908 |    2.23 |
 
 | Name               | TotalFq | TotalFa | RatioDiscard | TotalSubs | RatioSubs |  RealG | CovFq | CovFa |   EstG |   SumSR | Est/Real | SumSR/Real | N50SR |
 |:-------------------|--------:|--------:|-------------:|----------:|----------:|-------:|------:|------:|-------:|--------:|---------:|-----------:|------:|
@@ -2420,11 +2425,6 @@ Adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
 | trimmed_20000000   |   4.05G |   4.05G |       0.0010 |     1.48M |    0.0004 | 95.64M |  43.4 |  43.4 | 89.98M | 169.59M |     0.94 |       1.77 |  8032 |
 | trimmed_25000000   |   5.07G |   5.06G |       0.0009 |     1.83M |    0.0004 | 95.64M |  54.3 |  54.2 | 90.11M | 190.89M |     0.94 |       2.00 |  8293 |
 | trimmed_30000000   |   5.91G |    5.9G |       0.0009 |     2.13M |    0.0004 | 95.64M |  63.3 |  63.2 | 90.22M | 204.71M |     0.94 |       2.14 |  7909 |
-| trimmed90_10000000 |   2.04G |   2.03G |       0.0011 |   742.88K |    0.0003 | 95.64M |  21.8 |  21.8 | 89.51M |  116.5M |     0.94 |       1.22 |  1992 |
-| trimmed90_15000000 |   3.06G |   3.05G |       0.0010 |     1.07M |    0.0003 | 95.64M |  32.7 |  32.7 | 89.79M | 140.49M |     0.94 |       1.47 |  5656 |
-| trimmed90_20000000 |   4.07G |   4.07G |       0.0009 |     1.41M |    0.0003 | 95.64M |  43.6 |  43.6 | 89.92M | 168.82M |     0.94 |       1.77 |  8086 |
-| trimmed90_25000000 |   5.09G |   5.09G |       0.0009 |     1.75M |    0.0003 | 95.64M |  54.5 |  54.5 | 90.05M | 189.68M |     0.94 |       1.98 |  8237 |
-| trimmed90_30000000 |   5.72G |   5.71G |       0.0009 |     1.96M |    0.0003 | 95.64M |  61.2 |  61.2 | 90.14M |  201.1M |     0.94 |       2.10 |  8013 |
 
 | Name               |  #cor.fa | #strict.fa | strict/cor | N50SR |     SumSR |    #SR |
 |:-------------------|---------:|-----------:|-----------:|------:|----------:|-------:|
@@ -2438,11 +2438,6 @@ Adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
 | trimmed_20000000   | 40000000 |   38534767 |     0.9634 |  8032 | 177827217 | 153437 |
 | trimmed_25000000   | 50000000 |   48181917 |     0.9636 |  8293 | 200157634 | 167004 |
 | trimmed_30000000   | 58296138 |   56188361 |     0.9638 |  7909 | 214657271 | 180694 |
-| trimmed90_10000000 | 20000000 |   19279660 |     0.9640 |  1992 | 122158822 | 176013 |
-| trimmed90_15000000 | 30000000 |   28939783 |     0.9647 |  5656 | 147310564 | 143857 |
-| trimmed90_20000000 | 40000000 |   38592933 |     0.9648 |  8086 | 177020385 | 148874 |
-| trimmed90_25000000 | 50000000 |   48254390 |     0.9651 |  8237 | 198896723 | 162462 |
-| trimmed90_30000000 | 56155542 |   54202292 |     0.9652 |  8013 | 210872908 | 172232 |
 
 | Name               | N50Anchor | SumAnchor | #anchor | N50Anchor2 | SumAnchor2 | #anchor2 | N50Others | SumOthers | #others |
 |:-------------------|----------:|----------:|--------:|-----------:|-----------:|---------:|----------:|----------:|--------:|
@@ -2456,11 +2451,6 @@ Adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
 | trimmed_20000000   |      8210 |  27689673 |    5136 |      11530 |   29686983 |     4021 |      7001 | 120450561 |  144280 |
 | trimmed_25000000   |      8253 |  16827614 |    3070 |      10926 |   27673190 |     3694 |      7722 | 155656830 |  160240 |
 | trimmed_30000000   |      7460 |  11505843 |    2240 |      10265 |   24930981 |     3445 |      7544 | 178220447 |  175009 |
-| trimmed90_10000000 |      3213 |  61970383 |   23094 |       3558 |    9397603 |     3014 |       564 |  50790836 |  149905 |
-| trimmed90_15000000 |      6985 |  47116315 |   10232 |       9091 |   25266931 |     4232 |      3342 |  74927318 |  129393 |
-| trimmed90_20000000 |      8242 |  28104963 |    5196 |      11343 |   29216944 |     4008 |      7084 | 119698478 |  139670 |
-| trimmed90_25000000 |      8038 |  17823911 |    3287 |      10932 |   27132570 |     3648 |      7700 | 153940242 |  155527 |
-| trimmed90_30000000 |      7590 |  13168217 |    2536 |      10214 |   25377251 |     3520 |      7640 | 172327440 |  166176 |
 
 Clear intermediate files.
 
