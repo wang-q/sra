@@ -69,13 +69,12 @@ faops order ${PAC_FILE} \
 log_info "Preprocess reads to format them for dazzler"
 pushd ${MY_TMP_DIR}
 
-if [ -e stdin.* ]; then
-    rm stdin.*
+if [ -e stdout.* ]; then
+    rm stdout.*
 fi
-cat anchor.fasta pac.fasta | perl ~/Scripts/sra/falcon_name_fasta.pl -i stdin
-cat stdin.outfile \
+cat anchor.fasta pac.fasta \
+    | anchr dazzname stdin -o stdout \
     | faops filter -l 0 stdin renamed.fasta
-rm stdin.outfile
 
 log_info "Make the dazzler DB"
 DBrm myDB
@@ -165,26 +164,16 @@ faops some renamed.fasta rc.list stdout \
 
 faops order -l 0 strand.fa <(faops size renamed.fasta | cut -f 1) renamed.rc.fasta
 
-log_info "Run daligner for the second time"
-DBrm myDB
-fasta2DB myDB renamed.rc.fasta
-DBdust myDB
-
-if [ -e myDB.las ]; then
-    rm myDB.las
-fi
-HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
-bash job.sh
-
-# If the -o option is set then only alignments that are *proper overlaps*
-# (a sequence end occurs at the each end of the alignment) are displayed.
-LAshow -o myDB.db myDB.las > show.txt
+log_info "Run daligner for the second/third time"
+bash ~/Scripts/sra/overlap.sh renamed.rc.fasta 1000 .70 renamed.rc.ovlp.tsv false
+bash ~/Scripts/sra/overlap.sh renamed.rc.fasta 10 .98 10.98.ovlp.tsv false
 
 log_info "Create outputs"
 popd
 mv ${MY_TMP_DIR}/renamed.rc.fasta ${OUT_BASE}.renamed.fasta
-mv ${MY_TMP_DIR}/show.txt ${OUT_BASE}.show.txt
-mv ${MY_TMP_DIR}/stdin.replace.tsv ${OUT_BASE}.replace.tsv
+mv ${MY_TMP_DIR}/renamed.rc.ovlp.tsv ${OUT_BASE}.ovlp.tsv
+mv ${MY_TMP_DIR}/10.98.ovlp.tsv ${OUT_BASE}.10.98.ovlp.tsv
+mv ${MY_TMP_DIR}/stdout.replace.tsv ${OUT_BASE}.replace.tsv
 
 # clean tmp dir
-rm -fr ${MY_TMP_DIR}
+#rm -fr ${MY_TMP_DIR}
