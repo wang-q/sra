@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 FASTA_FILE OVLP_LEN OVLP_IDT OUT_NAME"
+USAGE="Usage: $0 FASTA_FILE OVLP_LEN OVLP_IDT OUT_NAME REPLACE"
 
 if [ "$#" -lt 3 ]; then
     echo >&2 "$USAGE"
@@ -39,6 +39,7 @@ FASTA_FILE=$1
 OVLP_LEN=${2:-500}
 OVLP_IDT=${3:-.99}
 OUT_NAME=${4:-ovlp.tsv}
+REPLACE=${5:-true}
 
 [ -e ${FASTA_FILE} ] || {
     log_warn "Can't find [${FASTA_FILE}].";
@@ -53,21 +54,18 @@ MY_TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 
 log_info "Temp dir: ${MY_TMP_DIR}"
 
-log_info "Sort by lengths"
-faops order ${FASTA_FILE} \
-    <(faops size ${FASTA_FILE} | sort -n -r -k2,2 | cut -f 1) \
-    ${MY_TMP_DIR}/original.fasta
+log_info "Copy file"
+faops filter -l 0 ${FASTA_FILE} ${MY_TMP_DIR}/original.fasta
 
 log_info "Preprocess reads to format them for dazzler"
 pushd ${MY_TMP_DIR}
 
-if [ -e stdin.* ]; then
-    rm stdin.*
+if [ -e stdout.* ]; then
+    rm stdout.*
 fi
-cat original.fasta | perl ~/Scripts/sra/falcon_name_fasta.pl -i stdin
-cat stdin.outfile \
+cat original.fasta \
+    | anchr dazzname stdin -o stdout \
     | faops filter -l 0 stdin renamed.fasta
-rm stdin.outfile
 
 log_info "Make the dazzler DB"
 DBrm myDB
@@ -95,7 +93,11 @@ fi
 # (a sequence end occurs at the each end of the alignment) are displayed.
 LAshow -o myDB.db myDB.las > show.txt
 
-perl ~/Scripts/sra/las2ovlp.pl renamed.fasta show.txt -r stdin.replace.tsv > ovlp.tsv
+if [ "${REPLACE}" = true ]; then
+    perl ~/Scripts/sra/las2ovlp.pl renamed.fasta show.txt -r stdout.replace.tsv > ovlp.tsv
+else
+    perl ~/Scripts/sra/las2ovlp.pl renamed.fasta show.txt > ovlp.tsv
+fi
 
 log_info "Create outputs"
 popd
