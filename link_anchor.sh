@@ -176,4 +176,4 @@ mv ${MY_TMP_DIR}/10.98.ovlp.tsv ${OUT_BASE}.10.98.ovlp.tsv
 mv ${MY_TMP_DIR}/stdout.replace.tsv ${OUT_BASE}.replace.tsv
 
 # clean tmp dir
-#rm -fr ${MY_TMP_DIR}
+rm -fr ${MY_TMP_DIR}
