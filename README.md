@@ -413,7 +413,7 @@ aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 md5sum --check sra_info.md5.txt
 ```
 
-## Atha Ler-0
+## Atha Col-0 Ler-0
 
 Grab information.
 
@@ -424,10 +424,11 @@ cd ~/data/dna-seq/atha_ler_0/sra
 cat << EOF > source.csv
 SRX1567556,Ler-0-1,Ler sequencing and assembly
 SRX202247,Ler-0-2,Ler_XL_4
+SRX202246,Col-0,Col_G
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv \
-    > atha_ler_0.yml
+    > sra_info.yml
 
 ```
 
@@ -435,17 +436,17 @@ Download.
 
 ```bash
 cd ~/data/dna-seq/atha_ler_0/sra
-perl ~/Scripts/sra/sra_prep.pl atha_ler_0.yml --md5
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
 
-aria2c -x 9 -s 3 -c -i atha_ler_0.ftp.txt
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
-md5sum --check atha_ler_0.md5.txt
+md5sum --check sra_info.md5.txt
 ```
 
 Generate bash files and run.
 
 ```bash
-perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/atha_ler_0 -c ~/data/dna-seq/atha_ler_0/sra/atha_ler_0.csv
+perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/atha_ler_0 -c ~/data/dna-seq/atha_ler_0/sra/sra_info.csv
 
 cd ~/data/dna-seq/atha_ler_0
 bash bash/sra.Ler-0-1.sh
