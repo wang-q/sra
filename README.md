@@ -1,7 +1,9 @@
-[TOC levels=1-3]: #
+# Processing NCBI sra/EBI ena data
 
-# Table of Contents
-- [Purpose](#purpose)
+
+[TOC levels=1-3]: # " "
+
+- [Processing NCBI sra/EBI ena data](#processing-ncbi-sraebi-ena-data)
 - [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn_rnapl)
     - [medfood: medicine food homology. Rna-seq survey.](#medfood-medicine-food-homology-rna-seq-survey)
     - [chickpea](#chickpea)
@@ -11,9 +13,11 @@
     - [Cercis gigantea 巨紫荆](#cercis-gigantea-巨紫荆)
     - [Gleditsia sinensis 皂荚树](#gleditsia-sinensis-皂荚树)
     - [Sophora japonica 槐树](#sophora-japonica-槐树)
-- [*De novo* dna-seq projects (dn_dna_*.pl)](#de-novo-dna-seq-projects-dn_dna_pl)
+- [*De novo* dna-seq projects (dn_dna.pl)](#de-novo-dna-seq-projects-dn_dnapl)
+    - [Scer S288c](#scer-s288c)
     - [Atha Ler-0](#atha-ler-0)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
+    - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
     - [Glycine max cultivar Williams 82](#glycine-max-cultivar-williams-82)
     - [Oropetium thomaeum](#oropetium-thomaeum)
@@ -35,9 +39,6 @@
 - [Unused projects](#unused-projects)
 
 
-# Purpose
-
-Processing NCBI sra/EBI ena data
 
 # *De novo* rna-seq projects (`dn_rna.pl`)
 
@@ -376,7 +377,7 @@ bash bash/sra.sophora_japonica.sh
 bash bash/tri.sophora_japonica.sh
 ```
 
-# *De novo* dna-seq projects (dn_dna_*.pl)
+# *De novo* dna-seq projects (dn_dna.pl)
 
 ## Scer S288c
 
@@ -411,7 +412,6 @@ aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
 md5sum --check sra_info.md5.txt
 ```
-
 
 ## Atha Ler-0
 
