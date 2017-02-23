@@ -1,11 +1,9 @@
-[TOC levels=1-3]: #
+# Plants 2+3
 
-# Table of Contents
-- [Name](#name)
+[TOC levels=1-3]: # " "
+
+- [Plants 2+3](#plants-23)
 - [super-reads](#super-reads)
-    - [Ler-0-1, SRR3166543](#ler-0-1-srr3166543)
-    - [Ler-0-2, SRR611087](#ler-0-2-srr611087)
-    - [Ler-0-2, SRR616965](#ler-0-2-srr616965)
     - [F63, Closterium sp., 新月藻](#f63-closterium-sp-新月藻)
     - [F295, Cosmarium botrytis, 葡萄鼓藻](#f295-cosmariumbotrytis-葡萄鼓藻)
     - [F340, Zygnema extenue, 亚小双星藻](#f340-zygnema-extenue-亚小双星藻)
@@ -13,14 +11,9 @@
     - [F357, Botryococcus braunii, 布朗葡萄藻](#f357-botryococcus-braunii-布朗葡萄藻)
     - [F1084, Staurastrum sp., 角星鼓藻](#f1084-staurastrumsp-角星鼓藻)
     - [moli, 茉莉](#moli-茉莉)
-    - [Otho, Oropetium thomaeum, 复活草](#otho-oropetium-thomaeum-复活草)
     - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
 
-
-# Name
-
-Plants 2+3
 
 # super-reads
 
