@@ -513,6 +513,7 @@ SRX063982,ycnbwsp_11-HE,
 SRX063983,ycnbwsp_12-HE,
 SRX063984,ycnbwsp_13-HE,
 SRX063985,ycnbwsp_14-HE,
+ERX645969,ISO1,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v \
