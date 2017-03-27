@@ -4,32 +4,32 @@
 [TOC levels=1-3]: # " "
 
 - [Processing NCBI sra/EBI ena data](#processing-ncbi-sraebi-ena-data)
-- [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn_rnapl)
+- [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn-rnapl)
     - [medfood: medicine food homology. Rna-seq survey.](#medfood-medicine-food-homology-rna-seq-survey)
     - [chickpea](#chickpea)
     - [Dioscorea villosa 长柔毛薯蓣](#dioscorea-villosa-长柔毛薯蓣)
-- [*De novo* rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)](#de-novo-rna-seq-projects-starting-from-fastq-dn_rna_fq_pl)
+- [*De novo* rna-seq projects starting from FASTQ (dn_rna_fq_*.pl)](#de-novo-rna-seq-projects-starting-from-fastq-dn-rna-fq-pl)
     - [Spartina alterniflora 互花米草](#spartina-alterniflora-互花米草)
     - [Cercis gigantea 巨紫荆](#cercis-gigantea-巨紫荆)
     - [Gleditsia sinensis 皂荚树](#gleditsia-sinensis-皂荚树)
     - [Sophora japonica 槐树](#sophora-japonica-槐树)
-- [*De novo* dna-seq projects (dn_dna.pl)](#de-novo-dna-seq-projects-dn_dnapl)
+- [*De novo* dna-seq projects (dn_dna.pl)](#de-novo-dna-seq-projects-dn-dnapl)
     - [Scer S288c](#scer-s288c)
-    - [Atha Ler-0](#atha-ler-0)
+    - [Atha Col-0 Ler-0](#atha-col-0-ler-0)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
     - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
     - [Glycine max cultivar Williams 82](#glycine-max-cultivar-williams-82)
     - [Oropetium thomaeum](#oropetium-thomaeum)
     - [Quercus lobata 加州峡谷栎树](#quercus-lobata-加州峡谷栎树)
-- [Reference based rna-seq projects (rb_rna_*.pl)](#reference-based-rna-seq-projects-rb_rna_pl)
+- [Reference based rna-seq projects (rb_rna_*.pl)](#reference-based-rna-seq-projects-rb-rna-pl)
     - [ath example](#ath-example)
     - [Human bodymap2](#human-bodymap2)
     - [Mouse transcriptome](#mouse-transcriptome)
     - [Dmel transcriptome](#dmel-transcriptome)
     - [Rat hypertension](#rat-hypertension)
-- [Reference based dna-seq projects (rb_dna_*.pl)](#reference-based-dna-seq-projects-rb_dna_pl)
-    - [cele_mmp: 40 wild strains from *C. elegans* million mutation project](#cele_mmp-40-wild-strains-from-c-elegans-million-mutation-project)
+- [Reference based dna-seq projects (rb_dna_*.pl)](#reference-based-dna-seq-projects-rb-dna-pl)
+    - [cele_mmp: 40 wild strains from *C. elegans* million mutation project](#cele-mmp-40-wild-strains-from-c-elegans-million-mutation-project)
     - [dicty](#dicty)
     - [ath19](#ath19)
     - [dpgp](#dpgp)
@@ -466,6 +466,8 @@ DRX007633,cele_n2,
 ERX1118232,cele_n2_2,
 SRX770040,cele_n2_3,
 SRX026594,cele_n2_4,
+SRX697551,cele_n2_5,
+SRX697546,cele_n2_5,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v \
