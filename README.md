@@ -425,6 +425,7 @@ cat << EOF > source.csv
 SRX1567556,Ler-0-1,Ler sequencing and assembly
 SRX202247,Ler-0-2,Ler_XL_4
 SRX202246,Col-0,Col_G
+SRS1404680,Col-0-P4C2
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv \
