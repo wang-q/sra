@@ -16,6 +16,11 @@
     - [F354: merge anchors](#f354-merge-anchors)
 - [F357, Botryococcus braunii, 布朗葡萄藻](#f357-botryococcus-braunii-布朗葡萄藻)
 - [F1084, Staurastrum sp., 角星鼓藻](#f1084-staurastrumsp-角星鼓藻)
+    - [F1084: download](#f1084-download)
+    - [F1084: combinations of different quality values and read lengths](#f1084-combinations-of-different-quality-values-and-read-lengths)
+    - [F1084: down sampling](#f1084-down-sampling)
+    - [F1084: generate super-reads](#f1084-generate-super-reads)
+    - [F1084: create anchors](#f1084-create-anchors)
 - [moli, 茉莉](#moli-茉莉)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
@@ -543,6 +548,8 @@ perl ~/Scripts/sra/superreads.pl \
 
 # F1084, Staurastrum sp., 角星鼓藻
 
+## F1084: download
+
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F1084
 cd ~/data/dna-seq/chara/superreads/F1084
@@ -551,6 +558,217 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz \
     ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz \
     -s 300 -d 30 -p 16
+```
+
+```bash
+mkdir -p ~/data/dna-seq/chara/F1084/2_illumina
+cd ~/data/dna-seq/chara/F1084/2_illumina
+
+ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
+```
+
+## F1084: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 100, 110, 120, 130, 140, and 150
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+
+# get the default adapter file
+# anchr trim --help
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 100 110 120 130 140 150
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 100 110 120 130 140 150; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
+```
+
+## F1084: down sampling
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=(
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q20L110:Q20L110"
+    "2_illumina/Q20L120:Q20L120"
+    "2_illumina/Q20L130:Q20L130"
+    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q20L150:Q20L150"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q25L110:Q25L110"
+    "2_illumina/Q25L120:Q25L120"
+    "2_illumina/Q25L130:Q25L130"
+    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q25L150:Q25L150"
+    "2_illumina/Q30L100:Q30L100"
+    "2_illumina/Q30L110:Q30L110"
+    "2_illumina/Q30L120:Q30L120"
+    "2_illumina/Q30L130:Q30L130"
+    "2_illumina/Q30L140:Q30L140"
+    "2_illumina/Q30L150:Q30L150"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
+
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
+done
+```
+
+## F1084: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## F1084: create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
 ```
 
 # moli, 茉莉
