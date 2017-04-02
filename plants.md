@@ -21,6 +21,8 @@
     - [F1084: down sampling](#f1084-down-sampling)
     - [F1084: generate super-reads](#f1084-generate-super-reads)
     - [F1084: create anchors](#f1084-create-anchors)
+    - [F1084: results](#f1084-results)
+    - [F1084: merge anchors](#f1084-merge-anchors)
 - [moli, 茉莉](#moli-茉莉)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
@@ -791,6 +793,227 @@ perl -e '
         rm -fr ${BASE_DIR}/{}/anchor
         bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
     "
+
+```
+
+## F1084: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+REAL_G=100000000
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+| Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% | RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:--------|-------:|------:|--------:|-----:|-------:|---------:|------:|--------:|---------:|--------:|------:|----------:|
+| Q20L100 | 15.16G | 151.6 |     132 |   63 | 12.42G |  18.074% |  100M | 167.85M |     1.68 | 250.28M |     0 | 3:42'09'' |
+| Q20L110 | 14.65G | 146.5 |     139 |   67 |  12.1G |  17.395% |  100M | 166.78M |     1.67 | 245.08M |     0 | 3:37'06'' |
+| Q20L120 | 13.96G | 139.6 |     145 |   75 | 11.64G |  16.601% |  100M | 165.47M |     1.65 | 239.82M |     0 | 3:34'33'' |
+| Q20L130 | 13.15G | 131.5 |     148 |   75 | 11.08G |  15.765% |  100M | 164.11M |     1.64 | 233.13M |     0 | 3:51'47'' |
+| Q20L140 | 12.49G | 124.9 |     149 |   75 | 10.61G |  15.046% |  100M | 163.05M |     1.63 | 228.45M |     0 | 3:37'18'' |
+| Q20L150 | 11.93G | 119.3 |     150 |   75 | 10.18G |  14.624% |  100M | 162.31M |     1.62 | 225.89M |     0 | 2:49'26'' |
+| Q25L100 | 13.52G | 135.2 |     130 |   61 | 11.83G |  12.475% |  100M | 164.03M |     1.64 | 228.39M |     0 | 3:13'03'' |
+| Q25L110 | 12.82G | 128.2 |     136 |   67 | 11.28G |  12.001% |  100M |  163.1M |     1.63 | 225.34M |     0 | 4:01'12'' |
+| Q25L120 | 11.85G | 118.5 |     143 |   75 | 10.49G |  11.479% |  100M | 161.86M |     1.62 | 221.81M |     0 | 2:31'33'' |
+| Q25L130 | 10.75G | 107.5 |     148 |   75 |  9.57G |  10.975% |  100M | 160.41M |     1.60 | 217.73M |     0 | 3:27'23'' |
+| Q25L140 |  9.82G |  98.2 |     149 |   75 |  8.79G |  10.500% |  100M | 159.12M |     1.59 | 214.59M |     0 | 2:07'27'' |
+| Q25L150 |   9.5G |  95.0 |     150 |   75 |  8.51G |  10.374% |  100M | 158.69M |     1.59 |  213.7M |     0 | 2:13'39'' |
+| Q30L100 | 11.45G | 114.5 |     128 |   61 | 10.47G |   8.537% |  100M | 161.07M |     1.61 | 217.63M |     0 | 2:42'46'' |
+| Q30L110 | 10.54G | 105.4 |     136 |   75 |  9.67G |   8.232% |  100M | 160.01M |     1.60 | 215.77M |     0 | 2:17'18'' |
+| Q30L120 |  9.28G |  92.8 |     143 |   75 |  8.55G |   7.930% |  100M | 158.38M |     1.58 |  212.5M |     0 | 2:00'17'' |
+| Q30L130 |  7.94G |  79.4 |     148 |   75 |  7.34G |   7.650% |  100M | 156.37M |     1.56 | 208.93M |     0 | 1:17'35'' |
+| Q30L140 |  6.83G |  68.3 |     149 |   75 |  6.32G |   7.348% |  100M | 154.25M |     1.54 |  205.6M |     0 | 0:58'03'' |
+| Q30L150 |   6.5G |  65.0 |     150 |   75 |  6.03G |   7.299% |  100M | 153.63M |     1.54 | 204.69M |     0 | 0:54'49'' |
+
+| Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 |     Sum |   # | N50Others |     Sum |       # |   RunTime |
+|:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|--------:|----:|----------:|--------:|--------:|----------:|
+| Q20L100 |        450 | 250.28M | 1157914 |      5138 | 100.06M | 28363 |       1293 | 337.35K | 254 |       136 | 149.88M | 1129297 | 1:04'03'' |
+| Q20L110 |        545 | 245.08M | 1020555 |      5231 | 103.42M | 29041 |       1265 |    313K | 240 |       149 | 141.35M |  991274 | 1:05'53'' |
+| Q20L120 |        703 | 239.82M |  850707 |      5167 | 108.75M | 30566 |       1254 | 270.85K | 211 |       164 |  130.8M |  819930 | 1:01'47'' |
+| Q20L130 |        808 | 233.13M |  781983 |      5111 | 109.48M | 30822 |       1244 | 291.44K | 229 |       173 | 123.36M |  750932 | 1:09'21'' |
+| Q20L140 |        887 | 228.45M |  735770 |      5080 | 109.85M | 31030 |       1245 |  317.5K | 246 |       180 | 118.28M |  704494 | 0:44'34'' |
+| Q20L150 |        937 | 225.89M |  711490 |      5041 | 110.17M | 31171 |       1245 | 298.23K | 229 |       183 | 115.43M |  680090 | 0:51'54'' |
+| Q25L100 |        695 | 228.39M |  909717 |      5461 | 102.73M | 28483 |       1261 | 286.17K | 220 |       155 | 125.37M |  881014 | 1:03'46'' |
+| Q25L110 |        852 | 225.34M |  784759 |      5416 | 107.22M | 29609 |       1267 | 246.66K | 192 |       170 | 117.87M |  754958 | 1:00'28'' |
+| Q25L120 |       1070 | 221.81M |  661637 |      5080 | 112.18M | 31369 |       1272 | 237.72K | 182 |       188 | 109.39M |  630086 | 0:46'42'' |
+| Q25L130 |       1144 | 217.73M |  629485 |      4919 |    112M | 31704 |       1235 | 288.87K | 223 |       192 | 105.45M |  597558 | 0:42'04'' |
+| Q25L140 |       1190 | 214.59M |  607279 |      4815 | 111.43M | 31941 |       1249 | 401.45K | 310 |       195 | 102.76M |  575028 | 0:41'51'' |
+| Q25L150 |       1203 |  213.7M |  601543 |      4784 | 111.24M | 31947 |       1263 | 439.83K | 338 |       196 | 102.02M |  569258 | 0:33'30'' |
+| Q30L100 |        910 | 217.63M |  786399 |      5698 | 105.52M | 28378 |       1243 |  232.1K | 182 |       164 | 111.88M |  757839 | 0:53'32'' |
+| Q30L110 |       1254 | 215.77M |  607597 |      5076 | 113.63M | 31511 |       1240 | 207.95K | 162 |       192 | 101.94M |  575924 | 0:49'42'' |
+| Q30L120 |       1271 |  212.5M |  588782 |      4875 | 112.23M | 31743 |       1239 |    302K | 237 |       196 |  99.96M |  556802 | 0:43'25'' |
+| Q30L130 |       1241 | 208.93M |  572911 |      4659 |  109.6M | 31920 |       1251 | 561.04K | 433 |       202 |  98.77M |  540558 | 0:31'20'' |
+| Q30L140 |       1182 |  205.6M |  562468 |      4408 | 106.26M | 32166 |       1283 | 910.09K | 695 |       207 |  98.43M |  529607 | 0:26'47'' |
+| Q30L150 |       1161 | 204.69M |  560316 |      4284 | 105.15M | 32192 |       1278 |      1M | 763 |       209 |  98.54M |  527361 | 0:25'51'' |
+
+## F1084: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L110/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L130/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q20L150/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L110/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L130/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    Q25L150/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    Q30L110/anchor/pe.anchor.fa \
+    Q30L120/anchor/pe.anchor.fa \
+    Q30L130/anchor/pe.anchor.fa \
+    Q30L140/anchor/pe.anchor.fa \
+    Q30L150/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+faops n50 -S -C merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q20L110/anchor/pe.anchor2.fa \
+    Q20L120/anchor/pe.anchor2.fa \
+    Q20L130/anchor/pe.anchor2.fa \
+    Q20L140/anchor/pe.anchor2.fa \
+    Q20L150/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q25L110/anchor/pe.anchor2.fa \
+    Q25L120/anchor/pe.anchor2.fa \
+    Q25L130/anchor/pe.anchor2.fa \
+    Q25L140/anchor/pe.anchor2.fa \
+    Q25L150/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q30L110/anchor/pe.anchor2.fa \
+    Q30L120/anchor/pe.anchor2.fa \
+    Q30L130/anchor/pe.anchor2.fa \
+    Q30L140/anchor/pe.anchor2.fa \
+    Q30L150/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q20L110/anchor/pe.others.fa \
+    Q20L120/anchor/pe.others.fa \
+    Q20L130/anchor/pe.others.fa \
+    Q20L140/anchor/pe.others.fa \
+    Q20L150/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q25L110/anchor/pe.others.fa \
+    Q25L120/anchor/pe.others.fa \
+    Q25L130/anchor/pe.others.fa \
+    Q25L140/anchor/pe.others.fa \
+    Q25L150/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    Q30L110/anchor/pe.others.fa \
+    Q30L120/anchor/pe.others.fa \
+    Q30L130/anchor/pe.others.fa \
+    Q30L140/anchor/pe.others.fa \
+    Q30L150/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 24 \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L110/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L130/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q20L150/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L110/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L130/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    Q25L150/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    Q30L110/anchor/pe.anchor.fa \
+    Q30L120/anchor/pe.anchor.fa \
+    Q30L130/anchor/pe.anchor.fa \
+    Q30L140/anchor/pe.anchor.fa \
+    Q30L150/anchor/pe.anchor.fa \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others" \
+    -o 9_qa
 
 ```
 
