@@ -44,7 +44,6 @@
 - [Anchors](#anchors)
 
 
-
 # F63, Closterium sp., 新月藻
 
 ## F63: download
@@ -525,6 +524,8 @@ cat stat.md
 
 # F340, Zygnema extenue, 亚小双星藻
 
+## F340: download
+
 ```bash
 mkdir -p ~/data/dna-seq/chara/superreads/F340
 cd ~/data/dna-seq/chara/superreads/F340
@@ -533,6 +534,84 @@ perl ~/Scripts/sra/superreads.pl \
     ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz \
     ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz \
     -s 300 -d 30 -p 16
+```
+
+```bash
+mkdir -p ~/data/dna-seq/chara/F340/2_illumina
+cd ~/data/dna-seq/chara/F340/2_illumina
+
+ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz R2.fq.gz
+```
+
+## F340: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 100, 110, 120, 130, 140, and 150
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+
+# get the default adapter file
+# anchr trim --help
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 100 110 120 130 140 150
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 100 110 120 130 140 150; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
 ```
 
 # F354, Spirogyra gracilis, 纤细水绵
