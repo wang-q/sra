@@ -408,27 +408,9 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 24 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others" \
+    --label "merge,others" \
     -o 9_qa
 
 ```
@@ -903,29 +885,21 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 24 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others" \
+    --label "merge,others" \
     -o 9_qa
 
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F354
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
 ```
 
 # F357, Botryococcus braunii, 布朗葡萄藻
@@ -1330,27 +1304,9 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 24 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others" \
+    --label "merge,others" \
     -o 9_qa
 
 ```
@@ -1799,29 +1755,21 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 24 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others" \
+    --label "merge,others" \
     -o 9_qa
 
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
 ```
 
 # moli, 茉莉
