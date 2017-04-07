@@ -14,6 +14,11 @@
 - [F295, Cosmarium botrytis, 葡萄鼓藻](#f295-cosmariumbotrytis-葡萄鼓藻)
     - [F295: download](#f295-download)
     - [F295: combinations of different quality values and read lengths](#f295-combinations-of-different-quality-values-and-read-lengths)
+    - [F295: down sampling](#f295-down-sampling)
+    - [F295: generate super-reads](#f295-generate-super-reads)
+    - [F295: create anchors](#f295-create-anchors)
+    - [F295: results](#f295-results)
+    - [F295: merge anchors](#f295-merge-anchors)
 - [F340, Zygnema extenue, 亚小双星藻](#f340-zygnema-extenue-亚小双星藻)
 - [F354, Spirogyra gracilis, 纤细水绵](#f354-spirogyragracilis-纤细水绵)
     - [F354: download](#f354-download)
@@ -595,6 +600,375 @@ for qual in 20 25 30; do
 done
 
 cat stat.md
+```
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 150 | 22046948400 | 146979656 |
+| scythe   | 150 | 22015725890 | 146979656 |
+| Q20L100  | 150 | 19085875980 | 130371314 |
+| Q20L110  | 150 | 18335048576 | 124375122 |
+| Q20L120  | 150 | 17327774659 | 116688314 |
+| Q20L130  | 150 | 16192978459 | 108384610 |
+| Q20L140  | 150 | 15276645865 | 101909704 |
+| Q20L150  | 150 | 14078317500 |  93855450 |
+| Q25L100  | 150 | 16854549405 | 116554392 |
+| Q25L110  | 150 | 15858973942 | 108581370 |
+| Q25L120  | 150 | 14485090137 |  98086328 |
+| Q25L130  | 150 | 12982514417 |  87086786 |
+| Q25L140  | 150 | 11739819388 |  78312454 |
+| Q25L150  | 150 | 11003809200 |  73358728 |
+| Q30L100  | 150 | 14095170031 |  99140622 |
+| Q30L110  | 150 | 12832856338 |  89011084 |
+| Q30L120  | 150 | 11121894458 |  75927340 |
+| Q30L130  | 150 |  9347502410 |  62930872 |
+| Q30L140  | 150 |  7914150289 |  52811380 |
+| Q30L150  | 150 |  7034036400 |  46893576 |
+
+## F295: down sampling
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=(
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q20L110:Q20L110"
+    "2_illumina/Q20L120:Q20L120"
+    "2_illumina/Q20L130:Q20L130"
+    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q20L150:Q20L150"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q25L110:Q25L110"
+    "2_illumina/Q25L120:Q25L120"
+    "2_illumina/Q25L130:Q25L130"
+    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q25L150:Q25L150"
+    "2_illumina/Q30L100:Q30L100"
+    "2_illumina/Q30L110:Q30L110"
+    "2_illumina/Q30L120:Q30L120"
+    "2_illumina/Q30L130:Q30L130"
+    "2_illumina/Q30L140:Q30L140"
+    "2_illumina/Q30L150:Q30L150"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
+
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
+done
+```
+
+## F295: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## F295: create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## F295: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+REAL_G=100000000
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+| Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% | RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:--------|-------:|------:|--------:|-----:|-------:|---------:|------:|--------:|---------:|--------:|------:|----------:|
+| Q20L100 | 19.09G | 190.9 |     130 |   39 | 14.56G |  23.712% |  100M | 240.32M |     2.40 | 432.23M |     0 | 4:24'09'' |
+| Q20L110 | 18.34G | 183.4 |     137 |   45 | 14.09G |  23.129% |  100M | 235.02M |     2.35 | 424.17M |     0 | 4:13'48'' |
+| Q20L120 | 17.33G | 173.3 |     144 |   47 | 13.43G |  22.482% |  100M | 228.34M |     2.28 | 397.88M |     0 | 4:47'25'' |
+| Q20L130 | 16.19G | 161.9 |     148 |   49 | 12.66G |  21.833% |  100M | 221.02M |     2.21 | 370.17M |     0 | 3:23'34'' |
+| Q20L140 | 15.28G | 152.8 |     149 |   49 | 12.03G |  21.271% |  100M | 215.12M |     2.15 | 348.53M |     0 | 3:10'02'' |
+| Q20L150 | 14.08G | 140.8 |     150 |   49 | 11.13G |  20.967% |  100M | 206.81M |     2.07 | 326.72M |     0 | 2:37'19'' |
+| Q25L100 | 16.85G | 168.5 |     128 |   37 |  13.7G |  18.701% |  100M | 224.75M |     2.25 | 367.05M |     0 | 2:28'10'' |
+| Q25L110 | 15.86G | 158.6 |     135 |   43 | 12.95G |  18.314% |  100M | 218.22M |     2.18 | 354.46M |     0 | 3:10'47'' |
+| Q25L120 | 14.49G | 144.9 |     142 |   49 | 11.88G |  17.964% |  100M |  209.6M |     2.10 | 330.14M |     0 | 2:39'55'' |
+| Q25L130 | 12.98G | 129.8 |     147 |   49 | 10.69G |  17.671% |  100M | 199.98M |     2.00 | 301.06M |     0 | 2:19'39'' |
+| Q25L140 | 11.74G | 117.4 |     149 |   49 |   9.7G |  17.388% |  100M | 191.77M |     1.92 | 279.27M |     0 | 2:10'17'' |
+| Q25L150 |    11G | 110.0 |     150 |   49 |  9.09G |  17.352% |  100M | 186.37M |     1.86 | 267.38M |     0 | 1:58'25'' |
+| Q30L100 |  14.1G | 141.0 |     126 |   37 | 11.94G |  15.287% |  100M |  206.2M |     2.06 | 312.13M |     0 | 2:49'12'' |
+| Q30L110 | 12.83G | 128.3 |     135 |   43 |  10.9G |  15.086% |  100M | 197.99M |     1.98 | 294.07M |     0 | 2:36'06'' |
+| Q30L120 | 11.12G | 111.2 |     142 |   49 |  9.45G |  15.013% |  100M | 186.86M |     1.87 | 267.63M |     0 | 2:18'44'' |
+| Q30L130 |  9.35G |  93.5 |     148 |   49 |  7.94G |  15.020% |  100M | 174.63M |     1.75 | 239.81M |     0 | 2:00'53'' |
+| Q30L140 |  7.91G |  79.1 |     149 |   49 |  6.73G |  15.006% |  100M |  163.8M |     1.64 |    218M |     0 | 1:46'04'' |
+| Q30L150 |  7.03G |  70.3 |     150 |   49 |  5.97G |  15.142% |  100M | 156.09M |     1.56 |  203.9M |     0 | 1:26'21'' |
+
+| Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 |   Sum |    # | N50Others |     Sum |       # |   RunTime |
+|:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|------:|-----:|----------:|--------:|--------:|----------:|
+| Q20L100 |         97 | 432.23M | 4861858 |      6161 | 118.17M | 29266 |       1395 |  2.8M | 1964 |        60 | 311.26M | 4830628 | 1:57'35'' |
+| Q20L110 |        116 | 424.17M | 4099420 |      7487 |  122.2M | 27872 |       1384 |  2.5M | 1762 |        69 | 299.47M | 4069786 | 1:57'37'' |
+| Q20L120 |        142 | 397.88M | 3516838 |      8143 | 122.68M | 26957 |       1392 | 2.54M | 1788 |        75 | 272.66M | 3488093 | 1:48'03'' |
+| Q20L130 |        150 | 370.17M | 2971857 |      8948 | 122.28M | 26079 |       1386 | 2.57M | 1822 |        83 | 245.31M | 2943956 | 1:33'18'' |
+| Q20L140 |        166 | 348.53M | 2664451 |      9272 | 121.11M | 25435 |       1385 | 2.68M | 1900 |        87 | 224.73M | 2637116 | 1:12'32'' |
+| Q20L150 |        195 | 326.72M | 2399598 |      9849 |  118.5M | 24168 |       1384 | 2.69M | 1913 |        90 | 205.54M | 2373517 | 1:07'40'' |
+| Q25L100 |        150 | 367.05M | 3829734 |      6274 | 120.63M | 29279 |       1372 | 2.61M | 1852 |        63 | 243.81M | 3798603 | 1:17'23'' |
+| Q25L110 |        155 | 354.46M | 3108371 |      8079 | 123.89M | 26710 |       1370 | 2.36M | 1685 |        74 | 228.21M | 3079976 | 1:15'22'' |
+| Q25L120 |        201 | 330.14M | 2409099 |     10088 | 122.42M | 24034 |       1365 | 2.37M | 1710 |        89 | 205.35M | 2383355 | 1:04'53'' |
+| Q25L130 |        272 | 301.06M | 2029445 |     11057 | 118.35M | 22491 |       1355 | 2.54M | 1831 |        97 | 180.18M | 2005123 | 0:55'43'' |
+| Q25L140 |        372 | 279.27M | 1763264 |     11535 | 114.46M | 20983 |       1336 |  2.5M | 1820 |        97 | 162.31M | 1740461 | 0:51'09'' |
+| Q25L150 |        436 | 267.38M | 1635555 |     11857 | 111.88M | 20107 |       1343 | 2.45M | 1783 |        97 | 153.05M | 1613665 | 0:46'26'' |
+| Q30L100 |        235 | 312.13M | 2857620 |      7042 | 117.94M | 26790 |       1353 | 2.39M | 1723 |        71 | 191.81M | 2829107 | 1:05'12'' |
+| Q30L110 |        312 | 294.07M | 2205398 |      9529 | 118.67M | 23831 |       1342 | 2.23M | 1617 |        85 | 173.17M | 2179950 | 1:00'43'' |
+| Q30L120 |        468 | 267.63M | 1632437 |     12540 | 114.42M | 20395 |       1313 | 2.07M | 1534 |        97 | 151.15M | 1610508 | 0:47'17'' |
+| Q30L130 |        659 | 239.81M | 1325078 |     12712 | 108.26M | 18724 |       1341 | 1.93M | 1417 |       104 | 129.62M | 1304937 | 0:51'13'' |
+| Q30L140 |        831 |    218M | 1108274 |     12624 | 102.86M | 17537 |       1340 | 1.88M | 1371 |       118 | 113.25M | 1089366 | 0:23'44'' |
+| Q30L150 |        990 |  203.9M |  981294 |     12634 |  99.34M | 16905 |       1331 | 1.76M | 1277 |       125 |  102.8M |  963112 | 0:22'02'' |
+
+## F295: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L110/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L130/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q20L150/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L110/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L130/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    Q25L150/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    Q30L110/anchor/pe.anchor.fa \
+    Q30L120/anchor/pe.anchor.fa \
+    Q30L130/anchor/pe.anchor.fa \
+    Q30L140/anchor/pe.anchor.fa \
+    Q30L150/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+faops n50 -S -C merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q20L110/anchor/pe.anchor2.fa \
+    Q20L120/anchor/pe.anchor2.fa \
+    Q20L130/anchor/pe.anchor2.fa \
+    Q20L140/anchor/pe.anchor2.fa \
+    Q20L150/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q25L110/anchor/pe.anchor2.fa \
+    Q25L120/anchor/pe.anchor2.fa \
+    Q25L130/anchor/pe.anchor2.fa \
+    Q25L140/anchor/pe.anchor2.fa \
+    Q25L150/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q30L110/anchor/pe.anchor2.fa \
+    Q30L120/anchor/pe.anchor2.fa \
+    Q30L130/anchor/pe.anchor2.fa \
+    Q30L140/anchor/pe.anchor2.fa \
+    Q30L150/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q20L110/anchor/pe.others.fa \
+    Q20L120/anchor/pe.others.fa \
+    Q20L130/anchor/pe.others.fa \
+    Q20L140/anchor/pe.others.fa \
+    Q20L150/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q25L110/anchor/pe.others.fa \
+    Q25L120/anchor/pe.others.fa \
+    Q25L130/anchor/pe.others.fa \
+    Q25L140/anchor/pe.others.fa \
+    Q25L150/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    Q30L110/anchor/pe.others.fa \
+    Q30L120/anchor/pe.others.fa \
+    Q30L130/anchor/pe.others.fa \
+    Q30L140/anchor/pe.others.fa \
+    Q30L150/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "merge,others" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F295
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
 ```
 
 # F340, Zygnema extenue, 亚小双星藻
