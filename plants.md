@@ -20,6 +20,13 @@
     - [F295: results](#f295-results)
     - [F295: merge anchors](#f295-merge-anchors)
 - [F340, Zygnema extenue, 亚小双星藻](#f340-zygnema-extenue-亚小双星藻)
+    - [F340: download](#f340-download)
+    - [F340: combinations of different quality values and read lengths](#f340-combinations-of-different-quality-values-and-read-lengths)
+    - [F340: down sampling](#f340-down-sampling)
+    - [F340: generate super-reads](#f340-generate-super-reads)
+    - [F340: create anchors](#f340-create-anchors)
+    - [F340: results](#f340-results)
+    - [F340: merge anchors](#f340-merge-anchors)
 - [F354, Spirogyra gracilis, 纤细水绵](#f354-spirogyragracilis-纤细水绵)
     - [F354: download](#f354-download)
     - [F354: combinations of different quality values and read lengths](#f354-combinations-of-different-quality-values-and-read-lengths)
@@ -1033,21 +1040,339 @@ done
 cat stat.md
 ```
 
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 150 | 18309410400 | 122062736 |
+| scythe   | 150 | 18294244113 | 122062736 |
+| Q20L100  | 150 | 15952654843 | 108933506 |
+| Q20L110  | 150 | 15395740729 | 104516894 |
+| Q20L120  | 150 | 14568381351 |  98229518 |
+| Q20L130  | 150 | 13469698389 |  90200814 |
+| Q20L140  | 150 | 12635988723 |  84308072 |
+| Q20L150  | 150 | 11252441400 |  75016276 |
+| Q25L100  | 150 | 13578669804 |  94126722 |
+| Q25L110  | 150 | 12804749796 |  87963032 |
+| Q25L120  | 150 | 11635292163 |  79059322 |
+| Q25L130  | 150 | 10116885486 |  67957746 |
+| Q25L140  | 150 |  8937530416 |  59628052 |
+| Q25L150  | 150 |  8133527700 |  54223518 |
+| Q30L100  | 150 | 10568914263 |  74892562 |
+| Q30L110  | 150 |  9554392799 |  66795324 |
+| Q30L120  | 150 |  8068144811 |  55466460 |
+| Q30L130  | 150 |  6316882890 |  42652592 |
+| Q30L140  | 150 |  5054092292 |  33733744 |
+| Q30L150  | 150 |  4283448000 |  28556320 |
+
+
+## F340: down sampling
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=(
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q20L110:Q20L110"
+    "2_illumina/Q20L120:Q20L120"
+    "2_illumina/Q20L130:Q20L130"
+    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q20L150:Q20L150"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q25L110:Q25L110"
+    "2_illumina/Q25L120:Q25L120"
+    "2_illumina/Q25L130:Q25L130"
+    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q25L150:Q25L150"
+    "2_illumina/Q30L100:Q30L100"
+    "2_illumina/Q30L110:Q30L110"
+    "2_illumina/Q30L120:Q30L120"
+    "2_illumina/Q30L130:Q30L130"
+    "2_illumina/Q30L140:Q30L140"
+    "2_illumina/Q30L150:Q30L150"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
+
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
+done
+```
+
+## F340: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## F340: create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## F340: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+REAL_G=100000000
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+## F340: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F340
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L110/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L130/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q20L150/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L110/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L130/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    Q25L150/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    Q30L110/anchor/pe.anchor.fa \
+    Q30L120/anchor/pe.anchor.fa \
+    Q30L130/anchor/pe.anchor.fa \
+    Q30L140/anchor/pe.anchor.fa \
+    Q30L150/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+faops n50 -S -C merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q20L110/anchor/pe.anchor2.fa \
+    Q20L120/anchor/pe.anchor2.fa \
+    Q20L130/anchor/pe.anchor2.fa \
+    Q20L140/anchor/pe.anchor2.fa \
+    Q20L150/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q25L110/anchor/pe.anchor2.fa \
+    Q25L120/anchor/pe.anchor2.fa \
+    Q25L130/anchor/pe.anchor2.fa \
+    Q25L140/anchor/pe.anchor2.fa \
+    Q25L150/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q30L110/anchor/pe.anchor2.fa \
+    Q30L120/anchor/pe.anchor2.fa \
+    Q30L130/anchor/pe.anchor2.fa \
+    Q30L140/anchor/pe.anchor2.fa \
+    Q30L150/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q20L110/anchor/pe.others.fa \
+    Q20L120/anchor/pe.others.fa \
+    Q20L130/anchor/pe.others.fa \
+    Q20L140/anchor/pe.others.fa \
+    Q20L150/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q25L110/anchor/pe.others.fa \
+    Q25L120/anchor/pe.others.fa \
+    Q25L130/anchor/pe.others.fa \
+    Q25L140/anchor/pe.others.fa \
+    Q25L150/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    Q30L110/anchor/pe.others.fa \
+    Q30L120/anchor/pe.others.fa \
+    Q30L130/anchor/pe.others.fa \
+    Q30L140/anchor/pe.others.fa \
+    Q30L150/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "merge,others" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F354
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
+
 # F354, Spirogyra gracilis, 纤细水绵
 
 转录本杂合度 0.35%
 
 ## F354: download
-
-```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F354
-cd ~/data/dna-seq/chara/superreads/F354
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/F354/2_illumina
@@ -1478,7 +1803,7 @@ faops n50 -S -C merge/others.merge.fasta
 
 # quast
 rm -fr 9_qa
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
