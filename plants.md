@@ -1553,7 +1553,7 @@ faops n50 -S -C merge/others.merge.fasta
 
 # quast
 rm -fr 9_qa
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
@@ -2014,7 +2014,7 @@ faops n50 -S -C merge/others.merge.fasta
 
 # quast
 rm -fr 9_qa
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
