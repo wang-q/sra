@@ -54,16 +54,6 @@
 ## F63: download
 
 ```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F63
-cd ~/data/dna-seq/chara/superreads/F63
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
-
-```bash
 mkdir -p ~/data/dna-seq/chara/F63/2_illumina
 cd ~/data/dna-seq/chara/F63/2_illumina
 
@@ -515,16 +505,6 @@ rm -fr Q{20,25,30}L*
 ## F295: download
 
 ```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F295
-cd ~/data/dna-seq/chara/superreads/F295
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
-
-```bash
 mkdir -p ~/data/dna-seq/chara/F295/2_illumina
 cd ~/data/dna-seq/chara/F295/2_illumina
 
@@ -974,16 +954,6 @@ rm -fr Q{20,25,30}L*
 # F340, Zygnema extenue, 亚小双星藻
 
 ## F340: download
-
-```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F340
-cd ~/data/dna-seq/chara/superreads/F340
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/F340/2_illumina
@@ -1531,16 +1501,6 @@ rm -fr Q{20,25,30}L*
 ## F357: download
 
 ```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F354
-cd ~/data/dna-seq/chara/superreads/F354
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F357_HF5WLALXX_L7_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F357_HF5WLALXX_L7_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
-
-```bash
 mkdir -p ~/data/dna-seq/chara/F357/2_illumina
 cd ~/data/dna-seq/chara/F357/2_illumina
 
@@ -1990,16 +1950,6 @@ rm -fr Q{20,25,30}L*
 # F1084, Staurastrum sp., 角星鼓藻
 
 ## F1084: download
-
-```bash
-mkdir -p ~/data/dna-seq/chara/superreads/F1084
-cd ~/data/dna-seq/chara/superreads/F1084
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz \
-    ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz \
-    -s 300 -d 30 -p 16
-```
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/F1084/2_illumina
