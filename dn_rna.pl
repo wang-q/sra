@@ -35,6 +35,7 @@ my @opt_spec = (
     [ 'fq',           'Inputs are .fq.gz files', ],
     [ 'parallel|p=i', 'Parallel mode',                   { default  => 8, }, ],
     [ 'memory|m=i',   'Memory size for JVM',             { default  => 64, }, ],
+    [ 'min=i',        'minimal length of trimmed reads', { default  => 80, }, ],
     [   'trinity=s',
         'Directory of Trinity',
         { default => path( $ENV{HOME}, "share/trinityrnaseq-2.0.6" )->stringify, },
@@ -154,6 +155,7 @@ for my $item (@data) {
         ref_file => $ref_file,
         parallel => $opt->{parallel},
         memory   => $opt->{memory},
+        min      => $opt->{min},
     );
 
     $mybam->head($item);
