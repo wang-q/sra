@@ -250,55 +250,79 @@ sub scythe_sickle {
 
     my $text = <<'EOF';
 #----------------------------#
-# scythe
+# tally
 #----------------------------#
 [% FOREACH lane IN item.lanes -%]
 # lane [% lane.srr %]
 
-if [ ! -d [% item.dir %]/[% lane.srr %] ];
-then
-    mkdir [% item.dir %]/[% lane.srr %];
-fi;
-
 if [ ! -d [% item.dir %]/[% lane.srr %]/trimmed  ];
 then
-    mkdir [% item.dir %]/[% lane.srr %]/trimmed ;
+    mkdir -p [% item.dir %]/[% lane.srr %]/trimmed ;
 fi;
 
+cd [% item.dir %]/[% lane.srr %]/trimmed
+
+echo "* Start tally [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/tally.log
+
+[% IF lane.layout == 'PAIRED' -%]
+# tally (pair end)
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
+    -j [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
+    -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.tally.fq \
+    -p [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.tally.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_{}.tally.fq
+    " ::: 1 2
+
+[% ELSE -%]
+# tally (single end)
+tally \
+    --with-quality --nozip \
+    -i [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
+    -o [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].tally.fq
+
+pigz -p [% parallel %] [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].tally.fq
+
+[% END -%]
+
+[ $? -ne 0 ] && echo `date` [% item.name %] [% lane.srr %] [tally] failed >> [% base_dir %]/fail.log && exit 255
+echo "* End tally [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/tally.log
+
+[% END -%]
+
+#----------------------------#
+# scythe
+#----------------------------#
+[% FOREACH lane IN item.lanes -%]
+# lane [% lane.srr %]
 cd [% item.dir %]/[% lane.srr %]/trimmed
 
 echo "* Start scythe [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/scythe.log
 
 [% IF lane.layout == 'PAIRED' -%]
 # scythe (pair end)
-scythe \
-    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_1.fastq.gz \
-    -q sanger \
-    -M 20 \
-    -a [% ref_file.adapters %] \
-    -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.matches.txt \
-    --quiet \
-    | pigz -p [% parallel %] -cc > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_1.scythe.fq.gz
-
-scythe \
-    [% item.dir %]/[% lane.srr %]/[% lane.srr %]_2.fastq.gz \
-    -q sanger \
-    -M 20 \
-    -a [% ref_file.adapters %] \
-    -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.matches.txt \
-    --quiet \
-    | pigz -p [% parallel %] -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_2.scythe.fq.gz
+parallel -j 2 "
+    scythe \
+        [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_{}.tally.fq.gz \
+        -q sanger \
+        -a [% ref_file.adapters %] \
+        --quiet \
+        | pigz -p [% parallel %] -c \
+        > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %]_{}.scythe.fq.gz
+    " ::: 1 2
 
 [% ELSE -%]
 # scythe (single end)
 scythe \
-    [% item.dir %]/[% lane.srr %]/[% lane.srr %].fastq.gz \
+    [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].tally.fq.gz \
     -q sanger \
-    -M 20 \
     -a [% ref_file.adapters %] \
-    -m [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].matches.txt \
     --quiet \
-    | pigz -p [% parallel %] -c > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
+    | pigz -p [% parallel %] -c \
+    > [% item.dir %]/[% lane.srr %]/trimmed/[% lane.srr %].scythe.fq.gz
 
 [% END -%]
 
