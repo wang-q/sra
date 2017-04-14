@@ -2329,7 +2329,7 @@ ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
 ## F1084: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 100, 110, 120, 130, 140, and 150
+* len: 100, 120, and 140
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/F1084
@@ -2358,7 +2358,7 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 6 "
+parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -2373,7 +2373,25 @@ parallel --no-run-if-empty -j 6 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 100 110 120 130 140 150
+    " ::: 20 25 30 ::: 100 120 140
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}O
+    cd 2_illumina/Q{1}L{2}O
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.fq.gz ../R2.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
 
 ```
 
@@ -2396,7 +2414,17 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 100 110 120 130 140 150; do
+    for len in 100 120 140; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}O"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}O"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+for qual in 20 25 30; do
+    for len in 100 120 140; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -2440,24 +2468,24 @@ cd ${BASE_DIR}
 
 # works on bash 3
 ARRAY=(
+    "2_illumina/Q20L100O:Q20L100O"
+    "2_illumina/Q20L120O:Q20L120O"
+    "2_illumina/Q20L140O:Q20L140O"
+    "2_illumina/Q25L100O:Q25L100O"
+    "2_illumina/Q25L120O:Q25L120O"
+    "2_illumina/Q25L140O:Q25L140O"
+    "2_illumina/Q30L100O:Q30L100O"
+    "2_illumina/Q30L120O:Q30L120O"
+    "2_illumina/Q30L140O:Q30L140O"
     "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L110:Q20L110"
     "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L130:Q20L130"
     "2_illumina/Q20L140:Q20L140"
-    "2_illumina/Q20L150:Q20L150"
     "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L110:Q25L110"
     "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L130:Q25L130"
     "2_illumina/Q25L140:Q25L140"
-    "2_illumina/Q25L150:Q25L150"
     "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L110:Q30L110"
     "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L130:Q30L130"
     "2_illumina/Q30L140:Q30L140"
-    "2_illumina/Q30L150:Q30L150"
 )
 
 for group in "${ARRAY[@]}" ; do
@@ -2489,9 +2517,12 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100O Q20L120O Q20L140O
+        Q25L100O Q25L120O Q25L140O
+        Q30L100O Q30L120O Q30L140O
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -2543,9 +2574,12 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100O Q20L120O Q20L140O
+        Q25L100O Q25L120O Q25L140O
+        Q30L100O Q30L120O Q30L140O
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -2581,9 +2615,12 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100O Q20L120O Q20L140O
+        Q25L100O Q25L120O Q25L140O
+        Q30L100O Q30L120O Q30L140O
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -2613,9 +2650,12 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100O Q20L120O Q20L140O
+        Q25L100O Q25L120O Q25L140O
+        Q30L100O Q30L120O Q30L140O
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -2683,24 +2723,24 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q20L120O/anchor/pe.anchor.fa \
+    Q20L140O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q25L120O/anchor/pe.anchor.fa \
+    Q25L140O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
+    Q30L120O/anchor/pe.anchor.fa \
+    Q30L140O/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
     Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
     Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
     Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
     Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
     Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
     Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
@@ -2713,41 +2753,23 @@ faops n50 -S -C merge/anchor.merge.fasta
 # merge anchor2 and others
 anchr contained \
     Q20L100/anchor/pe.anchor2.fa \
-    Q20L110/anchor/pe.anchor2.fa \
     Q20L120/anchor/pe.anchor2.fa \
-    Q20L130/anchor/pe.anchor2.fa \
     Q20L140/anchor/pe.anchor2.fa \
-    Q20L150/anchor/pe.anchor2.fa \
     Q25L100/anchor/pe.anchor2.fa \
-    Q25L110/anchor/pe.anchor2.fa \
     Q25L120/anchor/pe.anchor2.fa \
-    Q25L130/anchor/pe.anchor2.fa \
     Q25L140/anchor/pe.anchor2.fa \
-    Q25L150/anchor/pe.anchor2.fa \
     Q30L100/anchor/pe.anchor2.fa \
-    Q30L110/anchor/pe.anchor2.fa \
     Q30L120/anchor/pe.anchor2.fa \
-    Q30L130/anchor/pe.anchor2.fa \
     Q30L140/anchor/pe.anchor2.fa \
-    Q30L150/anchor/pe.anchor2.fa \
     Q20L100/anchor/pe.others.fa \
-    Q20L110/anchor/pe.others.fa \
     Q20L120/anchor/pe.others.fa \
-    Q20L130/anchor/pe.others.fa \
     Q20L140/anchor/pe.others.fa \
-    Q20L150/anchor/pe.others.fa \
     Q25L100/anchor/pe.others.fa \
-    Q25L110/anchor/pe.others.fa \
     Q25L120/anchor/pe.others.fa \
-    Q25L130/anchor/pe.others.fa \
     Q25L140/anchor/pe.others.fa \
-    Q25L150/anchor/pe.others.fa \
     Q30L100/anchor/pe.others.fa \
-    Q30L110/anchor/pe.others.fa \
     Q30L120/anchor/pe.others.fa \
-    Q30L130/anchor/pe.others.fa \
     Q30L140/anchor/pe.others.fa \
-    Q30L150/anchor/pe.others.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
@@ -2760,9 +2782,15 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "merge,others" \
+    --label "Q20L100O,Q25L100O,Q30L100O,Q20L100,Q25L100,Q30L100,merge,others" \
     -o 9_qa
 
 ```
