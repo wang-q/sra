@@ -1,6 +1,5 @@
 # Processing NCBI sra/EBI ena data
 
-
 [TOC levels=1-3]: # " "
 
 - [Processing NCBI sra/EBI ena data](#processing-ncbi-sraebi-ena-data)
@@ -37,7 +36,6 @@
     - [dgrp](#dgrp)
     - [Glycine soja](#glycine-soja)
 - [Unused projects](#unused-projects)
-
 
 
 # *De novo* rna-seq projects (`dn_rna.pl`)
@@ -166,7 +164,7 @@ echo Pueraria_lobata,DRX014826,ILLUMINA,SINGLE,,DRR016460,23802502,2.19G \
 Generate bash files and run a sample.
 
 ```bash
-perl ~/Scripts/sra/dn_rna.pl -b ~/data/rna-seq/medfood -c ~/data/rna-seq/medfood/sra/medfood_all.csv
+perl ~/Scripts/sra/dn_rna.pl --min 40 -b ~/data/rna-seq/medfood -c ~/data/rna-seq/medfood/sra/medfood_all.csv
 
 #cd ~/data/rna-seq/medfood/sra
 #bash bash/sra.Cichorium_intybus.sh
