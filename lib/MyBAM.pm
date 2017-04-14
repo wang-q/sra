@@ -151,7 +151,7 @@ echo "* End srr_dump [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data
 
 find [% item.dir %]/[% lane.srr %]/ -type f -name "*.fastq" \
     | parallel --no-run-if-empty -j 1 pigz -p [% parallel %]
-echo "* Gzip sra fastq [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/sickle.log
+echo "* Gzip sra fastq [[% item.name %]] [[% lane.srr %]] `date`" | tee -a [% data_dir.log %]/srr_dump.log
 
 [% END -%]
 
