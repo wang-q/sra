@@ -52,6 +52,8 @@
     - [F1084: results](#f1084-results)
     - [F1084: merge anchors](#f1084-merge-anchors)
 - [moli, 茉莉](#moli-茉莉)
+    - [moli: download](#moli-download)
+    - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
 
@@ -2841,6 +2843,87 @@ perl ~/Scripts/sra/superreads.pl \
     R1.fq.gz \
     R2.fq.gz \
     -s 300 -d 30 -p 16 --jf 10_000_000_000
+```
+
+
+## moli: download
+
+```bash
+mkdir -p ~/data/dna-seq/plants/moli/2_illumina
+cd ~/data/dna-seq/plants/moli/2_illumina
+
+ln -s ~/zlc/medfood/moli/lane5ml_R1.fq.gz R1.fq.gz
+ln -s ~/zlc/medfood/moli/lane5ml_R2.fq.gz R2.fq.gz
+```
+
+## moli: combinations of different quality values and read lengths
+
+* qual: 25 and 30
+* len: 100, 120, and 140
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/plants/moli
+
+cd ${BASE_DIR}
+
+
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 25 30 ::: 100 120 140
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F1084
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 100 110 120 130 140 150; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
 ```
 
 # Summary of SR
