@@ -57,6 +57,10 @@
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
     - [ZS97: combinations of different quality values and read lengths](#zs97-combinations-of-different-quality-values-and-read-lengths)
+    - [ZS97: down sampling](#zs97-down-sampling)
+    - [ZS97: generate super-reads](#zs97-generate-super-reads)
+    - [ZS97: create anchors](#zs97-create-anchors)
+    - [ZS97: results](#zs97-results)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
 
@@ -3051,7 +3055,7 @@ find . -type f -name "pe.renamed.fastq"          | xargs rm
 find . -type f -name "pe.cor.sub.fa"             | xargs rm
 ```
 
-# ZS97, *Oryza sativa* Indica Group, Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
+# ZS97, *Oryza sativa* Indica Group, Zhenshan 97
 
 ## ZS97: download
 
@@ -3111,7 +3115,7 @@ ln -s SRR3234372_2.fastq.gz R2.fq.gz
 ## ZS97: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 100, 120, and 140
+* len: 80, 90, and 100
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/ZS97
@@ -3129,17 +3133,6 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 2 "
-    scythe \
-        2_illumina/{}.uniq.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina/{}.scythe.fq.gz
-    " ::: R1 R2
-
-cd ${BASE_DIR}
 parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -3152,10 +3145,10 @@ parallel --no-run-if-empty -j 4 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 100 120 140
+    " ::: 20 25 30 ::: 80 90 100
 
 ```
 
@@ -3176,11 +3169,9 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 100 120 140; do
+    for len in 80 90 100; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -3200,15 +3191,15 @@ cd ${BASE_DIR}
 
 # works on bash 3
 ARRAY=(
+    "2_illumina/Q20L80:Q20L80"
+    "2_illumina/Q20L90:Q20L90"
     "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q25L80:Q25L80"
+    "2_illumina/Q25L90:Q25L90"
     "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q30L80:Q30L80"
+    "2_illumina/Q30L90:Q30L90"
     "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L140:Q30L140"
 )
 
 for group in "${ARRAY[@]}" ; do
@@ -3240,9 +3231,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -3294,12 +3285,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100O Q20L120O Q20L140O
-        Q25L100O Q25L120O Q25L140O
-        Q30L100O Q30L120O Q30L140O
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -3335,9 +3323,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -3367,9 +3355,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -3385,6 +3373,93 @@ perl -e '
     " >> ${BASE_DIR}/stat2.md
 
 cat stat2.md
+```
+
+## ZS97: merge anchors from different groups of reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/ZS97
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L80/anchor/pe.anchor.fa \
+    Q20L90/anchor/pe.anchor.fa \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L80/anchor/pe.anchor.fa \
+    Q25L90/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L80/anchor/pe.anchor.fa \
+    Q30L90/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L80/anchor/pe.anchor2.fa \
+    Q20L90/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q25L80/anchor/pe.anchor2.fa \
+    Q25L90/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q30L80/anchor/pe.anchor2.fa \
+    Q30L90/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q20L80/anchor/pe.others.fa \
+    Q20L90/anchor/pe.others.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q25L80/anchor/pe.others.fa \
+    Q25L90/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q30L80/anchor/pe.others.fa \
+    Q30L90/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
+
+# quast
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "Q20L100,Q25L100,Q30L100,merge,others" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/ZS97
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
 ```
 
 # Summary of SR
