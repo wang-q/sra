@@ -2947,6 +2947,60 @@ done
 cat stat.md
 ```
 
+
+# ZS97, *Oryza sativa* Indica Group, Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
+
+## ZS97: download
+
+* Reference genome
+
+```bash
+mkdir -p ~/data/dna-seq/chara/ZS97/1_genome
+cd ~/data/dna-seq/chara/ZS97/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/345/GCA_001623345.1_ZS97RS1/GCA_001623345.1_ZS97RS1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+CM003910.1${TAB}1
+CM003911.1${TAB}2
+CM003912.1${TAB}3
+CM003913.1${TAB}4
+CM003914.1${TAB}5
+CM003915.1${TAB}6
+CM003916.1${TAB}7
+CM003917.1${TAB}8
+CM003918.1${TAB}9
+CM003919.1${TAB}10
+CM003920.1${TAB}11
+CM003921.1${TAB}12
+EOF
+
+faops replace GCA_001623345.1_ZS97RS1_genomic.fna.gz replace.tsv stdout \
+    | faops some stdin <(for chr in $(seq 1 1 12); do echo $chr; done) \
+        genome.fa
+
+```
+
+* Illumina
+
+    * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download from NCBI ftp.
+    * `ftp://ftp-trace.ncbi.nih.gov`
+    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of accession>/<accession>/<accession>.sra`
+
+```bash
+mkdir -p ~/data/dna-seq/chara/ZS97/2_illumina
+cd ~/data/dna-seq/chara/ZS97/2_illumina
+
+aria2c -x 9 -s 3 -c ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR323/SRR3234372/SRR3234372.sra
+
+fastq-dump --split-files SRR3234372  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR3234372_1.fastq.gz R1.fq.gz
+ln -s SRR3234372_2.fastq.gz R2.fq.gz
+```
+
 # Summary of SR
 
 | Name     | fq size | fa size | Length | Kmer | Est. Genome |   Run time |     Sum SR | SR/Est.G |
