@@ -2854,7 +2854,8 @@ cd ~/zlc/medfood/superreads/moli_sub
 # 200 M Reads
 zcat ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
     | head -n 800000000 \
-    | gzip > R1.fq.gz
+    | pigz -p 4 -c \
+    > R1.fq.gz
 
 zcat ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
     | head -n 800000000 \
@@ -2870,8 +2871,8 @@ perl ~/Scripts/sra/superreads.pl \
 ## moli: download
 
 ```bash
-mkdir -p ~/data/dna-seq/plants/moli/2_illumina
-cd ~/data/dna-seq/plants/moli/2_illumina
+mkdir -p ~/data/dna-seq/chara/moli/2_illumina
+cd ~/data/dna-seq/chara/moli/2_illumina
 
 ln -s ~/zlc/medfood/moli/lane5ml_R1.fq.gz R1.fq.gz
 ln -s ~/zlc/medfood/moli/lane5ml_R2.fq.gz R2.fq.gz
@@ -2879,15 +2880,25 @@ ln -s ~/zlc/medfood/moli/lane5ml_R2.fq.gz R2.fq.gz
 
 ## moli: combinations of different quality values and read lengths
 
-* qual: 25 and 30
+* qual: 20, 25, and 30
 * len: 100, 120, and 140
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/plants/moli
+BASE_DIR=$HOME/data/dna-seq/chara/moli
 
 cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
 
+parallel --no-run-if-empty -j 2 "
+    pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
 
+cd ${BASE_DIR}
 parallel --no-run-if-empty -j 2 "
     scythe \
         2_illumina/{}.fq.gz \
@@ -2899,7 +2910,7 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 6 "
+parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -2914,32 +2925,29 @@ parallel --no-run-if-empty -j 6 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 25 30 ::: 100 120 140
+    " ::: 20 25 30 ::: 100 120 140
 
 ```
 
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F1084
+BASE_DIR=$HOME/data/dna-seq/chara/moli
 cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 100 110 120 130 140 150; do
+    for len in 100 120 140; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            $(echo "Q${qual}L${len}O"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
             >> stat.md
     done
 done
@@ -2947,6 +2955,98 @@ done
 cat stat.md
 ```
 
+## moli: down sampling
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=(
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q20L120:Q20L120"
+    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q25L120:Q25L120"
+    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q30L100:Q30L100"
+    "2_illumina/Q30L120:Q30L120"
+    "2_illumina/Q30L140:Q30L140"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
+
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
+done
+```
+
+## moli: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 --jf 10_000_000_000 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
 
 # ZS97, *Oryza sativa* Indica Group, Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
 
