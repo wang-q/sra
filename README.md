@@ -452,6 +452,31 @@ bash bash/sra.Ler-0-1.sh
 bash bash/sra.Ler-0-2.sh
 ```
 
+## Osat ZS97 and MH63
+
+Grab information and download.
+
+```bash
+mkdir -p ~/data/dna-seq/osat/sra
+cd ~/data/dna-seq/osat/sra
+
+cat << EOF > source.csv
+SRX1639981,ZS97,Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
+SRX1639978,MH63,Minghui 63 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
+EOF
+
+perl ~/Scripts/sra/sra_info.pl source.csv -s erp -v \
+    > sra_info.yml
+
+# check before running these
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+
+```
+
 ## Caenorhabditis elegans
 
 Grab information and download.
