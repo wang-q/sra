@@ -2887,7 +2887,8 @@ BASE_DIR=$HOME/data/dna-seq/chara/moli
 
 cd ${BASE_DIR}
 tally \
-    --pair-by-offset --with-quality --nozip \
+    --pair-by-offset --with-quality --nozip --unsorted \
+    -sumstat 2_illumina/tally.sumstat.txt \
     -i 2_illumina/R1.fq.gz \
     -j 2_illumina/R2.fq.gz \
     -o 2_illumina/R1.uniq.fq \
