@@ -133,6 +133,19 @@ SRX474977,Staurastrum_ophiura,
 SRX474978,Staurastrum_punctulatum,
 SRX474979,Staurastrum_tetracerum,
 SRX474985,Zygnema_cylindricum,亚小双星藻
+
+SRX277981,Agapanthus_praecox,Agapanthus praecox subsp. orientalis strain:Big Blue
+SRX1560538,Allium_ampeloprasum,象大蒜
+SRX1560692,Allium_ascalonicum,火葱
+SRX1560712,Allium_cepa,洋葱
+SRX1560673,Allium_chinense,薤
+SRX1560727,Allium_fistulosum,葱
+SRX1560658,Allium_macrostemon,薤白
+SRX1560526,Allium_sativum,大蒜
+SRX1560563,Allium_tuberosum,韭菜
+SRX1494636,Galanthus_elwesii,大花雪花莲
+SRX739241,Narcissus_pseudonarcissus,黄水仙
+SRX1271111,Narcissus_tazetta,水仙
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv \
