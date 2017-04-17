@@ -54,6 +54,8 @@
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
+    - [moli: down sampling](#moli-down-sampling)
+    - [moli: generate super-reads](#moli-generate-super-reads)
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
     - [ZS97: combinations of different quality values and read lengths](#zs97-combinations-of-different-quality-values-and-read-lengths)
@@ -2845,18 +2847,8 @@ than the MAX_INT
   `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
 
 ```bash
-mkdir -p /home/wangq/zlc/medfood/superreads/moli
-cd ~/zlc/medfood/superreads/moli
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
-    ~/zlc/medfood/moli/lane5ml_R2.fq.gz \
-    -s 300 -d 30 -p 16 --jf 10_000_000_000 --kmer 77
-```
-
-```bash
-mkdir -p /home/wangq/zlc/medfood/superreads/moli_sub
-cd ~/zlc/medfood/superreads/moli_sub
+mkdir -p ~/data/dna-seq/chara/medfood
+cd ~/data/dna-seq/chara/medfood
 
 # 200 M Reads
 zcat ~/zlc/medfood/moli/lane5ml_R1.fq.gz \
@@ -2881,13 +2873,13 @@ perl ~/Scripts/sra/superreads.pl \
 mkdir -p ~/data/dna-seq/chara/moli/2_illumina
 cd ~/data/dna-seq/chara/moli/2_illumina
 
-ln -s ~/zlc/medfood/moli/lane5ml_R1.fq.gz R1.fq.gz
-ln -s ~/zlc/medfood/moli/lane5ml_R2.fq.gz R2.fq.gz
+ln -s ~/data/dna-seq/chara/medfood/lane5ml_R1.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/chara/medfood/lane5ml_R2.fq.gz R2.fq.gz
 ```
 
 ## moli: combinations of different quality values and read lengths
 
-* qual: 20, 25, and 30
+* qual: 20 and 25
 * len: 100, 120, and 140
 
 ```bash
@@ -2906,17 +2898,6 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 2 "
-    scythe \
-        2_illumina/{}.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina/{}.scythe.fq.gz
-    " ::: R1 R2
-
-cd ${BASE_DIR}
 parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -2929,10 +2910,10 @@ parallel --no-run-if-empty -j 4 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 100 120 140
+    " ::: 20 25 ::: 100 120 140
 
 ```
 
@@ -2946,10 +2927,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
-for qual in 20 25 30; do
+for qual in 20 25; do
     for len in 100 120 140; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
@@ -2976,9 +2955,6 @@ ARRAY=(
     "2_illumina/Q25L100:Q25L100"
     "2_illumina/Q25L120:Q25L120"
     "2_illumina/Q25L140:Q25L140"
-    "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L140:Q30L140"
 )
 
 for group in "${ARRAY[@]}" ; do
@@ -3012,7 +2988,6 @@ perl -e '
         qw{
         Q20L100 Q20L120 Q20L140
         Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
         }
         )
     {
