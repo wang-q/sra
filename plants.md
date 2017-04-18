@@ -2915,6 +2915,11 @@ BASE_DIR=$HOME/data/dna-seq/chara/moli
 cd ${BASE_DIR}
 
 printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
@@ -2924,13 +2929,24 @@ for qual in 20 25; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}O"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
             >> stat.md
     done
 done
 
 cat stat.md
 ```
+
+| Name     | N50 |          Sum |         # |
+|:---------|----:|-------------:|----------:|
+| Illumina | 150 | 131208907200 | 874726048 |
+| uniq     | 150 | 108022731300 | 720151542 |
+| Q20L100O | 150 |  99447660517 | 669337434 |
+| Q20L120O | 150 |  96283521937 | 644827784 |
+| Q20L140O | 150 |  90797417755 | 605412990 |
+| Q25L100O | 150 |  89342502638 | 605173772 |
+| Q25L120O | 150 |  84446237212 | 567043586 |
+| Q25L140O | 150 |  76712262430 | 511489372 |
 
 ## moli: down sampling
 
@@ -3019,6 +3035,186 @@ find . -type f -name "readPositionsInSuperReads" | xargs rm
 find . -type f -name "*.tmp"                     | xargs rm
 find . -type f -name "pe.renamed.fastq"          | xargs rm
 find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## moli: create anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## moli: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+REAL_G=100000000
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 4 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+## moli: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q20L120/anchor/pe.anchor2.fa \
+    Q20L140/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q25L120/anchor/pe.anchor2.fa \
+    Q25L140/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q20L120/anchor/pe.others.fa \
+    Q20L140/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q25L120/anchor/pe.others.fa \
+    Q25L140/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "Q20L100,Q25L100,merge,others" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/moli
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+
+cat stat3.md
 ```
 
 # ZS97, *Oryza sativa* Indica Group, Zhenshan 97
