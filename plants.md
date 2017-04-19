@@ -82,17 +82,27 @@ ln -s ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz R2.fq.gz
 ## F63: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 100, 110, 120, 130, 140, and 150
+* len: 100, 120, and 140
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/F63
 
-# get the default adapter file
-# anchr trim --help
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 2 "
     scythe \
-        2_illumina/{}.fq.gz \
+        2_illumina/{}.uniq.fq.gz \
         -q sanger \
         -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
         --quiet \
@@ -101,7 +111,7 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 6 "
+parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -116,7 +126,7 @@ parallel --no-run-if-empty -j 6 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 100 110 120 130 140 150
+    " ::: 20 25 30 ::: 100 120 140
 
 ```
 
@@ -134,10 +144,12 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 100 110 120 130 140 150; do
+    for len in 100 120 140; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -229,9 +241,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -283,9 +295,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -321,9 +333,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -353,9 +365,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
         }
         )
     {
@@ -425,23 +437,14 @@ cd ${BASE_DIR}
 mkdir -p merge
 anchr contained \
     Q20L100/anchor/pe.anchor.fa \
-    Q20L110/anchor/pe.anchor.fa \
     Q20L120/anchor/pe.anchor.fa \
-    Q20L130/anchor/pe.anchor.fa \
     Q20L140/anchor/pe.anchor.fa \
-    Q20L150/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q25L110/anchor/pe.anchor.fa \
     Q25L120/anchor/pe.anchor.fa \
-    Q25L130/anchor/pe.anchor.fa \
     Q25L140/anchor/pe.anchor.fa \
-    Q25L150/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
-    Q30L110/anchor/pe.anchor.fa \
     Q30L120/anchor/pe.anchor.fa \
-    Q30L130/anchor/pe.anchor.fa \
     Q30L140/anchor/pe.anchor.fa \
-    Q30L150/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
@@ -454,41 +457,23 @@ faops n50 -S -C merge/anchor.merge.fasta
 # merge anchor2 and others
 anchr contained \
     Q20L100/anchor/pe.anchor2.fa \
-    Q20L110/anchor/pe.anchor2.fa \
     Q20L120/anchor/pe.anchor2.fa \
-    Q20L130/anchor/pe.anchor2.fa \
     Q20L140/anchor/pe.anchor2.fa \
-    Q20L150/anchor/pe.anchor2.fa \
     Q25L100/anchor/pe.anchor2.fa \
-    Q25L110/anchor/pe.anchor2.fa \
     Q25L120/anchor/pe.anchor2.fa \
-    Q25L130/anchor/pe.anchor2.fa \
     Q25L140/anchor/pe.anchor2.fa \
-    Q25L150/anchor/pe.anchor2.fa \
     Q30L100/anchor/pe.anchor2.fa \
-    Q30L110/anchor/pe.anchor2.fa \
     Q30L120/anchor/pe.anchor2.fa \
-    Q30L130/anchor/pe.anchor2.fa \
     Q30L140/anchor/pe.anchor2.fa \
-    Q30L150/anchor/pe.anchor2.fa \
     Q20L100/anchor/pe.others.fa \
-    Q20L110/anchor/pe.others.fa \
     Q20L120/anchor/pe.others.fa \
-    Q20L130/anchor/pe.others.fa \
     Q20L140/anchor/pe.others.fa \
-    Q20L150/anchor/pe.others.fa \
     Q25L100/anchor/pe.others.fa \
-    Q25L110/anchor/pe.others.fa \
     Q25L120/anchor/pe.others.fa \
-    Q25L130/anchor/pe.others.fa \
     Q25L140/anchor/pe.others.fa \
-    Q25L150/anchor/pe.others.fa \
     Q30L100/anchor/pe.others.fa \
-    Q30L110/anchor/pe.others.fa \
     Q30L120/anchor/pe.others.fa \
-    Q30L130/anchor/pe.others.fa \
     Q30L140/anchor/pe.others.fa \
-    Q30L150/anchor/pe.others.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
@@ -501,9 +486,12 @@ faops n50 -S -C merge/others.merge.fasta
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "merge,others" \
+    --label "Q20L100,Q25L100,Q30L100,merge,others" \
     -o 9_qa
 
 ```
@@ -516,6 +504,25 @@ cd ${BASE_DIR}
 
 rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F63
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+
+cat stat3.md
 ```
 
 # F295, Cosmarium botrytis, 葡萄鼓藻
@@ -1064,26 +1071,17 @@ cat stat.md
 | Name     | N50 |         Sum |         # |
 |:---------|----:|------------:|----------:|
 | Illumina | 150 | 18309410400 | 122062736 |
-| scythe   | 150 | 18294244113 | 122062736 |
-| Q20L100  | 150 | 15952654843 | 108933506 |
-| Q20L110  | 150 | 15395740729 | 104516894 |
-| Q20L120  | 150 | 14568381351 |  98229518 |
-| Q20L130  | 150 | 13469698389 |  90200814 |
-| Q20L140  | 150 | 12635988723 |  84308072 |
-| Q20L150  | 150 | 11252441400 |  75016276 |
-| Q25L100  | 150 | 13578669804 |  94126722 |
-| Q25L110  | 150 | 12804749796 |  87963032 |
-| Q25L120  | 150 | 11635292163 |  79059322 |
-| Q25L130  | 150 | 10116885486 |  67957746 |
-| Q25L140  | 150 |  8937530416 |  59628052 |
-| Q25L150  | 150 |  8133527700 |  54223518 |
-| Q30L100  | 150 | 10568914263 |  74892562 |
-| Q30L110  | 150 |  9554392799 |  66795324 |
-| Q30L120  | 150 |  8068144811 |  55466460 |
-| Q30L130  | 150 |  6316882890 |  42652592 |
-| Q30L140  | 150 |  5054092292 |  33733744 |
-| Q30L150  | 150 |  4283448000 |  28556320 |
-
+| uniq     | 150 | 17866149600 | 119107664 |
+| scythe   | 150 | 17851191742 | 119107664 |
+| Q20L100  | 150 | 15513406507 | 105986394 |
+| Q20L120  | 150 | 14134581471 |  95323932 |
+| Q20L140  | 150 | 12224648204 |  81563320 |
+| Q25L100  | 150 | 13163602983 |  91278248 |
+| Q25L120  | 150 | 11253296912 |  76464550 |
+| Q25L140  | 150 |  8646235281 |  57684080 |
+| Q30L100  | 150 | 10234799514 |  72478776 |
+| Q30L120  | 150 |  7829284286 |  53788182 |
+| Q30L140  | 150 |  4971865380 |  33183492 |
 
 ## F340: down sampling
 
