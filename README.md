@@ -139,11 +139,12 @@ SRX1560538,Allium_ampeloprasum,象大蒜
 SRX1560692,Allium_ascalonicum,火葱
 SRX1560712,Allium_cepa,洋葱
 SRX1560673,Allium_chinense,薤
-SRX1560727,Allium_fistulosum,葱
+SRX730597,Allium_fistulosum,葱
 SRX1560658,Allium_macrostemon,薤白
 SRX1560526,Allium_sativum,大蒜
 SRX1560563,Allium_tuberosum,韭菜
 SRX1494636,Galanthus_elwesii,大花雪花莲
+SRX845524,Lycoris_radiata,石蒜
 SRX739241,Narcissus_pseudonarcissus,黄水仙
 SRX1271111,Narcissus_tazetta,水仙
 EOF
