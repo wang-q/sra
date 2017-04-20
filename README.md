@@ -424,6 +424,31 @@ aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 md5sum --check sra_info.md5.txt
 ```
 
+## GAGE-B
+
+Grab information and download.
+
+```bash
+mkdir -p ~/data/dna-seq/gage_b/sra
+cd ~/data/dna-seq/gage_b/sra
+
+cat << EOF > source.csv
+SRX160386,Rsph,Rhodobacter sphaeroides 2.4.1 SRR522246
+SRX246890,Mabs,Mycobacterium abscessus 6G-0125-R SRR768269
+SRX247310,Vcho,Vibrio cholerae CP1032(5) SRR769320
+EOF
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
+    > sra_info.yml
+
+# check before running these
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+```
+
 ## Atha Col-0 Ler-0
 
 Grab information.
