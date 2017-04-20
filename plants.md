@@ -56,6 +56,9 @@
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
     - [moli: down sampling](#moli-down-sampling)
     - [moli: generate super-reads](#moli-generate-super-reads)
+    - [moli: create anchors](#moli-create-anchors)
+    - [moli: results](#moli-results)
+    - [moli: merge anchors](#moli-merge-anchors)
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
     - [ZS97: combinations of different quality values and read lengths](#zs97-combinations-of-different-quality-values-and-read-lengths)
@@ -63,6 +66,7 @@
     - [ZS97: generate super-reads](#zs97-generate-super-reads)
     - [ZS97: create anchors](#zs97-create-anchors)
     - [ZS97: results](#zs97-results)
+    - [ZS97: merge anchors](#zs97-merge-anchors)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
 
@@ -3513,7 +3517,7 @@ cat stat2.md
 | Q30L90  |        777 | 440.08M | 1892634 |      3163 | 204.68M | 77429 |       1143 |  6.93K |  6 |       141 |  235.4M | 1815199 | 2:07'40'' |
 | Q30L100 |        753 |  426.6M | 1819140 |      2993 |  195.4M | 76909 |       1184 | 12.95K | 11 |       141 | 231.19M | 1742220 | 1:58'50'' |
 
-## ZS97: merge anchors from different groups of reads
+## ZS97: merge anchors
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/ZS97
