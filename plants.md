@@ -3219,6 +3219,7 @@ ln -s SRR3234372_2.fastq.gz R2.fq.gz
 
 * qual: 20, 25, and 30
 * len: 80, 90, and 100
+* Peak memory: 138 GiB
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/ZS97
