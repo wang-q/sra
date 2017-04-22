@@ -2839,12 +2839,12 @@ cat stat.md
 |:---------|----:|-------------:|----------:|
 | Illumina | 150 | 131208907200 | 874726048 |
 | uniq     | 150 | 108022731300 | 720151542 |
-| Q20L100O | 150 |  99447660517 | 669337434 |
-| Q20L120O | 150 |  96283521937 | 644827784 |
-| Q20L140O | 150 |  90797417755 | 605412990 |
-| Q25L100O | 150 |  89342502638 | 605173772 |
-| Q25L120O | 150 |  84446237212 | 567043586 |
-| Q25L140O | 150 |  76712262430 | 511489372 |
+| Q20L100  | 150 |  99447660517 | 669337434 |
+| Q20L120  | 150 |  96283521937 | 644827784 |
+| Q20L140  | 150 |  90797417755 | 605412990 |
+| Q25L100  | 150 |  89342502638 | 605173772 |
+| Q25L120  | 150 |  84446237212 | 567043586 |
+| Q25L140  | 150 |  76712262430 | 511489372 |
 
 ## moli: down sampling
 
@@ -2899,7 +2899,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 3 "
+    | parallel --no-run-if-empty -j 1 "
         echo '==> Group {}'
         
         if [ ! -d ${BASE_DIR}/{} ]; then
@@ -2915,7 +2915,7 @@ perl -e '
         cd ${BASE_DIR}/{}
         anchr superreads \
             R1.fq.gz R2.fq.gz \
-            --nosr -p 8 --jf 10_000_000_000 \
+            --nosr -p 16 --jf 10_000_000_000 \
             -o superreads.sh
         bash superreads.sh
     "
@@ -2952,7 +2952,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 3 "
+    | parallel --no-run-if-empty -j 1 "
         echo '==> Group {}'
 
         if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
@@ -2960,7 +2960,7 @@ perl -e '
         fi
 
         rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 16 false
     "
 
 ```
@@ -2973,7 +2973,7 @@ perl -e '
 BASE_DIR=$HOME/data/dna-seq/chara/moli
 cd ${BASE_DIR}
 
-REAL_G=100000000
+REAL_G=600000000
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
@@ -2989,7 +2989,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 4 "
+    | parallel -k --no-run-if-empty -j 1 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -3020,7 +3020,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
