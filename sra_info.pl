@@ -260,7 +260,7 @@ sub erx_worker {
         my @basenames = map { ( split "/", $_ )[-1] } @parts15;
         my @parts14 = grep {defined} split ";", $f[14];
         for my $i ( 0 .. $#basenames ) {
-            push @md5s, ( sprintf "%s\t%s", $parts14[$i], $basenames[$i] );
+            push @md5s, ( sprintf "%s %s", $parts14[$i], $basenames[$i] );
         }
 
         $info->{srr_info}{ $f[3] } = {
