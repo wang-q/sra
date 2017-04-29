@@ -30,7 +30,6 @@ use URI;
     [],
     [ 'platform|p=s', 'illumina or 454', ],
     [ 'layout|l=s',   'pair or single', ],
-    [ 'md5',          'generate a md5sum file', ],
     { show_defaults => 1, }
     );
 
@@ -59,13 +58,12 @@ $basename .= "." . $opt->{layout}   if $opt->{layout};
 my $csv = Text::CSV_XS->new( { binary => 1 } )
     or die "Cannot use CSV: " . Text::CSV_XS->error_diag;
 $csv->eol("\n");
-
 open my $csv_fh, ">", "$basename.csv";
-open my $ftp_fh, ">", "$basename.ftp.txt";
-my $md5_fh;
-if ( $opt->{md5} ) {
-    open $md5_fh, ">", "$basename.md5.txt";
-}
+
+my $ftp_fn = "$basename.ftp.txt";
+my $md5_fn = "$basename.md5.txt";
+path($ftp_fn)->remove;
+path($md5_fn)->remove;
 
 $csv->print( $csv_fh, [qw{ name srx platform layout ilength srr spot base }] );
 for my $name ( sort keys %{$yml} ) {
@@ -93,26 +91,19 @@ for my $name ( sort keys %{$yml} ) {
 
         for my $i ( 0 .. scalar @{ $info->{srr} } - 1 ) {
             my $srr = $info->{srr}[$i];
-            my $url = $info->{downloads}[$i];
 
             my $spot = $info->{srr_info}{$srr}{spot};
             my $base = $info->{srr_info}{$srr}{base};
 
             $csv->print( $csv_fh,
                 [ $name, $srx, $platform, $layout, $ilength, $srr, $spot, $base, ] );
-            print {$ftp_fh} $url, "\n";
-
-            if ( $opt->{md5} ) {
-                printf {$md5_fh} "%s\t%s\n", $info->{srr_info}{$srr}{md5}, $srr;
-            }
         }
+
+        path($ftp_fn)->append( map {"$_\n"} @{ $info->{downloads} } );
+        path($md5_fn)->append( map {"$_\n"} @{ $info->{md5s} } );
     }
 }
 
 close $csv_fh;
-close $ftp_fh;
-if ( $opt->{md5} ) {
-    close $md5_fh;
-}
 
 __END__
