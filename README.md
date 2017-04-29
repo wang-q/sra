@@ -14,7 +14,10 @@
     - [Sophora japonica 槐树](#sophora-japonica-槐树)
 - [*De novo* dna-seq projects (dn_dna.pl)](#de-novo-dna-seq-projects-dn-dnapl)
     - [Scer S288c](#scer-s288c)
+    - [GAGE-B](#gage-b)
+    - [Other bacteria (2+3)](#other-bacteria-23)
     - [Atha Col-0 Ler-0](#atha-col-0-ler-0)
+    - [Osat ZS97 and MH63](#osat-zs97-and-mh63)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
     - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
@@ -449,6 +452,30 @@ aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
 md5sum --check sra_info.md5.txt
 ```
+
+## Other bacteria (2+3)
+
+Grab information and download.
+
+```bash
+mkdir -p ~/data/dna-seq/other_bac/sra
+cd ~/data/dna-seq/other_bac/sra
+
+cat << EOF > source.csv
+ERX518562,Sfle,Shigella_flexneri_NCTC0001 ERR559526
+EOF
+
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
+    > sra_info.yml
+
+# check before running these
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+
+aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
+
+md5sum --check sra_info.md5.txt
+```
+
 
 ## Atha Col-0 Ler-0
 
