@@ -463,6 +463,11 @@ cd ~/data/dna-seq/other_bac/sra
 
 cat << EOF > source.csv
 ERX518562,Sfle,Shigella_flexneri_NCTC0001 ERR559526
+SRX2165170,Vpar,Vibrio parahaemolyticus ATCC BAA-239
+SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
+SRX2179279,Lpne,Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
+SRX2107163,Cdif,Clostridioides difficile 630
+SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
