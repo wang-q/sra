@@ -465,11 +465,11 @@ cat << EOF > source.csv
 ERX518562,Sfle,Shigella_flexneri_NCTC0001 ERR559526
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv -v \
+perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
     > sra_info.yml
 
 # check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
 aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
