@@ -36,6 +36,7 @@ use WWW::Mechanize;
     [ 'verbose|v', 'verbose mode' ],
     [],
     [ 'source|s=s', "srp, srs or erp", { default => 'srp' } ],
+    [ 'fq',         "fastq instead of sra", ],
     { show_defaults => 1, }
     );
 
@@ -102,7 +103,7 @@ while ( my $row = $csv->getline($csv_fh) ) {
         ? $master->{$name}
         : {};
     for (@srx) {
-        $sample->{$_} = erx_worker( $_, $opt->{verbose} );
+        $sample->{$_} = erx_worker( $_, $opt->{fq}, $opt->{verbose} );
     }
     $master->{$name} = $sample;
     warn "\n";
@@ -192,6 +193,7 @@ sub srs_worker {
 
 sub erx_worker {
     my $term    = shift;
+    my $fq      = shift;
     my $verbose = shift;
 
     my $mech = WWW::Mechanize->new;
@@ -203,7 +205,9 @@ sub erx_worker {
         . "experiment_accession,run_accession,scientific_name,"
         . "instrument_platform,instrument_model,"
         . "library_name,library_layout,nominal_length,library_source,library_selection,"
-        . "read_count,base_count,sra_md5,sra_ftp&download=txt";
+        . "read_count,base_count,"
+        . ( $fq ? "fastq_md5,fastq_ftp" : "sra_md5,sra_ftp" )
+        . "&download=txt";
     my $url = $url_part1 . $term . $url_part2;
     warn "$url\n" if $verbose;
 
@@ -243,20 +247,30 @@ sub erx_worker {
         $info->{selection}          = $f[11];
     }
 
-    my ( @srr, @downloads );
+    my ( @srr, @downloads, @md5s );
     for my $line (@lines) {
         my @f = split /\t/, $line;
         warn " " x 4 . "$f[3]\n";
-        push @srr,       $f[3];
-        push @downloads, "ftp://" . $f[15];
+        push @srr, $f[3];
+
+        # ftp path and md5
+        my @parts15 = map { "ftp://" . $_ } grep {defined} split ";", $f[15];
+        push @downloads, @parts15;
+
+        my @basenames = map { ( split "/", $_ )[-1] } @parts15;
+        my @parts14 = grep {defined} split ";", $f[14];
+        for my $i ( 0 .. $#basenames ) {
+            push @md5s, ( sprintf "%s\t%s", $parts14[$i], $basenames[$i] );
+        }
+
         $info->{srr_info}{ $f[3] } = {
             spot => $f[12],
             base => Number::Format::format_bytes( $f[13] ),
-            md5  => $f[14],
         };
     }
     $info->{srr}       = \@srr;
     $info->{downloads} = \@downloads;
+    $info->{md5s}      = \@md5s;
 
     return $info;
 }
