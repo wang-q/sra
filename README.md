@@ -471,6 +471,9 @@ SRX1385806,Bbro,Bordetella bronchiseptica FDAARGOS_176; ATCC BAA-588D-5; RB50; S
 SRX1385807,Bbro,
 SRX2179101,Bper,Bordetella pertussis FDAARGOS_195; ATCC BAA-589D-5; Tohama 1; SAMN04875532
 SRX2179104,Bper,
+SRX2179108,Cdip,Corynebacterium diphtheriae FDAARGOS_197; ATCC 700971D-5; NCTC 13129; SAMN04875534
+SRX2105481,Ftul,Francisella tularensis FDAARGOS_247; SHU-S4; SAMN04875573
+SRX2104758,Hinf,Haemophilus influenzae FDAARGOS_199
 SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
 SRX2107163,Cdif,Clostridioides difficile 630
 SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
