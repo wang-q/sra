@@ -1523,7 +1523,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 2 "
+    | parallel --no-run-if-empty -j 1 "
         echo '==> Group {}'
         
         if [ ! -d ${BASE_DIR}/{} ]; then
@@ -1541,13 +1541,13 @@ perl -e '
         if [[ {} == *'Q30'* ]]; then
             anchr superreads \
                 R1.fq.gz R2.fq.gz Rs.fq.gz \
-                --nosr -p 12 \
+                --nosr -p 24 \
                 --kmer 41,61,81,101,121 \
                 -o superreads.sh
         else
             anchr superreads \
                 R1.fq.gz R2.fq.gz \
-                --nosr -p 12 \
+                --nosr -p 24 \
                 --kmer 41,61,81,101,121 \
                 -o superreads.sh
         fi
