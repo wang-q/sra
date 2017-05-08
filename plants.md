@@ -1378,27 +1378,31 @@ ln -s ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
 BASE_DIR=$HOME/data/dna-seq/chara/F354
 
 cd ${BASE_DIR}
-tally \
-    --pair-by-offset --with-quality --nozip \
-    -i 2_illumina/R1.fq.gz \
-    -j 2_illumina/R2.fq.gz \
-    -o 2_illumina/R1.uniq.fq \
-    -p 2_illumina/R2.uniq.fq
-
-parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-    " ::: R1 R2
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 4 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 2 "
-    scythe \
-        2_illumina/{}.uniq.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina/{}.scythe.fq.gz
-    " ::: R1 R2
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
 
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 4 "
@@ -1416,7 +1420,7 @@ parallel --no-run-if-empty -j 4 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 100 120 140
+    " ::: 20 25 30 ::: 60 90
 
 ```
 
@@ -1439,7 +1443,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 100 120 140; do
+    for len in 60 90; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -1474,21 +1478,17 @@ cd ${BASE_DIR}
 
 # works on bash 3
 ARRAY=(
-    "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L140:Q20L140"
-    "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L140:Q25L140"
-    "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L140:Q30L140"
+    "2_illumina/Q20L60:Q20L60"
+    "2_illumina/Q20L90:Q20L90"
+    "2_illumina/Q25L60:Q25L60"
+    "2_illumina/Q25L90:Q25L90"
+    "2_illumina/Q30L60:Q30L60"
+    "2_illumina/Q30L90:Q30L90"
 )
 
 for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_DIR=$(perl -e "@p = split q{:}, q{${group}}; print \$p[0];")
+    GROUP_ID=$( perl -e "@p = split q{:}, q{${group}}; print \$p[1];")
     printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
 
     echo "==> Group ${GROUP_ID}"
@@ -1514,16 +1514,16 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
         }
         )
     {
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 3 "
+    | parallel --no-run-if-empty -j 1 "
         echo '==> Group {}'
         
         if [ ! -d ${BASE_DIR}/{} ]; then
@@ -1539,7 +1539,8 @@ perl -e '
         cd ${BASE_DIR}/{}
         anchr superreads \
             R1.fq.gz R2.fq.gz \
-            --nosr -p 8 \
+            --nosr -p 16 \
+            --kmer 41,61,81,101,121 \
             -o superreads.sh
         bash superreads.sh
     "
@@ -1568,9 +1569,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
         }
         )
     {
@@ -1606,16 +1607,16 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
         }
         )
     {
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 4 "
+    | parallel -k --no-run-if-empty -j 1 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -1638,16 +1639,16 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
         }
         )
     {
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -1691,15 +1692,12 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
+    Q20L60/anchor/pe.anchor.fa \
+    Q20L90/anchor/pe.anchor.fa \
+    Q25L60/anchor/pe.anchor.fa \
+    Q25L90/anchor/pe.anchor.fa \
+    Q30L60/anchor/pe.anchor.fa \
+    Q30L90/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
@@ -1707,46 +1705,35 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-faops n50 -S -C merge/anchor.merge.fasta
-
 # merge anchor2 and others
 anchr contained \
-    Q20L100/anchor/pe.anchor2.fa \
-    Q20L120/anchor/pe.anchor2.fa \
-    Q20L140/anchor/pe.anchor2.fa \
-    Q25L100/anchor/pe.anchor2.fa \
-    Q25L120/anchor/pe.anchor2.fa \
-    Q25L140/anchor/pe.anchor2.fa \
-    Q30L100/anchor/pe.anchor2.fa \
-    Q30L120/anchor/pe.anchor2.fa \
-    Q30L140/anchor/pe.anchor2.fa \
-    Q20L100/anchor/pe.others.fa \
-    Q20L120/anchor/pe.others.fa \
-    Q20L140/anchor/pe.others.fa \
-    Q25L100/anchor/pe.others.fa \
-    Q25L120/anchor/pe.others.fa \
-    Q25L140/anchor/pe.others.fa \
-    Q30L100/anchor/pe.others.fa \
-    Q30L120/anchor/pe.others.fa \
-    Q30L140/anchor/pe.others.fa \
+    Q20L60/anchor/pe.others.fa \
+    Q20L90/anchor/pe.others.fa \
+    Q25L60/anchor/pe.others.fa \
+    Q25L90/anchor/pe.others.fa \
+    Q30L60/anchor/pe.others.fa \
+    Q30L90/anchor/pe.others.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
 
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
+    --eukaryote \
+    --no-icarus \
+    Q20L60_6000000/anchor/pe.anchor.fa \
+    Q20L90_6000000/anchor/pe.anchor.fa \
+    Q25L60_6000000/anchor/pe.anchor.fa \
+    Q25L90_6000000/anchor/pe.anchor.fa \
+    Q30L60_6000000/anchor/pe.anchor.fa \
+    Q30L90_6000000/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q25L100,Q30L100,merge,others" \
+    --label "Q20L60,Q20L90,Q25L60,Q25L90,Q30L60,Q30L90,merge,others,paralogs" \
     -o 9_qa
 
 ```
