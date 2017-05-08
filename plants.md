@@ -1372,7 +1372,7 @@ ln -s ~/data/dna-seq/chara/clean_data/F354_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
 ## F354: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 100, 120, and 140
+* len: 60 and 90
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/F354
@@ -1387,7 +1387,7 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         -p 2_illumina/R2.uniq.fq
     
     parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
+            pigz -p 8 2_illumina/{}.uniq.fq
         " ::: R1 R2
 fi
 
@@ -1399,13 +1399,13 @@ if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
             -q sanger \
             -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
             --quiet \
-            | pigz -p 4 -c \
+            | pigz -p 8 -c \
             > 2_illumina/{}.scythe.fq.gz
         " ::: R1 R2
 fi
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 4 "
+parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -1415,7 +1415,7 @@ parallel --no-run-if-empty -j 4 "
     fi
 
     anchr trim \
-        --noscythe \
+        --noscythe -p 8 \
         -q {1} -l {2} \
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
@@ -1438,19 +1438,19 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
-for qual in 20 25 30; do
-    for len in 60 90; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( echo Q{1}L{2}; \
+            faops n50 -H -S -C \
+                ${BASE_DIR}/2_illumina/Q{1}L{2}/R1.fq.gz \
+                ${BASE_DIR}/2_illumina/Q{1}L{2}/R2.fq.gz;
+        )
+    " ::: 20 25 30 ::: 60 90 \
+    >> ${BASE_DIR}/stat.md
 
 cat stat.md
 ```
@@ -1460,15 +1460,12 @@ cat stat.md
 | Illumina | 150 | 18458643300 | 123057622 |
 | uniq     | 150 | 17588350800 | 117255672 |
 | scythe   | 150 | 17573329056 | 117255672 |
-| Q20L100  | 150 | 15802779330 | 107565256 |
-| Q20L120  | 150 | 14595244263 |  98163136 |
-| Q20L140  | 150 | 13081582885 |  87254332 |
-| Q25L100  | 150 | 14193636795 |  97724786 |
-| Q25L120  | 150 | 12494203969 |  84445000 |
-| Q25L140  | 150 | 10429864256 |  69565290 |
-| Q30L100  | 150 | 12155701851 |  84957258 |
-| Q30L120  | 150 |  9985378386 |  67945424 |
-| Q30L140  | 150 |  7519384097 |  50161834 |
+| Q20L60   | 150 | 16500940475 | 113760264 |
+| Q20L90   | 150 | 16130269250 | 110315612 |
+| Q25L60   | 150 | 15288148644 | 107698238 |
+| Q25L90   | 150 | 14633775486 | 101458342 |
+| Q30L60   | 150 | 13641553993 |  98681978 |
+| Q30L90   | 150 | 12714214258 |  89728110 |
 
 ## F354: down sampling
 
@@ -1496,13 +1493,16 @@ for group in "${ARRAY[@]}" ; do
     mkdir -p ${DIR_COUNT}
     
     if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
+        echo '    R1.fq.gz exists'        
+        continue;
     fi
     
     ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
     ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/Rs.fq.gz ${DIR_COUNT}/Rs.fq.gz
 
 done
+
 ```
 
 ## F354: generate super-reads
@@ -1523,7 +1523,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 1 "
+    | parallel --no-run-if-empty -j 2 "
         echo '==> Group {}'
         
         if [ ! -d ${BASE_DIR}/{} ]; then
@@ -1537,11 +1537,20 @@ perl -e '
         fi
 
         cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 16 \
-            --kmer 41,61,81,101,121 \
-            -o superreads.sh
+        string='My long string'
+        if [[ {} == *'Q30'* ]]; then
+            anchr superreads \
+                R1.fq.gz R2.fq.gz Rs.fq.gz \
+                --nosr -p 12 \
+                --kmer 41,61,81,101,121 \
+                -o superreads.sh
+        else
+            anchr superreads \
+                R1.fq.gz R2.fq.gz \
+                --nosr -p 12 \
+                --kmer 41,61,81,101,121 \
+                -o superreads.sh
+        fi
         bash superreads.sh
     "
 
