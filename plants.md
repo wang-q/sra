@@ -3575,6 +3575,120 @@ cat stat3.md
 | anchor.merge |     4229 | 240033952 | 73761 |
 | others.merge |     1007 |   2823559 |  2793 |
 
+
+# showa, Botryococcus braunii Showa
+
+* https://www.ncbi.nlm.nih.gov/bioproject/PRJNA60039
+* https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP003868
+* https://www.ncbi.nlm.nih.gov/assembly/GCA_002005505.1/
+* https://www.ncbi.nlm.nih.gov/Traces/wgs/?val=MVGU01&display=contigs&page=1
+
+## showa: download
+
+* Illumina
+
+    * [SRX1879506](https://www.ncbi.nlm.nih.gov/sra/SRX1879506) SRR3721649
+
+```bash
+mkdir -p ~/data/dna-seq/chara/showa/2_illumina
+cd ~/data/dna-seq/chara/showa/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/009/SRR3721649/SRR3721649_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/009/SRR3721649/SRR3721649_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+c7ec4f83101c0f5a7f1187afc344b243 SRR3721649_1.fastq.gz
+da3bfe2c9c64c249e30148208ec14796 SRR3721649_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR3721649_1.fastq.gz R1.fq.gz
+ln -s SRR3721649_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/showa/3_pacbio
+cd ~/data/anchr/showa/3_pacbio
+
+cat <<EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/000/SRR3721650/SRR3721650_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/001/SRR3721651/SRR3721651_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/002/SRR3721652/SRR3721652_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/003/SRR3721653/SRR3721653_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/004/SRR3721654/SRR3721654_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/005/SRR3721655/SRR3721655_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/006/SRR3721656/SRR3721656_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/007/SRR3721657/SRR3721657_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/001/SRR4053781/SRR4053781_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/002/SRR4053782/SRR4053782_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/003/SRR4053783/SRR4053783_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/004/SRR4053784/SRR4053784_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/005/SRR4053785/SRR4053785_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/006/SRR4053786/SRR4053786_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/007/SRR4053787/SRR4053787_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/008/SRR4053788/SRR4053788_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/009/SRR4053789/SRR4053789_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/000/SRR4053790/SRR4053790_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/001/SRR4053791/SRR4053791_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/002/SRR4053792/SRR4053792_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/003/SRR4053793/SRR4053793_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR405/004/SRR4053794/SRR4053794_1.fastq.gz
+EOF
+
+aria2c -x 6 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+0d9cfdf5235dd0e9854297998ae967de SRR3721650_1.fastq.gz
+4f0c37faaf5504ebfe81738062e71f43 SRR3721651_1.fastq.gz
+4bf9db8b856490a9b562e6211f8b480d SRR3721652_1.fastq.gz
+87600852285dc3d0fe13bf061f4b508c SRR3721653_1.fastq.gz
+8cc3898680a17e66af116965d8e32628 SRR3721654_1.fastq.gz
+b935a0bb5485fad168bad2bc74a05bbe SRR3721655_1.fastq.gz
+ec78f65a7970ca94adb2599ef5577103 SRR3721656_1.fastq.gz
+a40e4de33906a90e68f0b8c91a255078 SRR3721657_1.fastq.gz
+06d4802e264e8b4bd884d9ad24c68232 SRR4053781_1.fastq.gz
+9b3f9acc85f84083bea8e3df1b2a8c1d SRR4053782_1.fastq.gz
+83d2489b34c9adb84c095c90bb11b78e SRR4053783_1.fastq.gz
+d23544f5cf089fe343b5cb228292bc8e SRR4053784_1.fastq.gz
+8ab91ce9890f2a47117fe2f6954708d3 SRR4053785_1.fastq.gz
+accc5c548e2f1e84dfb9ffb462c53060 SRR4053786_1.fastq.gz
+8fdd2514780f1c25664e6346b51ecc64 SRR4053787_1.fastq.gz
+f4008c9802ff14f66318338a17ef5c2c SRR4053788_1.fastq.gz
+f5f1c4f50e0b9abd006300482b024258 SRR4053789_1.fastq.gz
+11aa5f57b83940784e7bf0d018c92c1e SRR4053790_1.fastq.gz
+387661cbca9322cfdce7072e5664ecad SRR4053791_1.fastq.gz
+774f7732acecae1fc722e6a854835e4c SRR4053792_1.fastq.gz
+48ef169bd6090dc6354e9e0a6eeb0732 SRR4053793_1.fastq.gz
+6dbf27cc3a6de285bc96cca901e106e9 SRR4053794_1.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+gzip -d -c SRR372165{0,1,2,3,4,5,6,7}_1.fastq.gz \
+    > pacbio1.fq
+
+gzip -d -c SRR40537{81,82,83,84,85,86,87,88,89,90,91,92,93,94}_1.fastq.gz \
+    > pacbio2.fq
+
+#faops filter -l 0 pacbio.fq.gz pacbio.fasta
+#
+#cd ~/data/anchr/col_0
+#head -n 2600000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+#faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+#
+#head -n 5200000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+#faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
+
 # Summary of SR
 
 | Name     | fq size | fa size | Length | Kmer | Est. Genome |   Run time |     Sum SR | SR/Est.G |
