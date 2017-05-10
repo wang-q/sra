@@ -3578,10 +3578,10 @@ cat stat3.md
 
 # showa, Botryococcus braunii Showa
 
-* https://www.ncbi.nlm.nih.gov/bioproject/PRJNA60039
-* https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP003868
-* https://www.ncbi.nlm.nih.gov/assembly/GCA_002005505.1/
-* https://www.ncbi.nlm.nih.gov/Traces/wgs/?val=MVGU01&display=contigs&page=1
+* BioProject: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA60039
+* SRP: https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP003868
+* Assembly: https://www.ncbi.nlm.nih.gov/assembly/GCA_002005505.1/
+* WGS: https://www.ncbi.nlm.nih.gov/Traces/wgs/?val=MVGU01&display=contigs&page=1
 
 ## showa: download
 
@@ -3615,8 +3615,8 @@ ln -s SRR3721649_2.fastq.gz R2.fq.gz
 * PacBio
 
 ```bash
-mkdir -p ~/data/anchr/showa/3_pacbio
-cd ~/data/anchr/showa/3_pacbio
+mkdir -p ~/data/dna-seq/chara/showa/3_pacbio
+cd ~/data/dna-seq/chara/showa/3_pacbio
 
 cat <<EOF > sra_ftp.txt
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR372/000/SRR3721650/SRR3721650_1.fastq.gz
@@ -3678,14 +3678,32 @@ gzip -d -c SRR372165{0,1,2,3,4,5,6,7}_1.fastq.gz \
 gzip -d -c SRR40537{81,82,83,84,85,86,87,88,89,90,91,92,93,94}_1.fastq.gz \
     > pacbio2.fq
 
-#faops filter -l 0 pacbio.fq.gz pacbio.fasta
-#
-#cd ~/data/anchr/col_0
-#head -n 2600000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-#faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-#
-#head -n 5200000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
-#faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+find . -name "pacbio*.fq" | parallel -j 1 pigz -p 8
+
+faops filter -l 0 pacbio2.fq.gz stdout \
+    | pigz -c -p 8 \
+    > pacbio.fasta.gz
+
+cd ~/data/dna-seq/chara/showa/
+gzip -d -c 3_pacbio/pacbio.fasta.gz | head -n 2000000 > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+```
+
+## 3GS
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/showa
+cd ${BASE_DIR}
+
+canu \
+    -p showa -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=184.4m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
 
 ```
 
