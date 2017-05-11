@@ -30,8 +30,8 @@
 - [F354, Spirogyra gracilis, 纤细水绵](#f354-spirogyragracilis-纤细水绵)
     - [F354: download](#f354-download)
     - [F354: combinations of different quality values and read lengths](#f354-combinations-of-different-quality-values-and-read-lengths)
-    - [F354: down sampling](#f354-down-sampling)
-    - [F354: generate super-reads](#f354-generate-super-reads)
+    - [F354: quorum](#f354-quorum)
+    - [F354: generate k-unitigs](#f354-generate-k-unitigs)
     - [F354: create anchors](#f354-create-anchors)
     - [F354: results](#f354-results)
     - [F354: merge anchors](#f354-merge-anchors)
@@ -67,6 +67,9 @@
     - [ZS97: create anchors](#zs97-create-anchors)
     - [ZS97: results](#zs97-results)
     - [ZS97: merge anchors](#zs97-merge-anchors)
+- [showa, Botryococcus braunii Showa](#showa-botryococcus-braunii-showa)
+    - [showa: download](#showa-download)
+    - [3GS](#3gs)
 - [Summary of SR](#summary-of-sr)
 - [Anchors](#anchors)
 
@@ -1424,6 +1427,21 @@ parallel --no-run-if-empty -j 3 "
 
 ```
 
+* kmergenie
+
+```bash
+BASE_NAME=F354
+
+mkdir -p $HOME/data/dna-seq/chara/${BASE_NAME}/2_illumina/kmergenie
+cd $HOME/data/dna-seq/chara/${BASE_NAME}/2_illumina/kmergenie
+
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R1.fq.gz -o Q20L60R1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R2.fq.gz -o Q20L60R2
+
+```
+
 * Stats
 
 ```bash
@@ -1467,45 +1485,47 @@ cat stat.md
 | Q30L60   | 150 | 13641553993 |  98681978 |
 | Q30L90   | 150 | 12714214258 |  89728110 |
 
-## F354: down sampling
+## F354: quorum
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/F354
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo '==> Group Q{1}L{2} <=='
+
+    if [ ! -e R1.fq.gz ]; then
+        echo '    R1.fq.gz not exists'
+        exit;
+    fi
+
+    anchr quorum \
+        R1.fq.gz R2.fq.gz Rs.fq.gz \
+        -p 16 \
+        -o quorum.sh
+    bash quorum.sh
+    
+    echo
+    " ::: 20 25 30 ::: 60 90
+
+```
+
+Clear intermediate files.
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/F354
 cd ${BASE_DIR}
 
-# works on bash 3
-ARRAY=(
-    "2_illumina/Q20L60:Q20L60"
-    "2_illumina/Q20L90:Q20L90"
-    "2_illumina/Q25L60:Q25L60"
-    "2_illumina/Q25L90:Q25L90"
-    "2_illumina/Q30L60:Q30L60"
-    "2_illumina/Q30L90:Q30L90"
-)
-
-for group in "${ARRAY[@]}" ; do
-    GROUP_DIR=$(perl -e "@p = split q{:}, q{${group}}; print \$p[0];")
-    GROUP_ID=$( perl -e "@p = split q{:}, q{${group}}; print \$p[1];")
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        echo '    R1.fq.gz exists'        
-        continue;
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/Rs.fq.gz ${DIR_COUNT}/Rs.fq.gz
-
-done
-
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ```
 
-## F354: generate super-reads
+## F354: generate k-unitigs
 
 ```bash
 BASE_DIR=$HOME/data/dna-seq/chara/F354
@@ -1524,34 +1544,24 @@ perl -e '
     }
     ' \
     | parallel --no-run-if-empty -j 1 "
-        echo '==> Group {}'
+        echo '==> Group {} >&2'
+
+        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
+            exit;
+        fi
         
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
-
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
-            exit;
-        fi
-
+        mkdir -p ${BASE_DIR}/{}
         cd ${BASE_DIR}/{}
-        string='My long string'
-        if [[ {} == *'Q30'* ]]; then
-            anchr superreads \
-                R1.fq.gz R2.fq.gz Rs.fq.gz \
-                --nosr -p 16 \
-                --kmer 41,61,81,101,121 \
-                -o superreads.sh
-        else
-            anchr superreads \
-                R1.fq.gz R2.fq.gz \
-                --nosr -p 16 \
-                --kmer 41,61,81,101,121 \
-                -o superreads.sh
-        fi
-        bash superreads.sh
+
+        anchr kunitigs \
+            ${BASE_DIR}/2_illumina/{}/pe.cor.fa ${BASE_DIR}/2_illumina/{}/environment.json \
+            -p 16 \
+            --kmer 41,51,61,71,81,101,121,37,93 \
+            -o kunitigs.sh
+        bash kunitigs.sh
+        
+        echo >&2
     "
 
 ```
@@ -1630,7 +1640,7 @@ perl -e '
             exit;
         fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/2_illumina/{} ${REAL_G}
     " >> ${BASE_DIR}/stat1.md
 
 cat stat1.md
@@ -1878,15 +1888,12 @@ cat stat.md
 | Illumina | 150 | 22137245100 | 147581634 |
 | uniq     | 150 | 20893186500 | 139287910 |
 | scythe   | 150 | 20874578888 | 139287910 |
-| Q20L100  | 150 | 18821779024 | 128065192 |
-| Q20L120  | 150 | 17413050886 | 117147166 |
-| Q20L140  | 150 | 15575746654 | 103911868 |
-| Q25L100  | 150 | 16714664673 | 115471956 |
-| Q25L120  | 150 | 14461226581 |  97970652 |
-| Q25L140  | 150 | 11649989635 |  77717480 |
-| Q30L100  | 150 | 13733904796 |  97022702 |
-| Q30L120  | 150 | 10542460646 |  72171522 |
-| Q30L140  | 150 |  7180694622 |  47919736 |
+| Q20L60   | 150 | 19551261683 | 134470224 |
+| Q20L90   | 150 | 19172674419 | 130991406 |
+| Q25L60   | 150 | 17982435621 | 126850214 |
+| Q25L90   | 150 | 17240761228 | 119891432 |
+| Q30L60   | 150 | 15705476728 | 114892408 |
+| Q30L90   | 150 | 14511548894 | 103581814 |
 
 ## F357: down sampling
 
@@ -2089,29 +2096,23 @@ perl -e '
 cat stat2.md
 ```
 
-| Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% | RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
-|:--------|-------:|------:|--------:|-----:|-------:|---------:|------:|--------:|---------:|--------:|------:|----------:|
-| Q20L100 | 18.82G | 188.2 |     149 |   49 | 15.21G |  19.175% |  100M | 267.19M |     2.67 |  371.6M |     0 | 8:15'30'' |
-| Q20L120 | 17.41G | 174.1 |     149 |   49 | 14.25G |  18.157% |  100M | 255.82M |     2.56 | 339.45M |     0 | 6:18'13'' |
-| Q20L140 | 15.58G | 155.8 |     149 |   49 | 12.92G |  17.027% |  100M |  242.5M |     2.42 | 307.17M |     0 | 3:47'58'' |
-| Q25L100 | 16.71G | 167.1 |     149 |   49 | 14.47G |  13.435% |  100M | 249.62M |     2.50 | 310.94M |     0 | 6:14'53'' |
-| Q25L120 | 14.46G | 144.6 |     149 |   49 | 12.61G |  12.776% |  100M | 234.43M |     2.34 | 282.74M |     0 | 5:45'28'' |
-| Q25L140 | 11.65G | 116.5 |     149 |   49 | 10.23G |  12.210% |  100M | 214.35M |     2.14 | 251.02M |     0 | 3:54'30'' |
-| Q30L100 | 13.73G | 137.3 |     149 |   49 | 12.49G |   9.053% |  100M | 228.06M |     2.28 | 267.78M |     0 | 4:13'50'' |
-| Q30L120 | 10.54G | 105.4 |     149 |   49 |   9.6G |   8.911% |  100M | 205.03M |     2.05 | 235.62M |     0 | 2:11'10'' |
-| Q30L140 |  7.18G |  71.8 |     149 |   49 |  6.52G |   9.143% |  100M | 174.89M |     1.75 | 196.68M |     0 | 1:32'35'' |
+| Name   |  SumFq | CovFq | AvgRead |               Kmer |  SumFa | Discard% | RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:-------|-------:|------:|--------:|-------------------:|-------:|---------:|------:|--------:|---------:|--------:|------:|----------:|
+| Q20L60 | 19.55G | 195.5 |     149 | "41,61,81,101,121" | 15.67G |  19.870% |  100M | 275.51M |     2.76 | 195.53M |     0 | 3:07'15'' |
+| Q20L90 | 19.17G | 191.7 |     149 | "41,61,81,101,121" | 15.43G |  19.502% |  100M | 270.66M |     2.71 | 193.14M |     0 | 3:20'02'' |
+| Q25L60 | 17.98G | 179.8 |     149 | "41,61,81,101,121" | 15.46G |  14.005% |  100M |    261M |     2.61 |  196.8M |     0 | 2:43'23'' |
+| Q25L90 | 17.24G | 172.4 |     149 | "41,61,81,101,121" | 14.89G |  13.660% |  100M | 253.82M |     2.54 |  192.4M |     0 | 3:29'14'' |
+| Q30L60 | 15.71G | 157.1 |     149 | "41,61,81,101,121" | 15.31G |   2.512% |  100M | 254.23M |     2.54 | 198.15M |     0 | 2:47'40'' |
+| Q30L90 | 14.51G | 145.1 |     149 | "41,61,81,101,121" | 14.82G |  -2.129% |  100M | 250.37M |     2.50 | 195.38M |     0 | 2:32'54'' |
 
-| Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 |   Sum |    # | N50Others |     Sum |       # |   RunTime |
-|:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|------:|-----:|----------:|--------:|--------:|----------:|
-| Q20L100 |        425 |  371.6M | 2130398 |      7249 | 113.28M | 29778 |       1315 | 7.48M | 5546 |       150 | 250.84M | 2095074 | 1:34'54'' |
-| Q20L120 |        506 | 339.45M | 1720424 |      8494 | 112.26M | 27711 |       1312 | 7.11M | 5289 |       182 | 220.08M | 1687424 | 1:36'16'' |
-| Q20L140 |        590 | 307.17M | 1349535 |     10252 | 110.41M | 24970 |       1307 | 6.43M | 4784 |       226 | 190.33M | 1319781 | 1:35'27'' |
-| Q25L100 |        648 | 310.94M | 1273854 |     10220 | 117.95M | 27508 |       1292 | 6.01M | 4528 |       243 | 186.98M | 1241818 | 1:52'07'' |
-| Q25L120 |        722 | 282.74M | 1022520 |     12128 | 114.36M | 23955 |       1290 | 5.29M | 3987 |       283 | 163.08M |  994578 | 1:52'13'' |
-| Q25L140 |        819 | 251.02M |  798830 |     13167 | 110.46M | 20283 |       1273 | 3.89M | 2962 |       307 | 136.67M |  775585 | 1:47'03'' |
-| Q30L100 |        850 | 267.78M |  858997 |     13746 | 119.43M | 23213 |       1258 | 3.97M | 3060 |       305 | 144.38M |  832724 | 0:59'58'' |
-| Q30L120 |       1034 | 235.62M |  681003 |     14102 | 114.67M | 18985 |       1265 | 2.75M | 2109 |       305 |  118.2M |  659909 | 0:46'33'' |
-| Q30L140 |       2098 | 196.68M |  505143 |     15119 | 106.17M | 15373 |       1316 | 1.93M | 1418 |       285 |  88.59M |  488352 | 0:41'34'' |
+| Name   | N50SR |     Sum |      # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |   RunTime |
+|:-------|------:|--------:|-------:|----------:|--------:|------:|----------:|-------:|------:|----------:|
+| Q20L60 |  2280 | 195.53M | 119839 |     10491 | 135.72M | 35446 |       720 | 59.81M | 84393 | 0:52'02'' |
+| Q20L90 |  2353 | 193.14M | 117189 |     11146 | 134.66M | 34591 |       719 | 58.48M | 82598 | 0:44'33'' |
+| Q25L60 |  2877 |  196.8M | 113928 |     19286 | 139.78M | 32851 |       715 | 57.03M | 81077 | 1:02'17'' |
+| Q25L90 |  3228 |  192.4M | 109483 |     21923 | 137.29M | 31163 |       715 | 55.11M | 78320 | 0:57'59'' |
+| Q30L60 |  4859 | 198.15M | 106173 |     34781 | 144.88M | 30546 |       715 | 53.27M | 75627 | 1:08'00'' |
+| Q30L90 |  5520 | 195.38M | 103655 |     37445 | 143.15M | 29457 |       714 | 52.23M | 74198 | 1:03'25'' |
 
 ## F357: merge anchors
 
@@ -2174,7 +2175,7 @@ quast --no-check --threads 16 \
 BASE_DIR=$HOME/data/dna-seq/chara/F357
 cd ${BASE_DIR}
 
-rm -fr 2_illumina/Q{20,25,30}L*
+#rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
@@ -2199,8 +2200,8 @@ cat stat3.md
 
 | Name         |   N50 |       Sum |     # |
 |:-------------|------:|----------:|------:|
-| anchor.merge | 16593 | 145592036 | 28540 |
-| others.merge |  1231 |  25985051 | 20525 |
+| anchor.merge | 28436 | 158392737 | 36505 |
+| others.merge |  1048 |   9455311 |  8593 |
 
 # F1084, Staurastrum sp., 角星鼓藻
 
