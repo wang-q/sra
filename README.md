@@ -417,11 +417,11 @@ SRX2058916,UFRJ50816,Spar
 SRX2058917,UWOPS91-917,Spar
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv -v \
+perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
     > sra_info.yml
 
 # check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
 aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
@@ -442,15 +442,12 @@ SRX246890,Mabs,Mycobacterium abscessus 6G-0125-R SRR768269
 SRX247310,Vcho,Vibrio cholerae CP1032(5) SRR769320
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv -v \
+perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
     > sra_info.yml
 
 # check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
+perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
-aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
-
-md5sum --check sra_info.md5.txt
 ```
 
 ## Other bacteria (2+3)
@@ -485,9 +482,6 @@ perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
 # check before running these
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
-aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
-
-md5sum --check sra_info.md5.txt
 ```
 
 ## Other plants
