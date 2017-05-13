@@ -32,8 +32,7 @@
     - [F354: combinations of different quality values and read lengths](#f354-combinations-of-different-quality-values-and-read-lengths)
     - [F354: quorum](#f354-quorum)
     - [F354: down sampling](#f354-down-sampling)
-    - [F354: generate k-unitigs (sampled)](#f354-generate-k-unitigs-sampled)
-    - [F354: create anchors (sampled)](#f354-create-anchors-sampled)
+    - [F354: k-unitigs and anchors (sampled)](#f354-k-unitigs-and-anchors-sampled)
     - [F354: results](#f354-results)
     - [F354: merge anchors](#f354-merge-anchors)
 - [F357, Botryococcus braunii, 布朗葡萄藻](#f357-botryococcus-braunii-布朗葡萄藻)
@@ -1618,12 +1617,13 @@ done
 
 ```
 
-## F354: generate k-unitigs (sampled)
+## F354: k-unitigs and anchors (sampled)
 
 ```bash
 BASE_NAME=F354
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
+# k-unitigs (sampled)
 parallel --no-run-if-empty -j 1 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
@@ -1651,14 +1651,7 @@ parallel --no-run-if-empty -j 1 "
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
 
-```
-
-## F354: create anchors (sampled)
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
+# anchors (sampled)
 parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
@@ -1672,14 +1665,7 @@ parallel --no-run-if-empty -j 2 "
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
 
-```
-
-* Stats of anchors
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
+# Stats of anchors
 REAL_G=100000000
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
