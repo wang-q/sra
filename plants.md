@@ -3649,6 +3649,21 @@ faops n50 -S -C 3_pacbio/pacbio.40x.fasta
 
 ```
 
+* FastQC
+
+```bash
+BASE_NAME=showa
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
 ## 3GS
 
 ```bash
