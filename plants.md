@@ -85,6 +85,21 @@ ln -s ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz R2.fq.gz
 ```
 
+* FastQC
+
+```bash
+BASE_NAME=F63
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
 ## F63: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
@@ -513,6 +528,21 @@ ln -s ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/chara/clean_data/F295_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
 ```
 
+* FastQC
+
+```bash
+BASE_NAME=F295
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
 ## F295: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
@@ -939,6 +969,21 @@ cd ~/data/dna-seq/chara/F340/2_illumina
 
 ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz R2.fq.gz
+```
+
+* FastQC
+
+```bash
+BASE_NAME=F340
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
 ```
 
 ## F340: combinations of different quality values and read lengths
