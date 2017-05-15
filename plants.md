@@ -33,7 +33,6 @@
     - [F354: quorum](#f354-quorum)
     - [F354: down sampling](#f354-down-sampling)
     - [F354: k-unitigs and anchors (sampled)](#f354-k-unitigs-and-anchors-sampled)
-    - [F354: results](#f354-results)
     - [F354: merge anchors](#f354-merge-anchors)
 - [F357, Botryococcus braunii, 布朗葡萄藻](#f357-botryococcus-braunii-布朗葡萄藻)
     - [F357: download](#f357-download)
@@ -1727,8 +1726,6 @@ parallel -k --no-run-if-empty -j 6 "
 cat stat2.md
 ```
 
-## F354: results
-
 | Name           | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
 | Q20L60X40P000  |     4G |   40.0 | 10423 | 63.51M | 19761 |     12919 | 56.61M |  9839 |       692 |   6.9M |  9922 | "31,41,51,61,71,81" | 0:51'46'' | 0:10'16'' |
@@ -1788,7 +1785,6 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
 
 # quast
-# quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
@@ -1822,14 +1818,14 @@ cat stat3.md
 | anchor.merge | 87164 | 87521663 | 14322 |
 | others.merge |  1052 |  6809332 |  6041 |
 
-* Clear QxxLxxx.
+* Clear QxxLxxXxx.
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F354
-cd ${BASE_DIR}
+BASE_NAME=F354
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
+rm -fr Q{20,25,30,35}L{1,60,90,120}X*
 ```
 
 # F357, Botryococcus braunii, 布朗葡萄藻
