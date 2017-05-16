@@ -1786,6 +1786,8 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
@@ -1916,14 +1918,8 @@ parallel --no-run-if-empty -j 3 "
         | bash
     " ::: 20 25 30 ::: 60
 
-```
 
-* Stats
-
-```bash
-BASE_NAME=F357
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
+# Stats
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -2173,6 +2169,24 @@ parallel -k --no-run-if-empty -j 6 "
 cat stat2.md
 ```
 
+| Name           | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|-------:|------:|--------:|-------:|----------:|--------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
+| Q20L60X40P000  |     4G |   40.0 |  7668 | 105.26M |  41284 |     12449 |  88.91M | 17799 |       704 | 16.36M | 23485 | "31,41,51,61,71,81" | 1:15'23'' | 0:09'29'' |
+| Q20L60X40P001  |     4G |   40.0 |  7247 | 103.46M |  41536 |     12253 |  86.87M | 17751 |       703 | 16.59M | 23785 | "31,41,51,61,71,81" | 1:08'07'' | 0:08'30'' |
+| Q20L60X40P002  |     4G |   40.0 |  6559 | 100.78M |  42009 |     10556 |  84.04M | 17928 |       703 | 16.74M | 24081 | "31,41,51,61,71,81" | 0:58'49'' | 0:07'31'' |
+| Q20L60X80P000  |     8G |   80.0 |  8384 | 133.67M |  66115 |     16516 | 100.38M | 16856 |       671 | 33.29M | 49259 | "31,41,51,61,71,81" | 1:47'12'' | 0:13'54'' |
+| Q20L60X120P000 |    12G |  120.0 |  2887 | 170.17M | 103764 |     12770 | 116.33M | 27078 |       708 | 53.84M | 76686 | "31,41,51,61,71,81" | 2:37'20'' | 0:17'36'' |
+| Q25L60X40P000  |     4G |   40.0 | 10281 |  108.7M |  38676 |     16286 |  93.76M | 17401 |       711 | 14.94M | 21275 | "31,41,51,61,71,81" | 0:53'00'' | 0:10'00'' |
+| Q25L60X40P001  |     4G |   40.0 |  9738 | 107.59M |  39809 |     15995 |  91.91M | 17444 |       708 | 15.68M | 22365 | "31,41,51,61,71,81" | 0:44'20'' | 0:09'43'' |
+| Q25L60X40P002  |     4G |   40.0 |  8255 | 105.42M |  40726 |     13120 |  89.34M | 17593 |       703 | 16.08M | 23133 | "31,41,51,61,71,81" | 0:44'13'' | 0:08'43'' |
+| Q25L60X80P000  |     8G |   80.0 | 10915 | 138.15M |  63850 |     22870 | 105.67M | 15943 |       672 | 32.48M | 47907 | "31,41,51,61,71,81" | 1:17'36'' | 0:15'58'' |
+| Q25L60X120P000 |    12G |  120.0 |  4039 |  173.6M |  99401 |     20157 | 121.89M | 25583 |       706 |  51.7M | 73818 | "31,41,51,61,71,81" | 1:53'15'' | 0:22'57'' |
+| Q30L60X40P000  |     4G |   40.0 | 16284 | 110.26M |  32257 |     24368 |  98.34M | 15315 |       709 | 11.92M | 16942 | "31,41,51,61,71,81" | 0:46'48'' | 0:11'31'' |
+| Q30L60X40P001  |     4G |   40.0 | 14471 | 110.02M |  34361 |     22185 |  97.19M | 16198 |       710 | 12.84M | 18163 | "31,41,51,61,71,81" | 0:45'52'' | 0:11'21'' |
+| Q30L60X40P002  |     4G |   40.0 | 11988 | 108.78M |  36573 |     17768 |  95.07M | 17118 |       716 | 13.71M | 19455 | "31,41,51,61,71,81" | 0:46'36'' | 0:11'00'' |
+| Q30L60X80P000  |     8G |   80.0 | 14914 | 142.95M |  59781 |     31007 | 112.93M | 15460 |       675 | 30.02M | 44321 | "31,41,51,61,71,81" | 1:18'40'' | 0:20'41'' |
+| Q30L60X120P000 |    12G |  120.0 |  6785 | 178.07M |  95012 |     31327 | 128.42M | 24353 |       708 | 49.66M | 70659 | "31,41,51,61,71,81" | 1:49'48'' | 0:28'24'' |
+
 ## F357: merge anchors
 
 ```bash
@@ -2193,7 +2207,9 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
@@ -2216,6 +2232,8 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
@@ -2241,6 +2259,11 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
+
+| Name         |   N50 |       Sum |     # |
+|:-------------|------:|----------:|------:|
+| anchor.merge | 84873 | 148010708 | 25297 |
+| others.merge |  1047 |  15603500 | 13933 |
 
 * Clear QxxLxxXxx.
 
@@ -2609,7 +2632,9 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
@@ -2630,9 +2655,10 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
 
 # quast
-# quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
@@ -2658,11 +2684,6 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
-
-| Name         |  N50 |       Sum |     # |
-|:-------------|-----:|----------:|------:|
-| anchor.merge | 8976 | 122233147 | 26448 |
-| others.merge | 1204 |   4466297 |  3577 |
 
 | Name         |  N50 |       Sum |     # |
 |:-------------|-----:|----------:|------:|
