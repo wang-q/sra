@@ -48,6 +48,13 @@
     - [F1084: down sampling](#f1084-down-sampling)
     - [F1084: k-unitigs and anchors (sampled)](#f1084-k-unitigs-and-anchors-sampled)
     - [F1084: merge anchors](#f1084-merge-anchors)
+- [CgiA, , 巨紫荆 A](#cgia--巨紫荆-a)
+    - [CgiA: download](#cgia-download)
+    - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
+    - [CgiA: quorum](#cgia-quorum)
+    - [CgiA: down sampling](#cgia-down-sampling)
+    - [CgiA: k-unitigs and anchors (sampled)](#cgia-k-unitigs-and-anchors-sampled)
+    - [CgiA: merge anchors](#cgia-merge-anchors)
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
@@ -2665,6 +2672,398 @@ cat stat3.md
 
 ```bash
 BASE_NAME=F1084
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
+rm -fr Q{20,25,30,35}L{1,60,90,120}X*
+```
+
+# CgiA, , 巨紫荆 A
+
+## CgiA: download
+
+```bash
+BASE_NAME=CgiA
+mkdir -p ${HOME}/data/dna-seq/chara/${BASE_NAME}
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+ln -s ../../medfood/Cgi_R1_head50.fastq.gz R1.fq.gz
+ln -s ../../medfood/Cgi_R2_head50.fastq.gz R2.fq.gz
+```
+
+* FastQC
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
+* kmergenie
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
+
+```
+
+## CgiA: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 60
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 8 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
+
+parallel --no-run-if-empty -j 3 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 60
+
+# Stats
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo Q{1}L{2};
+            if [[ {1} -ge '30' ]]; then
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+            else
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz;
+            fi
+        )
+    " ::: 20 25 30 ::: 60 \
+    >> stat.md
+
+cat stat.md
+```
+
+## CgiA: quorum
+
+```bash
+BASE_NAME=CgiA
+REAL_G=100000000
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+parallel --no-run-if-empty -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo >&2 '==> Group Q{1}L{2} <=='
+
+    if [ ! -e R1.fq.gz ]; then
+        echo >&2 '    R1.fq.gz not exists'
+        exit;
+    fi
+
+    if [ -e pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa exists'
+        exit;
+    fi
+
+    if [[ {1} -ge '30' ]]; then
+        anchr quorum \
+            R1.fq.gz R2.fq.gz Rs.fq.gz \
+            -p 16 \
+            -o quorum.sh
+    else
+        anchr quorum \
+            R1.fq.gz R2.fq.gz \
+            -p 16 \
+            -o quorum.sh
+    fi
+
+    bash quorum.sh
+    
+    echo >&2
+    " ::: 20 25 30 ::: 60
+
+# Stats of processed reads
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > stat1.md
+
+parallel -k --no-run-if-empty -j 3 "
+    if [ ! -d 2_illumina/Q{1}L{2} ]; then
+        exit;
+    fi
+
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
+    " ::: 20 25 30 ::: 60 \
+     >> stat1.md
+
+cat stat1.md
+```
+
+* Clear intermediate files.
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+```
+
+* kmergenie
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
+
+```
+
+## CgiA: down sampling
+
+```bash
+BASE_NAME=CgiA
+REAL_G=100000000
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
+    echo "==> ${QxxLxx}"
+
+    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
+        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
+        continue;
+    fi
+
+    for X in 40 80 120; do
+        printf "==> Coverage: %s\n" ${X}
+        
+        rm -fr 2_illumina/${QxxLxx}X${X}*
+    
+        faops split-about -l 0 \
+            2_illumina/${QxxLxx}/pe.cor.fa \
+            $(( ${REAL_G} * ${X} )) \
+            "2_illumina/${QxxLxx}X${X}"
+        
+        MAX_SERIAL=$(
+            cat 2_illumina/${QxxLxx}/environment.json \
+                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
+        )
+        
+        for i in $( seq 0 1 ${MAX_SERIAL} ); do
+            P=$( printf "%03d" ${i})
+            printf "  * Part: %s\n" ${P}
+            
+            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
+            
+            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
+                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
+            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
+    
+        done
+    done
+done
+
+```
+
+## CgiA: k-unitigs and anchors (sampled)
+
+```bash
+BASE_NAME=CgiA
+REAL_G=100000000
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+# k-unitigs (sampled)
+parallel --no-run-if-empty -j 1 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
+        exit;
+    fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p Q{1}L{2}X{3}P{4}
+    cd Q{1}L{2}X{3}P{4}
+
+    anchr kunitigs \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
+        -p 16 \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+
+# anchors (sampled)
+parallel --no-run-if-empty -j 2 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        exit;
+    fi
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    
+    echo >&2
+    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+
+# Stats of anchors
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > stat2.md
+
+parallel -k --no-run-if-empty -j 6 "
+    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        exit;
+    fi
+
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
+    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006 \
+     >> stat2.md
+
+cat stat2.md
+```
+
+## CgiA: merge anchors
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    $(
+        parallel -k --no-run-if-empty -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
+            fi
+            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+    ) \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge others
+mkdir -p merge
+anchr contained \
+    $(
+        parallel -k --no-run-if-empty -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
+            fi
+            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+    ) \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    --label "merge,others" \
+    -o 9_qa
+
+```
+
+* Stats
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+* Clear QxxLxxXxx.
+
+```bash
+BASE_NAME=CgiA
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
