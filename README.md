@@ -497,6 +497,7 @@ mkdir -p ~/data/dna-seq/other_plants/sra
 cd ~/data/dna-seq/other_plants/sra
 
 cat << EOF > source.csv
+SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
 #SRX202247,Ler-0-2,Ler_XL_4
 #SRX202246,Col-0,Col_G
@@ -504,39 +505,34 @@ cat << EOF > source.csv
 #SRX1639981,ZS97,Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
 #SRX1639978,MH63,Minghui 63 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
 #SRX1879506,showa2,
-SRX1879507,showa3,
-SRX1879508,showa3,
-SRX1879509,showa3,
-SRX1879510,showa3,
-SRX1879511,showa3,
-SRX1879512,showa3,
-SRX1879513,showa3,
-SRX1879514,showa3,
-SRX2043337,showa3,
-SRX2043338,showa3,
-SRX2043339,showa3,
-SRX2043340,showa3,
-SRX2043341,showa3,
-SRX2043342,showa3,
-SRX2043343,showa3,
-SRX2043344,showa3,
-SRX2043345,showa3,
-SRX2043346,showa3,
-SRX2043347,showa3,
-SRX2043348,showa3,
-SRX2043349,showa3,
-SRX2043350,showa3,
+#SRX1879507,showa3,
+#SRX1879508,showa3,
+#SRX1879509,showa3,
+#SRX1879510,showa3,
+#SRX1879511,showa3,
+#SRX1879512,showa3,
+#SRX1879513,showa3,
+#SRX1879514,showa3,
+#SRX2043337,showa3,
+#SRX2043338,showa3,
+#SRX2043339,showa3,
+#SRX2043340,showa3,
+#SRX2043341,showa3,
+#SRX2043342,showa3,
+#SRX2043343,showa3,
+#SRX2043344,showa3,
+#SRX2043345,showa3,
+#SRX2043346,showa3,
+#SRX2043347,showa3,
+#SRX2043348,showa3,
+#SRX2043349,showa3,
+#SRX2043350,showa3,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
     > sra_info.yml
 
-# check before running these
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml
-
-aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
-
-md5sum --check sra_info.md5.txt
 
 ```
 
