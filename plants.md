@@ -47,7 +47,7 @@
     - [F1084: down sampling](#f1084-down-sampling)
     - [F1084: k-unitigs and anchors (sampled)](#f1084-k-unitigs-and-anchors-sampled)
     - [F1084: merge anchors](#f1084-merge-anchors)
-- [CgiA, , 巨紫荆 A](#cgia--巨紫荆-a)
+- [CgiA, Cercis gigantea, 巨紫荆 A](#cgia-cercis-gigantea-巨紫荆-a)
     - [CgiA: download](#cgia-download)
     - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
     - [CgiA: quorum](#cgia-quorum)
@@ -2674,7 +2674,7 @@ rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
 rm -fr Q{20,25,30,35}L{1,60,90,120}X*
 ```
 
-# CgiA, , 巨紫荆 A
+# CgiA, Cercis gigantea, 巨紫荆 A
 
 ## CgiA: download
 
@@ -2741,6 +2741,25 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
+cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    > 2_illumina/illumina_adapters.fa
+echo ">TruSeq_Adapter_Index_15" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACGCTCGAATCTCGTAT" >> 2_illumina/illumina_adapters.fa
+echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
 parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -2753,7 +2772,7 @@ parallel --no-run-if-empty -j 3 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
     " ::: 20 25 30 ::: 60
@@ -2761,7 +2780,6 @@ parallel --no-run-if-empty -j 3 "
 # Stats
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-
     > stat.md
 printf "|:--|--:|--:|--:|\n" >> stat.md
 
@@ -2769,6 +2787,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 parallel -k --no-run-if-empty -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
@@ -2791,11 +2811,20 @@ parallel -k --no-run-if-empty -j 3 "
 cat stat.md
 ```
 
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 151 | 58890000000 | 390000000 |
+| uniq     | 151 | 57639361828 | 381717628 |
+| scythe   | 151 | 56855792587 | 381717628 |
+| Q20L60   | 151 | 47181285790 | 332231596 |
+| Q25L60   | 151 | 39049905338 | 284195248 |
+| Q30L60   | 151 | 37761899864 | 286580535 |
+
 ## CgiA: quorum
 
 ```bash
 BASE_NAME=CgiA
-REAL_G=100000000
+REAL_G=500000000
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 parallel --no-run-if-empty -j 1 "
@@ -2827,7 +2856,7 @@ parallel --no-run-if-empty -j 1 "
     bash quorum.sh
     
     echo >&2
-    " ::: 20 25 30 ::: 60
+    " ::: 25 30 ::: 60
 
 # Stats of processed reads
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
@@ -2839,11 +2868,16 @@ parallel -k --no-run-if-empty -j 3 "
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
+    " ::: 25 30 ::: 60 \
      >> stat1.md
 
 cat stat1.md
 ```
+
+| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q25L60 | 39.05G |  78.1 | 33.11G |   66.2 |  15.211% |     137 | "91" |  500M | 368.39M |     0.74 | 2:59'12'' |
+| Q30L60 | 37.82G |  75.6 | 34.74G |   69.5 |   8.147% |     132 | "81" |  500M | 355.97M |     0.71 | 1:59'00'' |
 
 * Clear intermediate files.
 
@@ -2876,10 +2910,10 @@ kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
 ```bash
 BASE_NAME=CgiA
-REAL_G=100000000
+REAL_G=500000000
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 25 30 ::: 60 ); do
     echo "==> ${QxxLxx}"
 
     if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
@@ -2887,7 +2921,7 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
         continue;
     fi
 
-    for X in 40 80 120; do
+    for X in 30 60; do
         printf "==> Coverage: %s\n" ${X}
         
         rm -fr 2_illumina/${QxxLxx}X${X}*
@@ -2922,7 +2956,7 @@ done
 
 ```bash
 BASE_NAME=CgiA
-REAL_G=100000000
+REAL_G=500000000
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 # k-unitigs (sampled)
@@ -2951,7 +2985,7 @@ parallel --no-run-if-empty -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
 
 # anchors (sampled)
 parallel --no-run-if-empty -j 2 "
@@ -2965,7 +2999,7 @@ parallel --no-run-if-empty -j 2 "
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
     
     echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
 
 # Stats of anchors
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
@@ -2977,7 +3011,7 @@ parallel -k --no-run-if-empty -j 6 "
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006 \
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006 \
      >> stat2.md
 
 cat stat2.md
@@ -2997,7 +3031,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -3016,7 +3050,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
+            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
