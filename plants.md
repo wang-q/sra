@@ -3643,6 +3643,20 @@ fastqc -t 16 \
 
 ```
 
+* kmergenie
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 91 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 91 -s 10 -t 8 ../R2.fq.gz -o oriR2
+
+```
+
 ## ZS97: combinations of different quality values and read lengths
 
 * qual: 25 and 30
@@ -3796,6 +3810,19 @@ find 2_illumina -type f -name "*.tmp"            | xargs rm
 find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+```
+
+* kmergenie
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 91 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
+
 ```
 
 ## ZS97: down sampling
