@@ -359,12 +359,25 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
+        exit;
+    fi
+
     if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
     rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006
@@ -1671,12 +1684,25 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
+        exit;
+    fi
+
     if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
     rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
@@ -2115,12 +2141,26 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
 
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+
     rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
@@ -2544,9 +2584,25 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
 
     rm -fr Q{1}L{2}X{3}P{4}/anchor
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
@@ -2995,8 +3051,19 @@ parallel --no-run-if-empty -j 2 "
         exit;
     fi
 
+    if [ ! -e Q{1}L{2}/k_unitigs.fasta ]; then
+        exit;
+    fi
+
     rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
@@ -3016,6 +3083,15 @@ parallel -k --no-run-if-empty -j 6 "
 
 cat stat2.md
 ```
+
+| Name          | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |    Sum |     # | N50Others |    Sum |      # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|-------:|------:|--------:|-------:|----------:|-------:|------:|----------:|-------:|-------:|--------------------:|----------:|:----------|
+| Q25L60X30P000 |    15G |   30.0 |   839 | 138.13M | 157958 |      1747 | 51.85M | 28791 |       665 | 86.29M | 129167 | "31,41,51,61,71,81" | 2:38'40'' | 0:16'03'' |
+| Q25L60X30P001 |    15G |   30.0 |   840 | 138.22M | 158010 |      1746 | 51.94M | 28839 |       665 | 86.28M | 129171 | "31,41,51,61,71,81" | 2:35'17'' | 0:15'34'' |
+| Q25L60X60P000 |    30G |   60.0 |   828 | 134.34M | 155963 |      1683 | 49.63M | 28646 |       662 | 84.71M | 127317 | "31,41,51,61,71,81" | 4:10'17'' | 0:28'06'' |
+| Q30L60X30P000 |    15G |   30.0 |   841 | 139.25M | 158884 |      1766 |  52.4M | 28832 |       665 | 86.85M | 130052 | "31,41,51,61,71,81" | 2:29'24'' | 0:16'41'' |
+| Q30L60X30P001 |    15G |   30.0 |   842 | 139.56M | 159066 |      1758 | 52.69M | 28965 |       665 | 86.87M | 130101 | "31,41,51,61,71,81" | 2:31'05'' | 0:16'40'' |
+| Q30L60X60P000 |    30G |   60.0 |   843 |  138.4M | 158013 |      1719 | 53.13M | 29953 |       663 | 85.27M | 128060 | "31,41,51,61,71,81" | 4:00'07'' | 0:29'19'' |
 
 ## CgiA: merge anchors
 
@@ -3089,6 +3165,11 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
+
+| Name         |  N50 |      Sum |     # |
+|:-------------|-----:|---------:|------:|
+| anchor.merge | 1779 | 61598601 | 33537 |
+| others.merge | 1034 |  6873722 |  6352 |
 
 * Clear QxxLxxXxx.
 
@@ -3547,28 +3628,44 @@ ln -s SRR3234372_1.fastq.gz R1.fq.gz
 ln -s SRR3234372_2.fastq.gz R2.fq.gz
 ```
 
+* FastQC
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
 ## ZS97: combinations of different quality values and read lengths
 
-* qual: 20, 25, and 30
-* len: 80, 90, and 100
+* qual: 25 and 30
+* len: 60
 * Peak memory: 138 GiB
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-cd ${BASE_DIR}
-tally \
-    --pair-by-offset --with-quality --nozip \
-    -i 2_illumina/R1.fq.gz \
-    -j 2_illumina/R2.fq.gz \
-    -o 2_illumina/R1.uniq.fq \
-    -p 2_illumina/R2.uniq.fq
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 4 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
 
-parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-    " ::: R1 R2
-
-cd ${BASE_DIR}
 parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -3584,16 +3681,9 @@ parallel --no-run-if-empty -j 4 "
         ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 80 90 100
+    " ::: 25 30 ::: 60
 
-```
-
-* Stats
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
+# Stats
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -3606,15 +3696,23 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 
-for qual in 20 25 30; do
-    for len in 80 90 100; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo Q{1}L{2};
+            if [[ {1} -ge '30' ]]; then
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+            else
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz;
+            fi
+        )
+    " ::: 25 30 ::: 60 \
+    >> stat.md
 
 cat stat.md
 ```
@@ -3624,219 +3722,206 @@ cat stat.md
 | Genome   | 27449063 |   346663259 |        12 |
 | Illumina |      101 | 34167671982 | 338293782 |
 | uniq     |      101 | 33822673960 | 334877960 |
-| Q20L80   |      101 | 27509564301 | 274005300 |
-| Q20L90   |      101 | 26420936235 | 262191534 |
-| Q20L100  |      101 | 24875667710 | 246295934 |
-| Q25L80   |      101 | 25468071680 | 254040008 |
-| Q25L90   |      101 | 24165258568 | 239891008 |
-| Q25L100  |      101 | 22398762768 | 221771944 |
-| Q30L80   |      101 | 21543805317 | 216094884 |
-| Q30L90   |      101 | 19651096465 | 195479350 |
-| Q30L100  |      101 | 17178948122 | 170094520 |
+| Q25L60   |      101 | 27107760556 | 273940552 |
+| Q30L60   |      101 | 26039636642 | 269603470 |
 
-## ZS97: down sampling
+## ZS97: quorum
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
-# works on bash 3
-ARRAY=(
-    "2_illumina/Q20L80:Q20L80"
-    "2_illumina/Q20L90:Q20L90"
-    "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q25L80:Q25L80"
-    "2_illumina/Q25L90:Q25L90"
-    "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q30L80:Q30L80"
-    "2_illumina/Q30L90:Q30L90"
-    "2_illumina/Q30L100:Q30L100"
-)
-
-for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-
-done
-```
-
-## ZS97: generate super-reads
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-        
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
-
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
-            exit;
-        fi
-
-        cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 8 \
-            -o superreads.sh
-        bash superreads.sh
-    "
-
-```
-
-Clear intermediate files.
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-
-find . -type f -name "quorum_mer_db.jf"          | xargs rm
-find . -type f -name "k_u_hash_0"                | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp"                     | xargs rm
-find . -type f -name "pe.renamed.fastq"          | xargs rm
-find . -type f -name "pe.cor.sub.fa"             | xargs rm
-```
-
-## ZS97: create anchors
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
-    "
-
-```
-
-## ZS97: results
-
-* Stats of super-reads
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
+BASE_NAME=ZS97
 REAL_G=346663259
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
+parallel --no-run-if-empty -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo >&2 '==> Group Q{1}L{2} <=='
+
+    if [ ! -e R1.fq.gz ]; then
+        echo >&2 '    R1.fq.gz not exists'
+        exit;
+    fi
+
+    if [ -e pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa exists'
+        exit;
+    fi
+
+    if [[ {1} == '30' ]]; then
+        anchr quorum \
+            R1.fq.gz R2.fq.gz Rs.fq.gz \
+            -p 16 \
+            -o quorum.sh
+    else
+        anchr quorum \
+            R1.fq.gz R2.fq.gz \
+            -p 16 \
+            -o quorum.sh
+    fi
+
+    bash quorum.sh
+    
+    echo >&2
+    " ::: 25 30 ::: 60
+
+# Stats of processed reads
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
+    > stat1.md
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 4 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            exit;
-        fi
+parallel -k --no-run-if-empty -j 3 "
+    if [ ! -d 2_illumina/Q{1}L{2} ]; then
+        exit;
+    fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
+    " ::: 25 30 ::: 60 \
+    >> stat1.md
 
 cat stat1.md
 ```
 
-* Stats of anchors
+| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
+| Q25L60 | 27.11G |  78.2 | 24.72G |   71.3 |   8.821% |     100 | "71" | 346.66M | 298.24M |     0.86 | 1:19'09'' |
+| Q30L60 | 26.06G |  75.2 |  24.1G |   69.5 |   7.537% |     100 | "71" | 346.66M | 295.54M |     0.85 | 1:19'13'' |
+
+* Clear intermediate files.
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+```
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
-        }
+## ZS97: down sampling
+
+```bash
+BASE_NAME=ZS97
+REAL_G=346663259
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 25 30 ::: 60 ); do
+    echo "==> ${QxxLxx}"
+
+    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
+        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
+        continue;
+    fi
+
+    for X in 30 60; do
+        printf "==> Coverage: %s\n" ${X}
+        
+        rm -fr 2_illumina/${QxxLxx}X${X}*
+    
+        faops split-about -l 0 \
+            2_illumina/${QxxLxx}/pe.cor.fa \
+            $(( ${REAL_G} * ${X} )) \
+            "2_illumina/${QxxLxx}X${X}"
+        
+        MAX_SERIAL=$(
+            cat 2_illumina/${QxxLxx}/environment.json \
+                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
         )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 8 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
+        
+        for i in $( seq 0 1 ${MAX_SERIAL} ); do
+            P=$( printf "%03d" ${i})
+            printf "  * Part: %s\n" ${P}
+            
+            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
+            
+            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
+                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
+            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
+    
+        done
+    done
+done
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
+```
+
+## ZS97: k-unitigs and anchors (sampled)
+
+```bash
+BASE_NAME=ZS97
+REAL_G=346663259
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+# k-unitigs (sampled)
+parallel --no-run-if-empty -j 1 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
+        exit;
+    fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p Q{1}L{2}X{3}P{4}
+    cd Q{1}L{2}X{3}P{4}
+
+    anchr kunitigs \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
+        -p 16 \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005
+
+# anchors (sampled)
+parallel --no-run-if-empty -j 3 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
+        exit;
+    fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
+    
+    echo >&2
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005
+
+# Stats of anchors
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > stat2.md
+
+parallel -k --no-run-if-empty -j 6 "
+    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        exit;
+    fi
+
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
+    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 \
+    >> stat2.md
 
 cat stat2.md
 ```
-
-| Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% |   RealG |    EstG | Est/Real |   SumKU | SumSR |    RunTime |
-|:--------|-------:|------:|--------:|-----:|-------:|---------:|--------:|--------:|---------:|--------:|------:|-----------:|
-| Q20L80  | 27.51G |  79.4 |     100 |   71 | 24.81G |   9.816% | 346.66M | 299.04M |     0.86 | 494.05M |     0 |  7:03'18'' |
-| Q20L90  | 26.42G |  76.2 |     100 |   71 | 23.88G |   9.618% | 346.66M | 296.67M |     0.86 | 485.54M |     0 |  7:00'46'' |
-| Q20L100 | 24.88G |  71.8 |     100 |   71 | 22.53G |   9.429% | 346.66M | 293.56M |     0.85 | 475.96M |     0 |  5:57'27'' |
-| Q25L80  | 25.47G |  73.5 |     100 |   71 | 23.28G |   8.606% | 346.66M | 295.26M |     0.85 | 476.37M |     0 | 11:25'02'' |
-| Q25L90  | 24.17G |  69.7 |     100 |   71 |  22.1G |   8.555% | 346.66M | 291.74M |     0.84 | 467.42M |     0 |  9:33'15'' |
-| Q25L100 |  22.4G |  64.6 |     101 |   71 | 20.49G |   8.526% | 346.66M | 287.75M |     0.83 | 458.16M |     0 |  9:07'50'' |
-| Q30L80  | 21.54G |  62.1 |     100 |   71 | 19.96G |   7.330% | 346.66M | 286.34M |     0.83 | 453.34M |     0 |  4:33'34'' |
-| Q30L90  | 19.65G |  56.7 |     100 |   71 |  18.2G |   7.403% | 346.66M | 279.92M |     0.81 | 440.08M |     0 |  3:34'32'' |
-| Q30L100 | 17.18G |  49.6 |     100 |   71 | 15.89G |   7.512% | 346.66M | 272.98M |     0.79 |  426.6M |     0 |  3:23'28'' |
 
 | Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 |    Sum |  # | N50Others |     Sum |       # |   RunTime |
 |:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|-------:|---:|----------:|--------:|--------:|----------:|
@@ -4094,17 +4179,16 @@ fastqc -t 16 \
 ## 3GS
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/showa
-cd ${BASE_DIR}
+BASE_NAME=showa
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 canu \
-    -p showa -d canu-raw-40x \
+    -p ${BASE_NAME} -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=184.4m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
 faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
 
 ```
 
