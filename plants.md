@@ -3919,7 +3919,6 @@ parallel --no-run-if-empty -j 3 "
         exit;
     fi
 
-
     rm -fr Q{1}L{2}X{3}P{4}/anchor
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
