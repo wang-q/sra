@@ -65,10 +65,9 @@
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
     - [ZS97: combinations of different quality values and read lengths](#zs97-combinations-of-different-quality-values-and-read-lengths)
+    - [ZS97: quorum](#zs97-quorum)
     - [ZS97: down sampling](#zs97-down-sampling)
-    - [ZS97: generate super-reads](#zs97-generate-super-reads)
-    - [ZS97: create anchors](#zs97-create-anchors)
-    - [ZS97: results](#zs97-results)
+    - [ZS97: k-unitigs and anchors (sampled)](#zs97-k-unitigs-and-anchors-sampled)
     - [ZS97: merge anchors](#zs97-merge-anchors)
 - [showa, Botryococcus braunii Showa](#showa-botryococcus-braunii-showa)
     - [showa: download](#showa-download)
@@ -3950,63 +3949,49 @@ parallel -k --no-run-if-empty -j 6 "
 cat stat2.md
 ```
 
-| Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 |    Sum |  # | N50Others |     Sum |       # |   RunTime |
-|:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|-------:|---:|----------:|--------:|--------:|----------:|
-| Q20L80  |        787 | 494.05M | 2279248 |      3775 | 235.04M | 78151 |       1240 |  3.54K |  3 |       116 |    259M | 2201094 | 2:58'42'' |
-| Q20L90  |        814 | 485.54M | 2206092 |      3737 | 232.18M | 77882 |       1240 |  5.05K |  4 |       120 | 253.35M | 2128206 | 3:11'57'' |
-| Q20L100 |        822 | 475.96M | 2134325 |      3629 | 227.49M | 77934 |       1122 |  6.04K |  5 |       126 | 248.47M | 2056386 | 3:07'38'' |
-| Q25L80  |        843 | 476.37M | 2114878 |      3671 | 229.19M | 77775 |       1240 |  1.24K |  1 |       128 | 247.18M | 2037102 | 2:36'55'' |
-| Q25L90  |        851 | 467.42M | 2052009 |      3586 | 224.83M | 77689 |       1191 |  6.99K |  6 |       132 | 242.59M | 1974314 | 2:36'11'' |
-| Q25L100 |        838 | 458.16M | 1994680 |      3446 | 219.02M | 77690 |       1121 | 10.31K |  9 |       136 | 239.13M | 1916981 | 2:34'30'' |
-| Q30L80  |        760 | 453.34M | 1984260 |      3260 | 210.69M | 77948 |       1186 |   3.5K |  3 |       139 | 242.64M | 1906309 | 2:13'18'' |
-| Q30L90  |        777 | 440.08M | 1892634 |      3163 | 204.68M | 77429 |       1143 |  6.93K |  6 |       141 |  235.4M | 1815199 | 2:07'40'' |
-| Q30L100 |        753 |  426.6M | 1819140 |      2993 |  195.4M | 76909 |       1184 | 12.95K | 11 |       141 | 231.19M | 1742220 | 1:58'50'' |
+| Name          | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|-------:|------:|--------:|-------:|----------:|--------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
+| Q25L60X30P000 |  10.4G |   30.0 |  3634 | 276.79M | 126239 |      4336 | 235.17M | 69765 |       741 | 41.62M | 56474 | "31,41,51,61,71,81" | 6:44'51'' | 0:20'15'' |
+| Q25L60X30P001 |  10.4G |   30.0 |  3728 |  278.2M | 124523 |      4421 |  237.7M | 69508 |       739 |  40.5M | 55015 | "31,41,51,61,71,81" | 6:53'00'' | 0:18'21'' |
+| Q25L60X60P000 |  20.8G |   60.0 |  4676 |  286.9M | 108406 |      5304 | 255.31M | 65720 |       741 | 31.59M | 42686 | "31,41,51,61,71,81" | 7:08'45'' | 0:28'45'' |
+| Q30L60X30P000 |  10.4G |   30.0 |  3157 | 266.67M | 133155 |      3851 | 221.57M | 71774 |       742 |  45.1M | 61381 | "31,41,51,61,71,81" | 6:32'04'' | 0:20'51'' |
+| Q30L60X30P001 |  10.4G |   30.0 |  3269 | 269.54M | 131487 |      3963 | 225.44M | 71421 |       740 |  44.1M | 60066 | "31,41,51,61,71,81" | 6:37'14'' | 0:20'41'' |
+| Q30L60X60P000 |  20.8G |   60.0 |  3981 | 280.46M | 118520 |      4601 | 244.66M | 69799 |       740 |  35.8M | 48721 | "31,41,51,61,71,81" | 8:49'45'' | 0:27'17'' |
 
 ## ZS97: merge anchors
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
 anchr contained \
-    Q20L80/anchor/pe.anchor.fa \
-    Q20L90/anchor/pe.anchor.fa \
-    Q20L100/anchor/pe.anchor.fa \
-    Q25L80/anchor/pe.anchor.fa \
-    Q25L90/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q30L80/anchor/pe.anchor.fa \
-    Q30L90/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
+    $(
+        parallel -k --no-run-if-empty -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
+            fi
+            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005
+    ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-# merge anchor2 and others
+# merge  others
 anchr contained \
-    Q20L80/anchor/pe.anchor2.fa \
-    Q20L90/anchor/pe.anchor2.fa \
-    Q20L100/anchor/pe.anchor2.fa \
-    Q25L80/anchor/pe.anchor2.fa \
-    Q25L90/anchor/pe.anchor2.fa \
-    Q25L100/anchor/pe.anchor2.fa \
-    Q30L80/anchor/pe.anchor2.fa \
-    Q30L90/anchor/pe.anchor2.fa \
-    Q30L100/anchor/pe.anchor2.fa \
-    Q20L80/anchor/pe.others.fa \
-    Q20L90/anchor/pe.others.fa \
-    Q20L100/anchor/pe.others.fa \
-    Q25L80/anchor/pe.others.fa \
-    Q25L90/anchor/pe.others.fa \
-    Q25L100/anchor/pe.others.fa \
-    Q30L80/anchor/pe.others.fa \
-    Q30L90/anchor/pe.others.fa \
-    Q30L100/anchor/pe.others.fa \
+    $(
+        parallel -k --no-run-if-empty -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
+            fi
+            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005
+    ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
@@ -4028,22 +4013,14 @@ mv anchor.sort.png merge/
 
 # quast
 quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
     --label "merge,others" \
     -o 9_qa
 
-```
-
-* Clear QxxLxxx.
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
-
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
 ```
 
 * Stats
@@ -4070,9 +4047,18 @@ cat stat3.md
 | Name         |      N50 |       Sum |     # |
 |:-------------|---------:|----------:|------:|
 | Genome       | 27449063 | 346663259 |    12 |
-| anchor.merge |     4229 | 240033952 | 73761 |
-| others.merge |     1007 |   2823559 |  2793 |
+| anchor.merge |     5541 | 259365865 | 65069 |
+| others.merge |     1185 |  21271839 | 16639 |
 
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/dna-seq/chara/ZS97
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
 
 # showa, Botryococcus braunii Showa
 
