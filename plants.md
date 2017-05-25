@@ -4229,7 +4229,8 @@ canu \
     genomeSize=184.4m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
-faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+rm -fr canu-raw-40x/correction
 
 ```
 
