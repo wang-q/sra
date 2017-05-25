@@ -2961,6 +2961,21 @@ kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
 ```
 
+## CgiA: spades
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+```
+
 ## CgiA: down sampling
 
 ```bash
