@@ -51,6 +51,7 @@
     - [CgiA: download](#cgia-download)
     - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
     - [CgiA: quorum](#cgia-quorum)
+    - [CgiA: spades](#cgia-spades)
     - [CgiA: down sampling](#cgia-down-sampling)
     - [CgiA: k-unitigs and anchors (sampled)](#cgia-k-unitigs-and-anchors-sampled)
     - [CgiA: merge anchors](#cgia-merge-anchors)
