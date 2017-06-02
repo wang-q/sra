@@ -3177,14 +3177,20 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contigs"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffolds"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name         |  N50 |      Sum |     # |
-|:-------------|-----:|---------:|------:|
-| anchor.merge | 1779 | 61598601 | 33537 |
-| others.merge | 1034 |  6873722 |  6352 |
+| Name             |  N50 |       Sum |      # |
+|:-----------------|-----:|----------:|-------:|
+| anchor.merge     | 1779 |  61598601 |  33537 |
+| others.merge     | 1034 |   6873722 |   6352 |
+| spades.contigs   | 1620 | 435929605 | 673266 |
+| spades.scaffolds | 1761 | 439173057 | 662729 |
 
 * Clear QxxLxxXxx.
 
