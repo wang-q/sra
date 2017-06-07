@@ -1,7 +1,6 @@
 # Plants 2+3
 
 [TOC levels=1-3]: # " "
-
 - [Plants 2+3](#plants-23)
 - [F63, Closterium sp., 新月藻](#f63-closterium-sp-新月藻)
     - [F63: download](#f63-download)
@@ -50,8 +49,9 @@
 - [CgiA, Cercis gigantea, 巨紫荆 A](#cgia-cercis-gigantea-巨紫荆-a)
     - [CgiA: download](#cgia-download)
     - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
-    - [CgiA: quorum](#cgia-quorum)
     - [CgiA: spades](#cgia-spades)
+    - [CgiA: platanus](#cgia-platanus)
+    - [CgiA: quorum](#cgia-quorum)
     - [CgiA: down sampling](#cgia-down-sampling)
     - [CgiA: k-unitigs and anchors (sampled)](#cgia-k-unitigs-and-anchors-sampled)
     - [CgiA: merge anchors](#cgia-merge-anchors)
@@ -2876,6 +2876,52 @@ cat stat.md
 | Q25L60   | 151 | 39049905338 | 284195248 |
 | Q30L60   | 151 | 37761899864 | 286580535 |
 
+## CgiA: spades
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+```
+
+## CgiA: platanus
+
+```bash
+BASE_NAME=CgiA
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e R1.fa ]; then
+    parallel --no-run-if-empty -j 3 "
+        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
+        " ::: R1 R2 Rs
+fi
+
+platanus assemble -t 16 -m 200 \
+    -f R1.fa R2.fa Rs.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
 ## CgiA: quorum
 
 ```bash
@@ -2947,34 +2993,6 @@ find 2_illumina -type f -name "*.tmp"            | xargs rm
 find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* kmergenie
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
-
-```
-
-## CgiA: spades
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 --careful \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
 ```
 
 ## CgiA: down sampling
@@ -3181,16 +3199,25 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.contigs"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffolds"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_scaffold.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.gapClosed"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name             |  N50 |       Sum |      # |
-|:-----------------|-----:|----------:|-------:|
-| anchor.merge     | 1779 |  61598601 |  33537 |
-| others.merge     | 1034 |   6873722 |   6352 |
-| spades.contigs   | 1620 | 435929605 | 673266 |
-| spades.scaffolds | 1761 | 439173057 | 662729 |
+| Name               |  N50 |       Sum |       # |
+|:-------------------|-----:|----------:|--------:|
+| anchor.merge       | 1779 |  61598601 |   33537 |
+| others.merge       | 1034 |   6873722 |    6352 |
+| spades.contigs     | 1620 | 435929605 |  673266 |
+| spades.scaffolds   | 1761 | 439173057 |  662729 |
+| platanus.contig    |  565 | 592588841 | 1792829 |
+| platanus.scaffold  | 5506 | 413563332 |  901777 |
+| platanus.gapClosed | 5499 | 414129420 |  901777 |
 
 * Clear QxxLxxXxx.
 
