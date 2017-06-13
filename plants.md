@@ -2884,7 +2884,7 @@ cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 spades.py \
     -t 16 \
-    -k 21,33,55,77 --careful \
+    -k 21,33,55,77 \
     -1 2_illumina/Q25L60/R1.fq.gz \
     -2 2_illumina/Q25L60/R2.fq.gz \
     -s 2_illumina/Q25L60/Rs.fq.gz \
@@ -2920,6 +2920,12 @@ platanus gap_close -t 16 \
     -IP1 R1.fa R2.fa \
     2>&1 | tee gap_log.txt
 
+```
+
+```text
+#### PROCESS INFORMATION ####
+VmPeak:         158.718 GByte
+VmHWM:           62.453 GByte
 ```
 
 ## CgiA: quorum
@@ -3180,6 +3186,8 @@ quast --no-check --threads 16 \
 
 ```
 
+## CgiA: final stats
+
 * Stats
 
 ```bash
@@ -3196,15 +3204,13 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contigs"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffolds"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_scaffold.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.gapClosed"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
 ```
@@ -3213,10 +3219,9 @@ cat stat3.md
 |:-------------------|-----:|----------:|--------:|
 | anchor.merge       | 1779 |  61598601 |   33537 |
 | others.merge       | 1034 |   6873722 |    6352 |
-| spades.contigs     | 1620 | 435929605 |  673266 |
-| spades.scaffolds   | 1761 | 439173057 |  662729 |
+| spades.contig      | 1620 | 435929605 |  673266 |
+| spades.scaffold    | 1761 | 439173057 |  662729 |
 | platanus.contig    |  565 | 592588841 | 1792829 |
-| platanus.scaffold  | 5506 | 413563332 |  901777 |
 | platanus.gapClosed | 5499 | 414129420 |  901777 |
 
 * Clear QxxLxxXxx.
@@ -3225,9 +3230,223 @@ cat stat3.md
 BASE_NAME=CgiA
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,60,90,120}X*
+rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```
+
+# CgiB, Cercis gigantea
+
+## CgiB: download
+
+```bash
+BASE_NAME=CgiB
+mkdir -p ${HOME}/data/dna-seq/chara/${BASE_NAME}
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+ln -s ../../medfood/Cgi_R1_tail50.fastq.gz R1.fq.gz
+ln -s ../../medfood/Cgi_R2_tail50.fastq.gz R2.fq.gz
+```
+
+* FastQC
+
+```bash
+BASE_NAME=CgiB
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
+## CgiB: combinations of different quality values and read lengths
+
+* qual: 25
+* len: 60
+
+```bash
+BASE_NAME=CgiB
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 8 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
+
+cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    > 2_illumina/illumina_adapters.fa
+echo ">TruSeq_Adapter_Index_15" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACGCTCGAATCTCGTAT" >> 2_illumina/illumina_adapters.fa
+echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
+parallel --no-run-if-empty -j 3 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 25 ::: 60
+
+# Stats
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo Q{1}L{2};
+            if [[ {1} -ge '30' ]]; then
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+            else
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz;
+            fi
+        )
+    " ::: 25 ::: 60 \
+    >> stat.md
+
+cat stat.md
+```
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 151 | 58890000000 | 390000000 |
+| uniq     | 151 | 57719368574 | 382247474 |
+| scythe   | 151 | 56959610487 | 382247474 |
+| Q25L60   | 151 | 39466026049 | 289798244 |
+
+## CgiB: spades
+
+```bash
+BASE_NAME=CgiB
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+```
+
+## CgiB: platanus
+
+```bash
+BASE_NAME=CgiB
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e R1.fa ]; then
+    parallel --no-run-if-empty -j 3 "
+        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
+        " ::: R1 R2 Rs
+fi
+
+platanus assemble -t 16 -m 200 \
+    -f R1.fa R2.fa Rs.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```text
+#### PROCESS INFORMATION ####
+VmPeak:         158.829 GByte
+VmHWM:           61.949 GByte
+```
+
+## CgiB: final stats
+
+* Stats
+
+```bash
+BASE_NAME=CgiB
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name              |  N50 |       Sum |       # |
+|:------------------|-----:|----------:|--------:|
+| spades.contig     | 1526 | 451828980 |  705723 |
+| spades.scaffold   | 1633 | 454928469 |  695914 |
+| platanus.contig   |  562 | 592944982 | 1795551 |
+| platanus.scaffold | 6298 | 417471995 |  941034 |
 
 # moli, 茉莉
 
