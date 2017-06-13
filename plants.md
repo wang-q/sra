@@ -55,6 +55,14 @@
     - [CgiA: down sampling](#cgia-down-sampling)
     - [CgiA: k-unitigs and anchors (sampled)](#cgia-k-unitigs-and-anchors-sampled)
     - [CgiA: merge anchors](#cgia-merge-anchors)
+    - [CgiA: final stats](#cgia-final-stats)
+- [CgiB, Cercis gigantea](#cgib-cercis-gigantea)
+    - [CgiB: download](#cgib-download)
+    - [CgiB: combinations of different quality values and read lengths](#cgib-combinations-of-different-quality-values-and-read-lengths)
+    - [CgiB: spades](#cgib-spades)
+    - [CgiB: platanus](#cgib-platanus)
+    - [CgiB: final stats](#cgib-final-stats)
+    - [Merge CgiA and CgiB](#merge-cgia-and-cgib)
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
@@ -3447,6 +3455,46 @@ cat stat3.md
 | spades.scaffold   | 1633 | 454928469 |  695914 |
 | platanus.contig   |  562 | 592944982 | 1795551 |
 | platanus.scaffold | 6298 | 417471995 |  941034 |
+
+## Merge CgiA and CgiB
+
+
+```bash
+cd ${HOME}/data/dna-seq/chara/CgiB
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    ../CgiA/8_spades/scaffolds.fasta \
+    8_spades/scaffolds.fasta \
+    ../CgiA/8_platanus/out_gapClosed.fa \
+    8_platanus/out_gapClosed.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta \
+    --len 1000 --idt 0.999 --parallel 16 \
+    -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    ../CgiA/8_spades/scaffolds.fasta \
+    8_spades/scaffolds.fasta \
+    ../CgiA/8_platanus/out_gapClosed.fa \
+    8_platanus/out_gapClosed.fa \
+    merge/anchor.merge.fasta \
+    --label "spades.CgiA,spades.CgiB,platanus.CgiA,platanus.CgiB,merge" \
+    -o 9_qa
+
+```
 
 # moli, 茉莉
 
