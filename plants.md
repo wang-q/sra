@@ -74,10 +74,13 @@
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
     - [ZS97: combinations of different quality values and read lengths](#zs97-combinations-of-different-quality-values-and-read-lengths)
+    - [ZS97: spades](#zs97-spades)
+    - [ZS97: platanus](#zs97-platanus)
     - [ZS97: quorum](#zs97-quorum)
     - [ZS97: down sampling](#zs97-down-sampling)
     - [ZS97: k-unitigs and anchors (sampled)](#zs97-k-unitigs-and-anchors-sampled)
     - [ZS97: merge anchors](#zs97-merge-anchors)
+    - [ZS97: final stats](#zs97-final-stats)
 - [showa, Botryococcus braunii Showa](#showa-botryococcus-braunii-showa)
     - [showa: download](#showa-download)
     - [3GS](#3gs)
@@ -4054,6 +4057,66 @@ cat stat.md
 | Q25L60   |      101 | 27107760556 | 273940552 |
 | Q30L60   |      101 | 26039636642 | 269603470 |
 
+## ZS97: spades
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+
+```
+
+## ZS97: platanus
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```text
+#### PROCESS INFORMATION ####
+VmPeak:          73.002 GByte
+VmHWM:            5.477 GByte
+```
+
 ## ZS97: quorum
 
 ```bash
@@ -4239,8 +4302,8 @@ parallel --no-run-if-empty -j 3 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -4298,7 +4361,7 @@ anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-# merge  others
+# merge others
 anchr contained \
     $(
         parallel -k --no-run-if-empty -j 6 "
@@ -4338,11 +4401,13 @@ quast --no-check --threads 16 \
 
 ```
 
+## ZS97: final stats
+
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -4355,24 +4420,55 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name         |      N50 |       Sum |     # |
-|:-------------|---------:|----------:|------:|
-| Genome       | 27449063 | 346663259 |    12 |
-| anchor.merge |     5541 | 259365865 | 65069 |
-| others.merge |     1185 |  21271839 | 16639 |
+| Name              |      N50 |       Sum |       # |
+|:------------------|---------:|----------:|--------:|
+| Genome            | 27449063 | 346663259 |      12 |
+| anchor.merge      |     5541 | 259365865 |   65069 |
+| others.merge      |     1185 |  21271839 |   16639 |
+| spades.contig     |    12421 | 343065556 |  246828 |
+| spades.scaffold   |    13039 | 343127110 |  245326 |
+| platanus.contig   |     1419 | 422154233 | 1526431 |
+| platanus.scaffold |     7687 | 325245861 |  396499 |
+
+* quast
+
+```bash
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    8_spades/scaffolds.fasta \
+    8_platanus/out_gapClosed.fa \
+    --label "merge,spades,platanus" \
+    -o 9_qa_contig
+
+```
 
 * Clear QxxLxxx.
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/ZS97
-cd ${BASE_DIR}
+BASE_NAME=ZS97
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```
 
 # showa, Botryococcus braunii Showa
