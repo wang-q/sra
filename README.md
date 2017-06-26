@@ -1,7 +1,6 @@
 # Processing NCBI sra/EBI ena data
 
 [TOC levels=1-3]: # " "
-
 - [Processing NCBI sra/EBI ena data](#processing-ncbi-sraebi-ena-data)
 - [*De novo* rna-seq projects (`dn_rna.pl`)](#de-novo-rna-seq-projects-dn-rnapl)
     - [medfood: medicine food homology. Rna-seq survey.](#medfood-medicine-food-homology-rna-seq-survey)
@@ -16,8 +15,7 @@
     - [Scer S288c](#scer-s288c)
     - [GAGE-B](#gage-b)
     - [Other bacteria (2+3)](#other-bacteria-23)
-    - [Atha Col-0 Ler-0](#atha-col-0-ler-0)
-    - [Osat ZS97 and MH63](#osat-zs97-and-mh63)
+    - [Other plants](#other-plants)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
     - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
