@@ -63,6 +63,14 @@
     - [CgiB: platanus](#cgib-platanus)
     - [CgiB: final stats](#cgib-final-stats)
     - [Merge CgiA and CgiB](#merge-cgia-and-cgib)
+- [CgiC, Cercis gigantea](#cgic-cercis-gigantea)
+    - [CgiC: download](#cgic-download)
+    - [CgiC: combinations of different quality values and read lengths](#cgic-combinations-of-different-quality-values-and-read-lengths)
+    - [CgiC: spades](#cgic-spades)
+    - [CgiC: platanus](#cgic-platanus)
+    - [CgiC: final stats](#cgic-final-stats)
+- [CgiD, Cercis gigantea](#cgid-cercis-gigantea)
+    - [CgiD: download](#cgid-download)
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
@@ -3497,6 +3505,205 @@ quast --no-check --threads 16 \
     --label "spades.CgiA,spades.CgiB,platanus.CgiA,platanus.CgiB,merge" \
     -o 9_qa
 
+```
+
+# CgiC, Cercis gigantea
+
+## CgiC: download
+
+```bash
+BASE_NAME=CgiC
+mkdir -p ${HOME}/data/dna-seq/chara/${BASE_NAME}
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+ln -s ../../medfood/CgiC_R1.fq.gz R1.fq.gz
+ln -s ../../medfood/CgiC_R2.fq.gz R2.fq.gz
+```
+
+## CgiC: combinations of different quality values and read lengths
+
+* qual: 25
+* len: 60
+
+```bash
+BASE_NAME=CgiC
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 8 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
+
+cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    > 2_illumina/illumina_adapters.fa
+echo ">TruSeq_Adapter_Index_15" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACGCTCGAATCTCGTAT" >> 2_illumina/illumina_adapters.fa
+echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
+parallel --no-run-if-empty -j 3 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 25 ::: 60
+
+# Stats
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo Q{1}L{2};
+            if [[ {1} -ge '30' ]]; then
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+            else
+                faops n50 -H -S -C \
+                    2_illumina/Q{1}L{2}/R1.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.fq.gz;
+            fi
+        )
+    " ::: 25 ::: 60 \
+    >> stat.md
+
+cat stat.md
+```
+
+## CgiC: spades
+
+```bash
+BASE_NAME=CgiC
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+```
+
+## CgiC: platanus
+
+```bash
+BASE_NAME=CgiC
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e R1.fa ]; then
+    parallel --no-run-if-empty -j 3 "
+        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
+        " ::: R1 R2 Rs
+fi
+
+platanus assemble -t 16 -m 200 \
+    -f R1.fa R2.fa Rs.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```text
+#### PROCESS INFORMATION ####
+```
+
+## CgiC: final stats
+
+* Stats
+
+```bash
+BASE_NAME=CgiC
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+
+cat stat3.md
+```
+
+# CgiD, Cercis gigantea
+
+## CgiD: download
+
+```bash
+BASE_NAME=CgiD
+mkdir -p ${HOME}/data/dna-seq/chara/${BASE_NAME}
+cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+ln -s ../../medfood/CgiD_R1.fastq.gz R1.fq.gz
+ln -s ../../medfood/CgiD_R1.fastq.gz R2.fq.gz
 ```
 
 # moli, 茉莉
