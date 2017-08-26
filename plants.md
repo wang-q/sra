@@ -3473,7 +3473,6 @@ cat stat3.md
 
 ## Merge CgiA and CgiB
 
-
 ```bash
 cd ${HOME}/data/dna-seq/chara/CgiB
 
@@ -3674,6 +3673,8 @@ platanus gap_close -t 16 \
 
 ```text
 #### PROCESS INFORMATION ####
+VmPeak:          19.969 GByte
+VmHWM:            9.248 GByte
 ```
 
 ## CgiC: final stats
@@ -3700,6 +3701,13 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
+
+| Name              |  N50 |       Sum |       # |
+|:------------------|-----:|----------:|--------:|
+| spades.contig     | 1529 | 453999116 |  718189 |
+| spades.scaffold   | 1640 | 457087770 |  708368 |
+| platanus.contig   |  553 | 586857429 | 1819727 |
+| platanus.scaffold | 5238 | 432432679 | 1120978 |
 
 # CgiD, Cercis gigantea
 
@@ -3846,8 +3854,9 @@ if [ ! -e R1.fa ]; then
         " ::: R1 R2 Rs
 fi
 
+# Rs.fa is empty
 platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
+    -f R1.fa R2.fa \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t 16 \
@@ -3889,6 +3898,45 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
+```
+
+## Merge CgiC and CgiD
+
+```bash
+cd ${HOME}/data/dna-seq/chara/CgiD
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    ../CgiC/8_spades/scaffolds.fasta \
+    8_spades/scaffolds.fasta \
+    ../CgiC/8_platanus/out_gapClosed.fa \
+    8_platanus/out_gapClosed.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta \
+    --len 1000 --idt 0.999 --parallel 16 \
+    -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    ../CgiC/8_spades/scaffolds.fasta \
+    8_spades/scaffolds.fasta \
+    ../CgiC/8_platanus/out_gapClosed.fa \
+    8_platanus/out_gapClosed.fa \
+    merge/anchor.merge.fasta \
+    --label "spades.CgiC,spades.CgiD,platanus.CgiC,platanus.CgiD,merge" \
+    -o 9_qa
+
 ```
 
 # moli, 茉莉
