@@ -75,6 +75,7 @@
     - [CgiD: spades](#cgid-spades)
     - [CgiD: platanus](#cgid-platanus)
     - [CgiD: final stats](#cgid-final-stats)
+    - [Merge CgiC and CgiD](#merge-cgic-and-cgid)
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
@@ -3722,7 +3723,7 @@ mkdir -p 2_illumina
 cd 2_illumina
 
 ln -s ../../medfood/CgiD_R1.fq.gz R1.fq.gz
-ln -s ../../medfood/CgiD_R1.fq.gz R2.fq.gz
+ln -s ../../medfood/CgiD_R2.fq.gz R2.fq.gz
 ```
 
 ## CgiD: combinations of different quality values and read lengths
@@ -3820,9 +3821,9 @@ cat stat.md
 | Name     | N50 |         Sum |         # |
 |:---------|----:|------------:|----------:|
 | Illumina | 150 | 45000000000 | 300000000 |
-| uniq     | 150 | 36762898500 | 245085990 |
-| scythe   | 150 | 36176068000 | 245085990 |
-| Q25L60   | 150 | 34014443340 | 233881906 |
+| uniq     | 150 | 42802892700 | 285352618 |
+| scythe   | 150 | 42149668084 | 285352618 |
+| Q25L60   | 150 | 35083711046 | 245385420 |
 
 ## CgiD: spades
 
@@ -3854,9 +3855,8 @@ if [ ! -e R1.fa ]; then
         " ::: R1 R2 Rs
 fi
 
-# Rs.fa is empty
 platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa \
+    -f R1.fa R2.fa Rs.fa \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t 16 \
@@ -3873,6 +3873,8 @@ platanus gap_close -t 16 \
 
 ```text
 #### PROCESS INFORMATION ####
+VmPeak:          20.172 GByte
+VmHWM:            9.394 GByte
 ```
 
 ## CgiD: final stats
@@ -3899,6 +3901,13 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
+
+| Name              |  N50 |       Sum |       # |
+|:------------------|-----:|----------:|--------:|
+| spades.contig     | 1500 | 456253937 |  737180 |
+| spades.scaffold   | 1603 | 459347483 |  727395 |
+| platanus.contig   |  533 | 592606020 | 1851674 |
+| platanus.scaffold | 4839 | 434810119 | 1135031 |
 
 ## Merge CgiC and CgiD
 
@@ -3935,6 +3944,41 @@ quast --no-check --threads 16 \
     8_platanus/out_gapClosed.fa \
     merge/anchor.merge.fasta \
     --label "spades.CgiC,spades.CgiD,platanus.CgiC,platanus.CgiD,merge" \
+    -o 9_qa
+
+```
+
+# Cgi - merge CgiAB and CgiCD
+
+```bash
+cd ${HOME}/data/dna-seq/chara/Cgi
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    ../CgiB/merge/anchor.merge.fasta \
+    ../CgiD/merge/anchor.merge.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta \
+    --len 1000 --idt 0.999 --parallel 16 \
+    -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    ../CgiB/merge/anchor.merge.fasta \
+    ../CgiD/merge/anchor.merge.fasta \
+    merge/anchor.merge.fasta \
+    --label "CgiAB,CgiCD,merge" \
     -o 9_qa
 
 ```
