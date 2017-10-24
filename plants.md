@@ -3948,7 +3948,9 @@ quast --no-check --threads 16 \
 
 ```
 
-# Cgi - merge CgiAB and CgiCD
+# Cgi
+
+## Cgi: Merge CgiAB and CgiCD
 
 ```bash
 cd ${HOME}/data/dna-seq/chara/Cgi
@@ -3980,6 +3982,75 @@ quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
     --label "CgiAB,CgiCD,merge" \
     -o 9_qa
+
+```
+
+## Cgi: preprocess PacBio reads
+
+```bash
+cd ${HOME}/data/dna-seq/chara/Cgi
+
+mkdir -p 3_pacbio
+
+samtools fasta \
+    ${HOME}/data/dna-seq/chara/CgiSequel/54167_2_B01/m54167_170825_204337.subreads.bam \
+    > 3_pacbio/m54167.fasta
+samtools fasta \
+    ${HOME}/data/dna-seq/chara/CgiSequel/r54172_20170821_090202_1_A01/m54172_170821_091102.subreads.bam \
+    > 3_pacbio/m54172.fasta
+
+cat 3_pacbio/m54167.fasta 3_pacbio/m54172.fasta \
+    | faops filter -l 0 -a 1000 stdin 3_pacbio/pacbio.fasta
+
+# minimap: Real time: 2522.743 sec; CPU: 33237.704 sec. 72G .paf file
+# jrange: about 2 hours
+# faops: real    2m18.233s
+anchr trimlong --parallel 16 -v \
+    --jvm '-d64 -server -Xms1g -Xmx64g -XX:-UseGCOverheadLimit' \
+    3_pacbio/pacbio.fasta \
+    -o 3_pacbio/pacbio.trim.fasta
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.trim"; faops n50 -H -S -C 3_pacbio/pacbio.trim.fasta;) >> stat.md
+
+```
+
+| Name        |   N50 |         Sum |      # |
+|:------------|------:|------------:|-------:|
+| PacBio      | 16814 | 11647545821 | 990085 |
+| PacBio.trim | 14117 |  8181836779 | 835086 |
+
+## Cgi: 3GS
+
+```bash
+BASE_NAME=Cgi
+REAL_G=500000000
+cd ${HOME}/data/dna-seq/chara/Cgi
+
+canu \
+    -p ${BASE_NAME} -d canu-raw \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.fasta
+
+canu \
+    -p ${BASE_NAME} -d canu-trim \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.trim.fasta
+
+faops n50 -S -C canu-raw/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim/${BASE_NAME}.trimmedReads.fasta.gz
+
+rm -fr canu-raw/correction
+rm -fr canu-trim/correction
 
 ```
 
