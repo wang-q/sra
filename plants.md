@@ -32,6 +32,10 @@
     - [CgiD: platanus](#cgid-platanus)
     - [CgiD: final stats](#cgid-final-stats)
     - [Merge CgiC and CgiD](#merge-cgic-and-cgid)
+- [Cgi](#cgi)
+    - [Cgi: Merge CgiAB and CgiCD](#cgi-merge-cgiab-and-cgicd)
+    - [Cgi: preprocess PacBio reads](#cgi-preprocess-pacbio-reads)
+    - [Cgi: 3GS](#cgi-3gs)
 - [moli, 茉莉](#moli-茉莉)
     - [moli: download](#moli-download)
     - [moli: combinations of different quality values and read lengths](#moli-combinations-of-different-quality-values-and-read-lengths)
@@ -1308,22 +1312,7 @@ anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.fasta \
     -o 3_pacbio/pacbio.trim.fasta
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio.trim"; faops n50 -H -S -C 3_pacbio/pacbio.trim.fasta;) >> stat.md
-
 ```
-
-| Name        |   N50 |         Sum |      # |
-|:------------|------:|------------:|-------:|
-| PacBio      | 16814 | 11647545821 | 990085 |
-| PacBio.trim | 14117 |  8181836779 | 835086 |
 
 ## Cgi: 3GS
 
@@ -1344,13 +1333,46 @@ canu \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.trim.fasta
 
-faops n50 -S -C canu-raw/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim/${BASE_NAME}.trimmedReads.fasta.gz
-
 rm -fr canu-raw/correction
 rm -fr canu-trim/correction
 
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.trim"; faops n50 -H -S -C 3_pacbio/pacbio.trim.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "correctedReads";      faops n50 -H -S -C canu-raw/${BASE_NAME}.correctedReads.fasta.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "correctedReads.trim"; faops n50 -H -S -C canu-trim/${BASE_NAME}.correctedReads.fasta.gz;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "trimmedReads";      faops n50 -H -S -C canu-raw/${BASE_NAME}.trimmedReads.fasta.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "trimmedReads.trim"; faops n50 -H -S -C canu-trim/${BASE_NAME}.trimmedReads.fasta.gz;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigs";      faops n50 -H -S -C canu-raw/${BASE_NAME}.contigs.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigs.trim"; faops n50 -H -S -C canu-trim/${BASE_NAME}.contigs.fasta;) >> stat.md
+
 ```
+
+| Name                |   N50 |         Sum |      # |
+|:--------------------|------:|------------:|-------:|
+| PacBio              | 16814 | 11647545821 | 990085 |
+| PacBio.trim         | 14117 |  8181836779 | 835086 |
+| correctedReads      |  8102 |  1632889184 | 289312 |
+| correctedReads.trim | 14234 |  7894714239 | 782147 |
+| trimmedReads        |  6896 |  1035588316 | 212397 |
+| trimmedReads.trim   |  7215 |  1610374094 | 308121 |
+| contigs             | 18506 |    14781217 |   1029 |
+| contigs.trim        | 17224 |    22371544 |   1553 |
 
 # moli, 茉莉
 
