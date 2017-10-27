@@ -4,11 +4,11 @@ use warnings;
 use autodie;
 
 use Getopt::Long::Descriptive;
-use YAML::Syck;
+use YAML::Syck qw();
 
 use Number::Format;
 use List::MoreUtils::PP;
-use Path::Tiny;
+use Path::Tiny qw();
 use Text::CSV_XS;
 use WWW::Mechanize;
 
