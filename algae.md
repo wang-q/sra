@@ -349,8 +349,8 @@ parallel --no-run-if-empty -j 2 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -1674,8 +1674,8 @@ parallel --no-run-if-empty -j 2 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -2132,8 +2132,8 @@ parallel --no-run-if-empty -j 2 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -2574,8 +2574,8 @@ parallel --no-run-if-empty -j 2 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
