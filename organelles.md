@@ -439,6 +439,69 @@ quast --no-check --threads 16 \
 
 ```
 
+## m07: expand anchors
+
+* contigTrim
+
+```bash
+BASE_NAME=m07
+cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.merge.fasta \
+    8_spades/contigs.non-contained.fasta \
+    -d contigTrim \
+    -b 10 --len 1000 --idt 0.98 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 500 -c 1 --png
+
+pushd contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 --all \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+
+```
+
+## Final stats
+
 * Stats
 
 ```bash
@@ -455,16 +518,22 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/contigs.non-contained.fasta;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name          |   N50 |      Sum |     # |
-|:--------------|------:|---------:|------:|
-| anchor.merge  | 10412 |   971844 |   140 |
-| others.merge  |  3456 |   400838 |   159 |
-| spades.contig |   299 | 36134245 | 95229 |
+| Name                 |    N50 |      Sum |     # |
+|:---------------------|-------:|---------:|------:|
+| anchor.merge         |  10412 |   971844 |   140 |
+| others.merge         |   3456 |   400838 |   159 |
+| contigTrim           |  17931 |   929973 |    85 |
+| spades.contig        |    299 | 36134245 | 95229 |
+| spades.non-contained | 146263 |  9281259 |  1203 |
 
 * Clear QxxLxxXxx.
 
