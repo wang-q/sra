@@ -56,7 +56,7 @@ kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
 
 ## m07: combinations of different quality values and read lengths
 
-* qual: 25, and 30
+* qual: 25 and 30
 * len: 60
 
 ```bash
@@ -183,7 +183,7 @@ platanus gap_close -t 16 \
 
 ```bash
 BASE_NAME=m07
-REAL_G=20000000
+REAL_G=5000000
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 parallel --no-run-if-empty -j 1 "
@@ -234,10 +234,10 @@ cat stat1.md
 
 ```
 
-| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |   EstG | Est/Real |   RunTime |
-|:-------|------:|------:|-------:|-------:|---------:|--------:|------:|------:|-------:|---------:|----------:|
-| Q25L60 | 5.32G | 265.9 |  4.79G |  239.6 |   9.907% |     149 | "105" |   20M | 21.99M |     1.10 | 0:13'07'' |
-| Q30L60 | 5.22G | 261.0 |  4.75G |  237.3 |   9.069% |     147 | "105" |   20M | 20.03M |     1.00 | 0:18'22'' |
+| Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |   EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|-------:|-------:|---------:|--------:|------:|------:|-------:|---------:|----------:|
+| Q25L60 | 5.32G | 1063.7 |  4.79G |  958.3 |   9.907% |     149 | "105" |    5M | 21.99M |     4.40 | 0:13'07'' |
+| Q30L60 | 5.22G | 1043.9 |  4.75G |  949.2 |   9.069% |     147 | "105" |    5M | 20.03M |     4.01 | 0:18'22'' |
 
 * Clear intermediate files.
 
@@ -344,7 +344,7 @@ parallel --no-run-if-empty -j 2 "
     fi
 
     if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
+        echo >&2 '    pe.anchor.fa already presents'
         exit;
     fi
 
@@ -352,8 +352,8 @@ parallel --no-run-if-empty -j 2 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
