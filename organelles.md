@@ -6,7 +6,6 @@
     - [m07: download](#m07-download)
     - [m07: combinations of different quality values and read lengths](#m07-combinations-of-different-quality-values-and-read-lengths)
     - [m07: spades](#m07-spades)
-    - [m07: platanus](#m07-platanus)
     - [m07: quorum](#m07-quorum)
     - [m07: down sampling](#m07-down-sampling)
     - [m07: k-unitigs and anchors (sampled)](#m07-k-unitigs-and-anchors-sampled)
@@ -18,17 +17,20 @@
 ## m07: download
 
 ```bash
-mkdir -p ~/data/dna-seq/xjy/m07/2_illumina
-cd ~/data/dna-seq/xjy/m07/2_illumina
+BASE_NAME=m07
+REAL_G=5000000
+
+mkdir -p ~/data/dna-seq/xjy/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy/${BASE_NAME}/2_illumina
 
 ln -s ~/data/dna-seq/xjy/clean_data/m07_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m07_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
+
 ```
 
 * FastQC
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 mkdir -p 2_illumina/fastqc
@@ -43,7 +45,6 @@ fastqc -t 16 \
 * kmergenie
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 mkdir -p 2_illumina/kmergenie
@@ -60,7 +61,6 @@ kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
 * len: 60
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
@@ -135,7 +135,6 @@ cat stat.md
 ## m07: spades
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 spades.py \
@@ -157,8 +156,6 @@ anchr contained \
 ## m07: quorum
 
 ```bash
-BASE_NAME=m07
-REAL_G=5000000
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 parallel --no-run-if-empty -j 1 "
@@ -217,7 +214,6 @@ cat stat1.md
 * Clear intermediate files.
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
@@ -231,8 +227,6 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ## m07: down sampling
 
 ```bash
-BASE_NAME=m07
-REAL_G=5000000
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 25 30 ::: 60 ); do
@@ -277,8 +271,6 @@ done
 ## m07: k-unitigs and anchors (sampled)
 
 ```bash
-BASE_NAME=m07
-REAL_G=5000000
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 # k-unitigs (sampled)
@@ -388,7 +380,6 @@ cat stat2.md
 ## m07: merge anchors
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 # merge anchors
@@ -444,7 +435,6 @@ quast --no-check --threads 16 \
 * contigTrim
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 rm -fr contigTrim
@@ -500,12 +490,11 @@ cat \
 
 ```
 
-## Final stats
+## m07: final stats
 
 * Stats
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
@@ -538,7 +527,6 @@ cat stat3.md
 * Clear QxxLxxXxx.
 
 ```bash
-BASE_NAME=m07
 cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
 
 rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
