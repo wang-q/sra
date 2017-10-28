@@ -1,7 +1,7 @@
-# Plants 2+3
+# Organelles 2
 
 [TOC levels=1-3]: # " "
-- [Plants 2+3](#plants-23)
+- [Organelles 2](#organelles-2)
 - [m07](#m07)
     - [m07: download](#m07-download)
     - [m07: combinations of different quality values and read lengths](#m07-combinations-of-different-quality-values-and-read-lengths)
