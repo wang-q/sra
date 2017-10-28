@@ -146,36 +146,11 @@ spades.py \
     -s 2_illumina/Q25L60/Rs.fq.gz \
     -o 8_spades
 
-```
-
-## m07: platanus
-
-```bash
-BASE_NAME=m07
-cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
-fi
-
-platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee gap_log.txt
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
 
 ```
 
