@@ -900,4 +900,5 @@ for BASE_NAME in m07 m08 m15; do
     popd
 done
 
+find ${HOME}/data/dna-seq/xjy/ -type d -path "*8_spades/*" 
 ```
