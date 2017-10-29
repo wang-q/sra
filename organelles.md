@@ -760,3 +760,20 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 | spades.non-contained |  1441 |  31715024 |   20536 |
 
 * Clear QxxLxxXxx.
+
+```bash
+for BASE_NAME in m07 m08 m15; do
+    echo ${BASE_NAME}
+    pushd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
+    
+    tar -czvf \
+        ../${BASE_NAME}.tar.gz \
+        2_illumina/fastqc/*.html \
+        8_spades/contigs.non-contained.fasta \
+        merge/anchor.merge.fasta \
+        contigTrim/contig.fasta
+        
+    popd
+done
+
+```
