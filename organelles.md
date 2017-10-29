@@ -32,6 +32,7 @@
     - [m15: merge anchors](#m15-merge-anchors)
     - [m15: expand anchors](#m15-expand-anchors)
     - [m15: final stats](#m15-final-stats)
+- [Create tarballs](#create-tarballs)
 
 
 # m07
@@ -760,6 +761,14 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 | spades.non-contained |  1441 |  31715024 |   20536 |
 
 * Clear QxxLxxXxx.
+
+
+# Create tarballs
+
+* FastQC reports
+* Spades assemblies
+* Our assemblies
+* Short gaps
 
 ```bash
 for BASE_NAME in m07 m08 m15; do
