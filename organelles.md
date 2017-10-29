@@ -423,7 +423,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-            " ::: 25 30 ::: 60 ::: 10 20 40 ::: 000 001 002 003 004 005 006
+            " ::: 25 30 ::: 60 ::: 10 20 40 80 160 ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -442,7 +442,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-            " ::: 25 30 ::: 60 ::: 10 20 40 ::: 000 001 002 003 004 005 006
+            " ::: 25 30 ::: 60 ::: 10 20 40 80 160 ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
