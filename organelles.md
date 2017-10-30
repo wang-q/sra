@@ -497,7 +497,7 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 500 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 2000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
@@ -561,9 +561,9 @@ cat stat3.md
 
 | Name                 |    N50 |      Sum |     # |
 |:---------------------|-------:|---------:|------:|
-| anchor.merge         |  10412 |   971844 |   140 |
-| others.merge         |   3456 |   400838 |   159 |
-| contigTrim           |  17931 |   929973 |    85 |
+| anchor.merge         |   2387 |  9455250 |  4155 |
+| others.merge         |   2284 |  7241455 |  3842 |
+| contigTrim           |  25799 |  7558289 |   590 |
 | spades.contig        |    299 | 36134245 | 95229 |
 | spades.non-contained | 146263 |  9281259 |  1203 |
 
@@ -881,7 +881,7 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 |:---------------------|------:|----------:|-------:|
 | anchor.merge         | 24298 |   1541694 |    287 |
 | others.merge         |  4300 |   1800818 |    735 |
-| contigTrim           | 33478 |   1454081 |    202 |
+| contigTrim           | 33478 |   1438879 |    194 |
 | spades.contig        |  2016 | 465173951 | 422022 |
 | spades.non-contained |  2673 | 348073390 | 147336 |
 
@@ -977,6 +977,14 @@ ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ## m19: final stats
 
 * Stats
+
+| Name                 |   N50 |       Sum |       # |
+|:---------------------|------:|----------:|--------:|
+| anchor.merge         |  2284 |    535008 |     233 |
+| others.merge         |  1440 |    866510 |     591 |
+| contigTrim           | 10766 |    560441 |     119 |
+| spades.contig        |   292 | 357083219 | 1124150 |
+| spades.non-contained |  1761 |  34758783 |   19397 |
 
 | Name                 |  N50 |       Sum |       # |
 |:---------------------|-----:|----------:|--------:|
