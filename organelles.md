@@ -521,7 +521,6 @@ cat group/groups.txt \
             group/{}.ovlp.tsv \
             group/{}.relation.tsv \
             group/{}.strand.fasta \
-            --png \
             -o group/{}.contig.fasta
     '
 popd
