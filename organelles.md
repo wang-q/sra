@@ -562,7 +562,7 @@ cat stat3.md
 |:---------------------|-------:|---------:|------:|
 | anchor.merge         |   2387 |  9455250 |  4155 |
 | others.merge         |   2284 |  7241455 |  3842 |
-| contigTrim           |  25799 |  7558289 |   590 |
+| contigTrim           | 106055 |  7952830 |   218 |
 | spades.contig        |    299 | 36134245 | 95229 |
 | spades.non-contained | 146263 |  9281259 |  1203 |
 
@@ -668,13 +668,13 @@ ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 * Stats
 
-| Name                 |  N50 |       Sum |      # |
-|:---------------------|-----:|----------:|-------:|
-| anchor.merge         | 1669 |   1076402 |    641 |
-| others.merge         | 1042 |    333326 |    311 |
-| contigTrim           | 8852 |    860024 |    170 |
-| spades.contig        |  964 | 403808501 | 623552 |
-| spades.non-contained | 1805 | 195666641 | 109369 |
+| Name                 |   N50 |       Sum |      # |
+|:---------------------|------:|----------:|-------:|
+| anchor.merge         |  1669 |   1076402 |    641 |
+| others.merge         |  1042 |    333326 |    311 |
+| contigTrim           | 20993 |    928522 |    104 |
+| spades.contig        |   964 | 403808501 | 623552 |
+| spades.non-contained |  1805 | 195666641 | 109369 |
 
 * Clear QxxLxxXxx.
 
@@ -773,9 +773,9 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 | Name                 |   N50 |       Sum |       # |
 |:---------------------|------:|----------:|--------:|
-| anchor.merge         | 10759 |    667372 |     123 |
-| others.merge         |  8862 |    201839 |      75 |
-| contigTrim           | 27693 |    649586 |      54 |
+| anchor.merge         | 18461 |   1050354 |     120 |
+| others.merge         |  1632 |    459105 |     258 |
+| contigTrim           | 35778 |    855518 |      58 |
 | spades.contig        |   285 | 459823867 | 1432956 |
 | spades.non-contained |  1441 |  31715024 |   20536 |
 
