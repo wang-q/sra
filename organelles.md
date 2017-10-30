@@ -497,7 +497,7 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 500 -c 1 --png
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 500 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
@@ -1010,5 +1010,5 @@ for BASE_NAME in m07 m08 m15; do
     popd
 done
 
-find ${HOME}/data/dna-seq/xjy/ -type d -path "*8_spades/*" 
+find ${HOME}/data/dna-seq/xjy/ -type d -path "*8_spades/*" | xargs rm -fr
 ```
