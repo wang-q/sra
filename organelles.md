@@ -1,7 +1,7 @@
 # Organelles: anchr + spades
 
 [TOC levels=1-3]: # " "
-- [Organelles 2](#organelles-2)
+- [Organelles: anchr + spades](#organelles-anchr--spades)
 - [m07](#m07)
     - [m07: download](#m07-download)
     - [m07: combinations of different quality values and read lengths](#m07-combinations-of-different-quality-values-and-read-lengths)
@@ -62,6 +62,16 @@
     - [m20: merge anchors](#m20-merge-anchors)
     - [m20: expand anchors](#m20-expand-anchors)
     - [m20: final stats](#m20-final-stats)
+- [m22](#m22)
+    - [m22: download](#m22-download)
+    - [m22: combinations of different quality values and read lengths](#m22-combinations-of-different-quality-values-and-read-lengths)
+    - [m22: spades](#m22-spades)
+    - [m22: quorum](#m22-quorum)
+    - [m22: down sampling](#m22-down-sampling)
+    - [m22: k-unitigs and anchors (sampled)](#m22-k-unitigs-and-anchors-sampled)
+    - [m22: merge anchors](#m22-merge-anchors)
+    - [m22: expand anchors](#m22-expand-anchors)
+    - [m22: final stats](#m22-final-stats)
 - [Create tarballs](#create-tarballs)
 
 
@@ -1102,13 +1112,137 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 * Clear QxxLxxXxx.
 
-| Name                 |  N50 |       Sum |       # |
-|:---------------------|-----:|----------:|--------:|
-| anchor.merge         | 2284 |    535008 |     233 |
-| others.merge         | 1440 |    866510 |     591 |
-| contigTrim           | 4861 |    522155 |     154 |
-| spades.contig        |  292 | 357083219 | 1124150 |
-| spades.non-contained | 1761 |  34758783 |   19397 |
+# m22
+
+## m22: download
+
+```bash
+BASE_NAME=m22
+REAL_G=5000000
+
+mkdir -p ~/data/dna-seq/xjy/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_2.clean.fq.gz R2.fq.gz
+```
+
+* FastQC
+
+* kmergenie
+
+
+## m22: combinations of different quality values and read lengths
+
+* qual: 25 and 30
+* len: 60
+
+| Name     | N50 |         Sum |        # |
+|:---------|----:|------------:|---------:|
+| Illumina | 150 | 11593186500 | 77287910 |
+| uniq     | 150 | 10283319600 | 68555464 |
+| Q25L60   | 150 | 10197625302 | 68378762 |
+| Q30L60   | 150 |  9977172214 | 68015510 |
+
+## m22: spades
+
+> You need approx. 269.686GB of free RAM to assemble your dataset
+
+```bash
+cd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
+
+mkdir -p 8_spades
+gzip -d -c 2_illumina/Q25L60/R1.fq.gz \
+    | head -n 30000000 \
+    | pigz -p 4 \
+    > 8_spades/R1.fq.gz
+gzip -d -c 2_illumina/Q25L60/R2.fq.gz \
+    | head -n 30000000 \
+    | pigz -p 4 \
+    > 8_spades/R2.fq.gz
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 8_spades/R1.fq.gz \
+    -2 8_spades/R2.fq.gz \
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
+
+```
+
+## m22: quorum
+
+| Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q25L60 | 10.2G | 2039.5 |  3.55G |  709.1 |  65.230% |     149 | "75" |    5M |  444.7M |    88.94 | 0:40'11'' |
+| Q30L60 | 9.98G | 1995.5 |  3.49G |  698.9 |  64.978% |     146 | "75" |    5M | 430.68M |    86.14 | 0:46'15'' |
+
+* Clear intermediate files.
+
+
+## m22: down sampling
+
+
+## m22: k-unitigs and anchors (sampled)
+
+| Name           | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|:-------|-------:|------:|--------:|------:|----------:|--------:|-----:|----------:|--------:|-----:|--------------------:|----------:|----------:|
+| Q25L60X10P000  | 50M    |   10.0 |   711 | 669.03K |   853 |      1348 |   58.8K |   42 |       686 | 610.23K |  811 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'13'' |
+| Q25L60X10P001  | 50M    |   10.0 |   736 | 659.48K |   844 |      1381 |  58.21K |   42 |       706 | 601.27K |  802 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'13'' |
+| Q25L60X10P002  | 50M    |   10.0 |   717 | 699.35K |   897 |      1265 |  60.88K |   46 |       688 | 638.47K |  851 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'10'' |
+| Q25L60X20P000  | 100M   |   20.0 |  1027 |   2.69M |  2742 |      1567 |   1.19M |  737 |       755 |    1.5M | 2005 | "31,41,51,61,71,81" | 0:01'41'' | 0:00'18'' |
+| Q25L60X20P001  | 100M   |   20.0 |  1031 |   2.76M |  2798 |      1602 |   1.22M |  751 |       768 |   1.54M | 2047 | "31,41,51,61,71,81" | 0:01'40'' | 0:00'19'' |
+| Q25L60X20P002  | 100M   |   20.0 |  1037 |   2.71M |  2757 |      1576 |    1.2M |  739 |       765 |   1.52M | 2018 | "31,41,51,61,71,81" | 0:01'39'' | 0:00'18'' |
+| Q25L60X40P000  | 200M   |   40.0 |  3765 |   4.46M |  1785 |      4240 |   3.99M | 1172 |       791 | 472.25K |  613 | "31,41,51,61,71,81" | 0:02'57'' | 0:00'25'' |
+| Q25L60X40P001  | 200M   |   40.0 |  3799 |   4.46M |  1756 |      4210 |   4.01M | 1170 |       791 | 454.01K |  586 | "31,41,51,61,71,81" | 0:02'54'' | 0:00'24'' |
+| Q25L60X40P002  | 200M   |   40.0 |  3946 |   4.45M |  1796 |      4309 |   3.95M | 1159 |       794 | 498.48K |  637 | "31,41,51,61,71,81" | 0:02'56'' | 0:00'23'' |
+| Q25L60X80P000  | 400M   |   80.0 | 11197 |   5.38M |  2114 |      1765 | 107.14K |   59 |     11363 |   5.28M | 2055 | "31,41,51,61,71,81" | 0:05'16'' | 0:00'28'' |
+| Q25L60X80P001  | 400M   |   80.0 | 11043 |    5.4M |  2164 |      1745 |  95.04K |   54 |     11343 |    5.3M | 2110 | "31,41,51,61,71,81" | 0:05'17'' | 0:00'28'' |
+| Q25L60X80P002  | 400M   |   80.0 | 10149 |   5.43M |  2213 |      1461 |  108.8K |   65 |     11294 |   5.32M | 2148 | "31,41,51,61,71,81" | 0:05'15'' | 0:00'29'' |
+| Q25L60X160P000 | 800M   |  160.0 |  1012 |  11.07M | 10342 |      1429 |   1.08M |  721 |       895 |   9.99M | 9621 | "31,41,51,61,71,81" | 0:10'15'' | 0:00'54'' |
+| Q25L60X160P001 | 800M   |  160.0 |  1042 |  11.09M | 10311 |      1417 |   1.19M |  792 |       898 |    9.9M | 9519 | "31,41,51,61,71,81" | 0:15'39'' | 0:00'53'' |
+| Q25L60X160P002 | 800M   |  160.0 |  1044 |  10.93M | 10163 |      1416 |   1.15M |  775 |       904 |   9.78M | 9388 | "31,41,51,61,71,81" | 0:11'05'' | 0:00'57'' |
+| Q30L60X10P000  | 50M    |   10.0 |   711 |  674.1K |   857 |      1347 |  60.06K |   44 |       684 | 614.04K |  813 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'10'' |
+| Q30L60X10P001  | 50M    |   10.0 |   736 | 681.37K |   871 |      1360 |  66.26K |   48 |       702 | 615.11K |  823 | "31,41,51,61,71,81" | 0:01'04'' | 0:00'09'' |
+| Q30L60X10P002  | 50M    |   10.0 |   718 | 710.68K |   910 |      1307 |  63.38K |   46 |       693 |  647.3K |  864 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'09'' |
+| Q30L60X20P000  | 100M   |   20.0 |  1038 |   2.74M |  2779 |      1595 |   1.24M |  763 |       754 |    1.5M | 2016 | "31,41,51,61,71,81" | 0:03'07'' | 0:00'17'' |
+| Q30L60X20P001  | 100M   |   20.0 |  1051 |   2.82M |  2806 |      1643 |   1.28M |  769 |       767 |   1.54M | 2037 | "31,41,51,61,71,81" | 0:04'41'' | 0:00'17'' |
+| Q30L60X20P002  | 100M   |   20.0 |  1065 |   2.77M |  2741 |      1594 |   1.28M |  774 |       771 |   1.49M | 1967 | "31,41,51,61,71,81" | 0:03'18'' | 0:00'17'' |
+| Q30L60X40P000  | 200M   |   40.0 |  3911 |   4.48M |  1749 |      4367 |   4.02M | 1153 |       795 | 462.93K |  596 | "31,41,51,61,71,81" | 0:03'33'' | 0:00'23'' |
+| Q30L60X40P001  | 200M   |   40.0 |  3999 |   4.48M |  1715 |      4462 |   4.03M | 1140 |       800 | 451.01K |  575 | "31,41,51,61,71,81" | 0:03'39'' | 0:00'24'' |
+| Q30L60X40P002  | 200M   |   40.0 |  4012 |   4.46M |  1726 |      4429 |      4M | 1133 |       797 | 465.33K |  593 | "31,41,51,61,71,81" | 0:03'41'' | 0:00'23'' |
+| Q30L60X80P000  | 400M   |   80.0 | 12539 |   5.41M |  2093 |      1769 | 108.73K |   60 |     13097 |    5.3M | 2033 | "31,41,51,61,71,81" | 0:06'41'' | 0:00'27'' |
+| Q30L60X80P001  | 400M   |   80.0 | 13568 |   5.44M |  2137 |      1475 |  99.75K |   59 |     14511 |   5.34M | 2078 | "31,41,51,61,71,81" | 0:06'42'' | 0:00'27'' |
+| Q30L60X80P002  | 400M   |   80.0 | 12626 |   5.44M |  2136 |      1623 | 118.76K |   67 |     13261 |   5.32M | 2069 | "31,41,51,61,71,81" | 0:06'34'' | 0:00'28'' |
+| Q30L60X160P000 | 800M   |  160.0 |  1010 |  11.24M | 10367 |      1448 |   1.11M |  738 |       898 |  10.13M | 9629 | "31,41,51,61,71,81" | 0:16'09'' | 0:00'52'' |
+| Q30L60X160P001 | 800M   |  160.0 |  1053 |  11.23M | 10212 |      1415 |   1.23M |  820 |       908 |     10M | 9392 | "31,41,51,61,71,81" | 0:15'15'' | 0:00'52'' |
+| Q30L60X160P002 | 800M   |  160.0 |  1051 |  11.11M | 10161 |      1406 |    1.2M |  814 |       902 |   9.91M | 9347 | "31,41,51,61,71,81" | 0:14'31'' | 0:00'51'' |
+
+## m22: merge anchors
+
+
+## m22: expand anchors
+
+* contigTrim
+
+
+## m22: final stats
+
+* Stats
+
+| Name                 |   N50 |       Sum |       # |
+|:---------------------|------:|----------:|--------:|
+| anchor.merge         |  4835 |   9206271 |    3155 |
+| others.merge         | 52794 |   6613803 |    2006 |
+| contigTrim           |  8529 |   8482457 |    2637 |
+| spades.contig        |   285 | 443831113 | 1289399 |
+| spades.non-contained |  1583 |  59215300 |   35218 |
 
 * Clear QxxLxxXxx.
 
@@ -1120,17 +1254,21 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 * Short gaps (fill gaps shorter than 2000 bp)
 
 ```bash
-for BASE_NAME in m07 m08 m15 m17 m19 m20; do
-    echo "==> ${BASE_NAME}"
+for BASE_NAME in m07 m08 m15 m17 m19 m20 m22; do
+    echo >&2 "==> ${BASE_NAME}"
     pushd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
     
-    tar -czvf \
-        ../${BASE_NAME}.tar.gz \
-        2_illumina/fastqc/*.html \
-        8_spades/contigs.non-contained.fasta \
-        merge/anchor.merge.fasta \
-        contigTrim/contig.fasta
-        
+    if [ -e ../${BASE_NAME}.tar.gz ]; then
+        echo >&2 "    ${BASE_NAME}.tar.gz exists"
+    else
+        tar -czvf \
+            ../${BASE_NAME}.tar.gz \
+            2_illumina/fastqc/*.html \
+            8_spades/contigs.non-contained.fasta \
+            merge/anchor.merge.fasta \
+            contigTrim/contig.fasta
+    fi
+
     popd
 done
 
