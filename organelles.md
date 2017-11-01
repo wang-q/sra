@@ -1117,11 +1117,11 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 * FastQC reports
 * Spades assemblies
 * Our assemblies
-* Short gaps
+* Short gaps (fill gaps shorter than 2000 bp)
 
 ```bash
-for BASE_NAME in m07 m08 m15; do
-    echo ${BASE_NAME}
+for BASE_NAME in m07 m08 m15 m17 m19 m20; do
+    echo "==> ${BASE_NAME}"
     pushd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
     
     tar -czvf \
