@@ -66,8 +66,9 @@ cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
+parallel -j 2 "
+    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    " ::: R1 R2
 
 ```
 
