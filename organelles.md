@@ -478,7 +478,9 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o merge/others.merge0.fasta
+anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
 
 # quast
@@ -580,8 +582,8 @@ cat stat3.md
 
 | Name                 |    N50 |      Sum |     # |
 |:---------------------|-------:|---------:|------:|
-| anchor.merge         |   2387 |  9455250 |  4155 |
-| others.merge         |   2284 |  7241455 |  3842 |
+| anchor.merge         |   2381 |  9444380 |  4154 |
+| others.merge         |   1619 |  4705716 |  2743 |
 | contigTrim           | 106055 |  7952830 |   218 |
 | spades.contig        |    299 | 36134245 | 95229 |
 | spades.non-contained | 146263 |  9281259 |  1203 |
@@ -898,8 +900,8 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 | Name                 |   N50 |       Sum |      # |
 |:---------------------|------:|----------:|-------:|
-| anchor.merge         | 24298 |   1541694 |    287 |
-| others.merge         |  4300 |   1800818 |    735 |
+| anchor.merge         | 22513 |   1542305 |    293 |
+| others.merge         |  4438 |   1778238 |    722 |
 | contigTrim           | 33478 |   1438879 |    194 |
 | spades.contig        |  2016 | 465173951 | 422022 |
 | spades.non-contained |  2673 | 348073390 | 147336 |
@@ -1104,8 +1106,8 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 | Name                 |   N50 |       Sum |      # |
 |:---------------------|------:|----------:|-------:|
-| anchor.merge         | 11071 |   1356134 |    421 |
-| others.merge         |  1131 |    705618 |    491 |
+| anchor.merge         | 11071 |   1353094 |    418 |
+| others.merge         |  1115 |    689202 |    484 |
 | contigTrim           | 21785 |   1050355 |    210 |
 | spades.contig        |   384 | 182028086 | 465531 |
 | spades.non-contained |  2838 |  41985607 |  16992 |
@@ -1238,8 +1240,8 @@ anchr contained \
 
 | Name                 |   N50 |       Sum |       # |
 |:---------------------|------:|----------:|--------:|
-| anchor.merge         |  4835 |   9206271 |    3155 |
-| others.merge         | 52794 |   6613803 |    2006 |
+| anchor.merge         |  4938 |   9236311 |    3164 |
+| others.merge         | 54054 |   6622204 |    2005 |
 | contigTrim           |  8529 |   8482457 |    2637 |
 | spades.contig        |   285 | 443831113 | 1289399 |
 | spades.non-contained |  1583 |  59215300 |   35218 |
@@ -1251,6 +1253,7 @@ anchr contained \
 * FastQC reports
 * Spades assemblies
 * Our assemblies
+* Slightly unreliable parts of our assemblies
 * Short gaps (fill gaps shorter than 2000 bp)
 
 ```bash
@@ -1266,6 +1269,7 @@ for BASE_NAME in m07 m08 m15 m17 m19 m20 m22; do
             2_illumina/fastqc/*.html \
             8_spades/contigs.non-contained.fasta \
             merge/anchor.merge.fasta \
+            merge/others.merge.fasta \
             contigTrim/contig.fasta
     fi
 
