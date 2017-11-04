@@ -22,6 +22,26 @@
     - [FCM05: k-unitigs and anchors (sampled)](#fcm05-k-unitigs-and-anchors-sampled)
     - [FCM05: merge anchors](#fcm05-merge-anchors)
     - [FCM05: final stats](#fcm05-final-stats)
+- [FCM07](#fcm07)
+    - [FCM07: download](#fcm07-download)
+    - [FCM07: combinations of different quality values and read lengths](#fcm07-combinations-of-different-quality-values-and-read-lengths)
+    - [FCM07: spades](#fcm07-spades)
+    - [FCM07: platanus](#fcm07-platanus)
+    - [FCM07: quorum](#fcm07-quorum)
+    - [FCM07: down sampling](#fcm07-down-sampling)
+    - [FCM07: k-unitigs and anchors (sampled)](#fcm07-k-unitigs-and-anchors-sampled)
+    - [FCM07: merge anchors](#fcm07-merge-anchors)
+    - [FCM07: final stats](#fcm07-final-stats)
+- [FCM13](#fcm13)
+    - [FCM13: download](#fcm13-download)
+    - [FCM13: combinations of different quality values and read lengths](#fcm13-combinations-of-different-quality-values-and-read-lengths)
+    - [FCM13: spades](#fcm13-spades)
+    - [FCM13: platanus](#fcm13-platanus)
+    - [FCM13: quorum](#fcm13-quorum)
+    - [FCM13: down sampling](#fcm13-down-sampling)
+    - [FCM13: k-unitigs and anchors (sampled)](#fcm13-k-unitigs-and-anchors-sampled)
+    - [FCM13: merge anchors](#fcm13-merge-anchors)
+    - [FCM13: final stats](#fcm13-final-stats)
 
 
 # FCM03
@@ -509,7 +529,7 @@ rm -fr Q{20,25,30,35}L{1,30,60,90,120}X*
 
 # FCM05
 
-* *Saururus chinensis Baill.*
+* *Saururus chinensis*
 * 三白草
 * Taxonomy ID: [54806](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=54806)
 
@@ -570,6 +590,136 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 
 
 ## FCM05: final stats
+
+* Stats
+
+| Name | N50 | Sum | # |
+|:-----|----:|----:|--:|
+
+* Clear QxxLxxXxx.
+
+# FCM07
+
+* *Chimonanthus praecox*
+* 蜡梅
+* Taxonomy ID: [13419](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=13419)
+
+## FCM07: download
+
+```bash
+BASE_NAME=FCM07
+REAL_G=500000000
+
+mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM07_R1_001.fastq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM07_R2_001.fastq.gz R2.fq.gz
+
+```
+
+* FastQC
+
+* kmergenie
+
+
+## FCM07: combinations of different quality values and read lengths
+
+* qual: 25 and 30
+* len: 60
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+
+## FCM07: spades
+
+## FCM07: platanus
+
+## FCM07: quorum
+
+| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
+
+* Clear intermediate files.
+
+
+## FCM07: down sampling
+
+
+## FCM07: k-unitigs and anchors (sampled)
+
+| Name | SumCor | CovCor | N50SR | Sum | # | N50Anchor | Sum | # | N50Others | Sum | # | Kmer | RunTimeKU | RunTimeAN |
+|:-----|:-------|-------:|------:|----:|--:|----------:|----:|--:|----------:|----:|--:|-----:|----------:|----------:|
+
+## FCM07: merge anchors
+
+
+## FCM07: final stats
+
+* Stats
+
+| Name | N50 | Sum | # |
+|:-----|----:|----:|--:|
+
+* Clear QxxLxxXxx.
+
+# FCM13
+
+* *Machilus thunbergii*
+* 红楠
+* Taxonomy ID: [128685](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=128685)
+
+## FCM13: download
+
+```bash
+BASE_NAME=FCM13
+REAL_G=500000000
+
+mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM13-BY_R1_001.fastq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM13-BY_R2_001.fastq.gz R2.fq.gz
+
+```
+
+* FastQC
+
+* kmergenie
+
+
+## FCM13: combinations of different quality values and read lengths
+
+* qual: 25 and 30
+* len: 60
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+
+## FCM13: spades
+
+## FCM13: platanus
+
+## FCM13: quorum
+
+| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
+
+* Clear intermediate files.
+
+
+## FCM13: down sampling
+
+
+## FCM13: k-unitigs and anchors (sampled)
+
+| Name | SumCor | CovCor | N50SR | Sum | # | N50Anchor | Sum | # | N50Others | Sum | # | Kmer | RunTimeKU | RunTimeAN |
+|:-----|:-------|-------:|------:|----:|--:|----------:|----:|--:|----------:|----:|--:|-----:|----------:|----------:|
+
+## FCM13: merge anchors
+
+
+## FCM13: final stats
 
 * Stats
 
