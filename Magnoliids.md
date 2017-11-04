@@ -12,6 +12,17 @@
     - [FCM03: k-unitigs and anchors (sampled)](#fcm03-k-unitigs-and-anchors-sampled)
     - [FCM03: merge anchors](#fcm03-merge-anchors)
     - [FCM03: final stats](#fcm03-final-stats)
+- [FCM05](#fcm05)
+    - [FCM05: download](#fcm05-download)
+    - [FCM05: combinations of different quality values and read lengths](#fcm05-combinations-of-different-quality-values-and-read-lengths)
+    - [FCM05: spades](#fcm05-spades)
+    - [FCM05: platanus](#fcm05-platanus)
+    - [FCM05: quorum](#fcm05-quorum)
+    - [FCM05: down sampling](#fcm05-down-sampling)
+    - [FCM05: k-unitigs and anchors (sampled)](#fcm05-k-unitigs-and-anchors-sampled)
+    - [FCM05: merge anchors](#fcm05-merge-anchors)
+    - [FCM05: final stats](#fcm05-final-stats)
+
 
 # FCM03
 
@@ -495,3 +506,73 @@ rm -fr 2_illumina/Q{20,25,30,35}L{1,30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{1,30,60,90,120}X*
 ```
 
+# FCM05
+
+* *Saururus chinensis Baill.*
+* 三白草
+* Taxonomy ID: [54806](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=54806)
+
+## FCM05: download
+
+```bash
+BASE_NAME=FCM05
+REAL_G=530000000
+
+mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R1_001.fastq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
+
+```
+
+* FastQC
+
+* kmergenie
+
+
+## FCM05: combinations of different quality values and read lengths
+
+* qual: 25 and 30
+* len: 60
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 151 | 24447486786 | 161903886 |
+| uniq     | 151 | 19928633606 | 131977706 |
+| Q25L60   | 151 | 18132355713 | 124923112 |
+| Q30L60   | 151 | 17387440203 | 123304964 |
+
+## FCM05: spades
+
+## FCM05: platanus
+
+## FCM05: quorum
+
+| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
+| Q25L60 | 18.13G |  34.2 | 14.98G |   28.3 |  17.362% |     144 | "105" |  530M | 576.61M |     1.09 | 1:04'59'' |
+| Q30L60 | 17.39G |  32.8 |    15G |   28.3 |  13.773% |     141 |  "97" |  530M | 571.31M |     1.08 | 1:15'59'' |
+
+* Clear intermediate files.
+
+
+## FCM05: down sampling
+
+
+## FCM05: k-unitigs and anchors (sampled)
+
+| Name | SumCor | CovCor | N50SR | Sum | # | N50Anchor | Sum | # | N50Others | Sum | # | Kmer | RunTimeKU | RunTimeAN |
+|:-----|:-------|-------:|------:|----:|--:|----------:|----:|--:|----------:|----:|--:|-----:|----------:|----------:|
+
+## FCM05: merge anchors
+
+
+## FCM05: final stats
+
+* Stats
+
+| Name | N50 | Sum | # |
+|:-----|----:|----:|--:|
+
+* Clear QxxLxxXxx.
