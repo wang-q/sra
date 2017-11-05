@@ -608,7 +608,7 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 
 ```bash
 BASE_NAME=FCM07
-REAL_G=500000000
+REAL_G=620000000
 
 mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
 cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
@@ -673,7 +673,7 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM07_R2_001.fastq.gz R2.fq.gz
 
 ```bash
 BASE_NAME=FCM13
-REAL_G=500000000
+REAL_G=430000000
 
 mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
 cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
