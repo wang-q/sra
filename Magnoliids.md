@@ -42,6 +42,7 @@
     - [FCM13: k-unitigs and anchors (sampled)](#fcm13-k-unitigs-and-anchors-sampled)
     - [FCM13: merge anchors](#fcm13-merge-anchors)
     - [FCM13: final stats](#fcm13-final-stats)
+- [Create tarballs](#create-tarballs)
 
 
 # FCM03
@@ -787,24 +788,24 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM13-BY_R2_001.fastq.gz R2.fq.gz
 # Create tarballs
 
 ```bash
-#for BASE_NAME in FCM03 FCM05 FCM07 FCM13; do
-#    echo >&2 "==> ${BASE_NAME}"
-#    pushd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
-#    
-#    if [ -e ../${BASE_NAME}.tar.gz ]; then
-#        echo >&2 "    ${BASE_NAME}.tar.gz exists"
-#    else
-#        tar -czvf \
-#            ../${BASE_NAME}.tar.gz \
-#            2_illumina/fastqc/*.html \
-#            8_spades/contigs.non-contained.fasta \
-#            merge/anchor.merge.fasta \
-#            merge/others.merge.fasta \
-#            contigTrim/contig.fasta
-#    fi
-#
-#    popd
-#done
+for BASE_NAME in FCM03 FCM05 FCM07 FCM13; do
+    echo >&2 "==> ${BASE_NAME}"
+    pushd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+    
+    if [ -e ../${BASE_NAME}.tar.gz ]; then
+        echo >&2 "    ${BASE_NAME}.tar.gz exists"
+    else
+        tar -czvf \
+            ../${BASE_NAME}.tar.gz \
+            2_illumina/fastqc/*.html \
+            8_spades/contigs.non-contained.fasta \
+            8_platanus/gapClosed.non-contained.fasta \
+            merge/anchor.merge.fasta \
+            merge/others.merge.fasta
+    fi
+
+    popd
+done
 
 find ${HOME}/data/dna-seq/xjy2/ -type d -path "*8_spades/*" | xargs rm -fr
 find ${HOME}/data/dna-seq/xjy2/ -type f -path "*8_platanus/*" -name "R[12s].fa" | xargs rm
