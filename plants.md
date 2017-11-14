@@ -1845,8 +1845,9 @@ cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-kmergenie -l 21 -k 91 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 91 -s 10 -t 8 ../R2.fq.gz -o oriR2
+parallel -j 2 "
+    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    " ::: R1 R2
 
 ```
 
@@ -1873,6 +1874,25 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
+cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    > 2_illumina/illumina_adapters.fa
+echo ">TruSeq_Adapter_Index_7" >> 2_illumina/illumina_adapters.fa
+echo "AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGC" >> 2_illumina/illumina_adapters.fa
+echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
+echo "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
 parallel --no-run-if-empty -j 4 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -1885,7 +1905,7 @@ parallel --no-run-if-empty -j 4 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
     " ::: 25 30 ::: 60
@@ -1902,6 +1922,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 parallel -k --no-run-if-empty -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
@@ -1929,8 +1951,9 @@ cat stat.md
 | Genome   | 27449063 |   346663259 |        12 |
 | Illumina |      101 | 34167671982 | 338293782 |
 | uniq     |      101 | 33822673960 | 334877960 |
-| Q25L60   |      101 | 27107760556 | 273940552 |
-| Q30L60   |      101 | 26039636642 | 269603470 |
+| scythe   |      101 | 32399254278 | 334877960 |
+| Q25L60   |      101 | 27030520638 | 273011730 |
+| Q30L60   |      101 | 25959559694 | 268552482 |
 
 ## ZS97: spades
 
