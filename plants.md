@@ -1969,6 +1969,12 @@ spades.py \
     -s 2_illumina/Q25L60/Rs.fq.gz \
     -o 8_spades
 
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
+
 ```
 
 ## ZS97: platanus
@@ -2007,12 +2013,12 @@ platanus gap_close -t 16 \
     -ip1 pe.fa \
     2>&1 | tee gap_log.txt
 
-```
+anchr contained \
+    out_gapClosed.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
 
-```text
-#### PROCESS INFORMATION ####
-VmPeak:          73.002 GByte
-VmHWM:            5.477 GByte
 ```
 
 ## ZS97: quorum
@@ -2323,22 +2329,28 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/contigs.non-contained.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/gapClosed.non-contained.fasta;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name              |      N50 |       Sum |       # |
-|:------------------|---------:|----------:|--------:|
-| Genome            | 27449063 | 346663259 |      12 |
-| anchor.merge      |     5541 | 259365865 |   65069 |
-| others.merge      |     1185 |  21271839 |   16639 |
-| spades.contig     |    12421 | 343065556 |  246828 |
-| spades.scaffold   |    13039 | 343127110 |  245326 |
-| platanus.contig   |     1419 | 422154233 | 1526431 |
-| platanus.scaffold |     7687 | 325245861 |  396499 |
+| Name                   |      N50 |       Sum |       # |
+|:-----------------------|---------:|----------:|--------:|
+| Genome                 | 27449063 | 346663259 |      12 |
+| anchor.merge           |     5541 | 259365865 |   65069 |
+| others.merge           |     1185 |  21271839 |   16639 |
+| spades.contig          |    12421 | 343065556 |  246828 |
+| spades.scaffold        |    13039 | 343127110 |  245326 |
+| spades.non-contained   |    14589 | 300686248 |   37507 |
+| platanus.contig        |     1419 | 422154233 | 1526431 |
+| platanus.scaffold      |     7687 | 325245861 |  396499 |
+| platanus.non-contained |     9554 | 270282635 |   43521 |
 
 * quast
 
