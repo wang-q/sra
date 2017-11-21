@@ -2185,7 +2185,7 @@ parallel --no-run-if-empty -j 3 "
     fi
 
     if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
+        echo >&2 '    pe.anchor.fa already presents'
         exit;
     fi
 
