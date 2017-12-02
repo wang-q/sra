@@ -741,32 +741,7 @@ ln -s ../../medfood/Cgi_R2_head50.fastq.gz R2.fq.gz
 
 * FastQC
 
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
 * kmergenie
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
-
-```
 
 ## CgiA: combinations of different quality values and read lengths
 
@@ -871,49 +846,7 @@ cat stat.md
 
 ## CgiA: spades
 
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-```
-
 ## CgiA: platanus
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
-fi
-
-platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee gap_log.txt
-
-```
 
 ```text
 #### PROCESS INFORMATION ####
@@ -923,198 +856,14 @@ VmHWM:           62.453 GByte
 
 ## CgiA: quorum
 
-```bash
-BASE_NAME=CgiA
-REAL_G=500000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 25 30 ::: 60
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 25 30 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-```
-
 | Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
 |:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
 | Q25L60 | 39.05G |  78.1 | 33.11G |   66.2 |  15.211% |     137 | "91" |  500M | 368.39M |     0.74 | 2:59'12'' |
 | Q30L60 | 37.82G |  75.6 | 34.74G |   69.5 |   8.147% |     132 | "81" |  500M | 355.97M |     0.71 | 1:59'00'' |
 
-* Clear intermediate files.
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
 ## CgiA: down sampling
 
-```bash
-BASE_NAME=CgiA
-REAL_G=500000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 25 30 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 30 60; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
 ## CgiA: k-unitigs and anchors (sampled)
-
-```bash
-BASE_NAME=CgiA
-REAL_G=500000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    if [ ! -e Q{1}L{2}/k_unitigs.fasta ]; then
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../pe.cor.fa \
-        ../k_unitigs.fasta \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006 \
-     >> stat2.md
-
-cat stat2.md
-```
 
 | Name          | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |    Sum |     # | N50Others |    Sum |      # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|--------:|-------:|----------:|-------:|------:|----------:|-------:|-------:|--------------------:|----------:|:----------|
@@ -1127,86 +876,9 @@ cat stat2.md
 
 ## CgiA: merge anchors
 
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 25 30 ::: 60 ::: 30 60 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "merge,others" \
-    -o 9_qa
-
-```
-
 ## CgiA: final stats
 
 * Stats
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name               |  N50 |       Sum |       # |
 |:-------------------|-----:|----------:|--------:|
@@ -1216,16 +888,6 @@ cat stat3.md
 | spades.scaffold    | 1761 | 439173057 |  662729 |
 | platanus.contig    |  565 | 592588841 | 1792829 |
 | platanus.gapClosed | 5499 | 414129420 |  901777 |
-
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=CgiA
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
-rm -fr Q{20,25,30,35}L{30,60,90,120}X*
-```
 
 # CgiB, Cercis gigantea
 
@@ -1244,19 +906,6 @@ ln -s ../../medfood/Cgi_R2_tail50.fastq.gz R2.fq.gz
 ```
 
 * FastQC
-
-```bash
-BASE_NAME=CgiB
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
 
 ## CgiB: combinations of different quality values and read lengths
 
@@ -1359,80 +1008,11 @@ cat stat.md
 
 ## CgiB: spades
 
-```bash
-BASE_NAME=CgiB
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-```
-
 ## CgiB: platanus
-
-```bash
-BASE_NAME=CgiB
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
-fi
-
-platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee gap_log.txt
-
-```
-
-```text
-#### PROCESS INFORMATION ####
-VmPeak:         158.829 GByte
-VmHWM:           61.949 GByte
-```
 
 ## CgiB: final stats
 
 * Stats
-
-```bash
-BASE_NAME=CgiB
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name              |  N50 |       Sum |       # |
 |:------------------|-----:|----------:|--------:|
@@ -1597,80 +1177,11 @@ cat stat.md
 
 ## CgiC: spades
 
-```bash
-BASE_NAME=CgiC
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-```
-
 ## CgiC: platanus
-
-```bash
-BASE_NAME=CgiC
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
-fi
-
-platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee gap_log.txt
-
-```
-
-```text
-#### PROCESS INFORMATION ####
-VmPeak:          19.969 GByte
-VmHWM:            9.248 GByte
-```
 
 ## CgiC: final stats
 
 * Stats
-
-```bash
-BASE_NAME=CgiC
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name              |  N50 |       Sum |       # |
 |:------------------|-----:|----------:|--------:|
@@ -1796,80 +1307,11 @@ cat stat.md
 
 ## CgiD: spades
 
-```bash
-BASE_NAME=CgiD
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-```
-
 ## CgiD: platanus
-
-```bash
-BASE_NAME=CgiD
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
-fi
-
-platanus assemble -t 16 -m 200 \
-    -f R1.fa R2.fa Rs.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
-    2>&1 | tee gap_log.txt
-
-```
-
-```text
-#### PROCESS INFORMATION ####
-VmPeak:          20.172 GByte
-VmHWM:            9.394 GByte
-```
 
 ## CgiD: final stats
 
 * Stats
-
-```bash
-BASE_NAME=CgiD
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name              |  N50 |       Sum |       # |
 |:------------------|-----:|----------:|--------:|
@@ -2124,33 +1566,6 @@ parallel --no-run-if-empty -j 4 "
 
 * Stats
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-
-for qual in 20 25; do
-    for len in 100 120 140; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
-
-cat stat.md
-```
-
 | Name     | N50 |          Sum |         # |
 |:---------|----:|-------------:|----------:|
 | Illumina | 150 | 131208907200 | 874726048 |
@@ -2164,269 +1579,18 @@ cat stat.md
 
 ## moli: down sampling
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-# works on bash 3
-ARRAY=(
-    "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L140:Q20L140"
-    "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L140:Q25L140"
-)
-
-for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-
-done
-```
-
 ## moli: generate super-reads
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 1 "
-        echo '==> Group {}'
-        
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
-
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
-            exit;
-        fi
-
-        cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 16 --jf 10_000_000_000 \
-            -o superreads.sh
-        bash superreads.sh
-    "
-
-```
-
-Clear intermediate files.
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-
-find . -type f -name "quorum_mer_db.jf"          | xargs rm
-find . -type f -name "k_u_hash_0"                | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp"                     | xargs rm
-find . -type f -name "pe.renamed.fastq"          | xargs rm
-find . -type f -name "pe.cor.sub.fa"             | xargs rm
-```
-
 ## moli: create anchors
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 1 "
-        echo '==> Group {}'
-
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 16 false
-    "
-
-```
 
 ## moli: results
 
 * Stats of super-reads
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-REAL_G=600000000
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 1 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            exit;
-        fi
-
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
-
-cat stat1.md
-```
-
 * Stats of anchors
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 4 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
-
-cat stat2.md
-```
 
 ## moli: merge anchors
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge anchor2 and others
-anchr contained \
-    Q20L100/anchor/pe.anchor2.fa \
-    Q20L120/anchor/pe.anchor2.fa \
-    Q20L140/anchor/pe.anchor2.fa \
-    Q25L100/anchor/pe.anchor2.fa \
-    Q25L120/anchor/pe.anchor2.fa \
-    Q25L140/anchor/pe.anchor2.fa \
-    Q20L100/anchor/pe.others.fa \
-    Q20L120/anchor/pe.others.fa \
-    Q20L140/anchor/pe.others.fa \
-    Q25L100/anchor/pe.others.fa \
-    Q25L120/anchor/pe.others.fa \
-    Q25L140/anchor/pe.others.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "Q20L100,Q25L100,merge,others" \
-    -o 9_qa
-
-```
-
 * Clear QxxLxxx.
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
-```
-
 * Stats
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/moli
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
