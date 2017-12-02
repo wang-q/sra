@@ -110,7 +110,7 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         -p 2_illumina/R2.uniq.fq
     
     parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.uniq.fq
+        pigz -p 8 2_illumina/{}.uniq.fq
         " ::: R1 R2
 fi
 
