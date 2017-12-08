@@ -80,6 +80,7 @@
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM03
 REAL_G=550000000
 IS_EUK="true"
@@ -92,18 +93,18 @@ READ_LEN="60"
 * Illumina
 
 ```bash
-mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
-cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
 
-ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM03_R1_001.fastq.gz R1.fq.gz
-ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM03_R2_001.fastq.gz R2.fq.gz
+ln -s ${WORKING_DIR}/data/D7g7512_FCM03_R1_001.fastq.gz R1.fq.gz
+ln -s ${WORKING_DIR}/data/D7g7512_FCM03_R2_001.fastq.gz R2.fq.gz
 
 ```
 
 * FastQC
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
@@ -117,7 +118,7 @@ fastqc -t 16 \
 * kmergenie
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
@@ -131,7 +132,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 ## FCM03: preprocess Illumina reads
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 cd 2_illumina
 
@@ -172,7 +173,7 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
     " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 # Stats
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -214,7 +215,7 @@ cat stat.md
 ## FCM03: spades
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 spades.py \
     -t 16 \
@@ -235,7 +236,7 @@ anchr contained \
 ## FCM03: platanus
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 8_platanus
 cd 8_platanus
@@ -271,7 +272,7 @@ anchr contained \
 ## FCM03: quorum
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
@@ -329,7 +330,7 @@ cat stat1.md
 ## FCM03: adapter filtering
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
     echo "==> ${QxxLxx}"
@@ -361,7 +362,7 @@ done
 ## FCM03: down sampling
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
     echo "==> ${QxxLxx}"
@@ -405,7 +406,7 @@ done
 ## FCM03: k-unitigs and anchors (sampled)
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # k-unitigs
 parallel --no-run-if-empty --linebuffer -k -j 2 "
@@ -494,7 +495,7 @@ cat stat2.md
 ## FCM03: merge anchors
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
@@ -545,7 +546,7 @@ quast --no-check --threads 16 \
 * Stats
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -584,7 +585,7 @@ cat stat3.md
 ## FCM03: clear intermediate files
 
 ```bash
-cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # bax2bam
 rm -fr 3_pacbio/bam/*
@@ -711,6 +712,7 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05B
 REAL_G=530000000
 IS_EUK="true"
@@ -723,11 +725,11 @@ READ_LEN="60"
 * Illumina
 
 ```bash
-mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
-cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
 
-ln -s ~/data/dna-seq/xjy2/data/FCM05_H3T7VDMXX_L1_1.clean.fq.gz R1.fq.gz
-ln -s ~/data/dna-seq/xjy2/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
+ln -s {WORKING_DIR}/data/FCM05_H3T7VDMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s {WORKING_DIR}/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 ```
 
@@ -763,6 +765,7 @@ ln -s ~/data/dna-seq/xjy2/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05C
 REAL_G=530000000
 IS_EUK="true"
@@ -775,11 +778,11 @@ READ_LEN="60"
 * Illumina
 
 ```bash
-mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
-cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
 
-ln -s ~/data/dna-seq/xjy2/data/FCM05_H3TC3DMXX_L1_1.clean.fq.gz R1.fq.gz
-ln -s ~/data/dna-seq/xjy2/data/FCM05_H3TC3DMXX_L1_2.clean.fq.gz R2.fq.gz
+ln -s ${WORKING_DIR}/data/FCM05_H3TC3DMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s ${WORKING_DIR}/data/FCM05_H3TC3DMXX_L1_2.clean.fq.gz R2.fq.gz
 
 ```
 
