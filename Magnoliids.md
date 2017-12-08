@@ -24,6 +24,28 @@
     - [FCM05: k-unitigs and anchors (sampled)](#fcm05-k-unitigs-and-anchors-sampled)
     - [FCM05: merge anchors](#fcm05-merge-anchors)
     - [FCM05: final stats](#fcm05-final-stats)
+- [FCM05B](#fcm05b)
+    - [FCM05B: download](#fcm05b-download)
+    - [FCM05B: preprocess Illumina reads](#fcm05b-preprocess-illumina-reads)
+    - [FCM05B: spades](#fcm05b-spades)
+    - [FCM05B: platanus](#fcm05b-platanus)
+    - [FCM05B: quorum](#fcm05b-quorum)
+    - [FCM05B: down sampling](#fcm05b-down-sampling)
+    - [FCM05B: k-unitigs and anchors (sampled)](#fcm05b-k-unitigs-and-anchors-sampled)
+    - [FCM05B: merge anchors](#fcm05b-merge-anchors)
+    - [FCM05B: final stats](#fcm05b-final-stats)
+    - [FCM05B: clear intermediate files](#fcm05b-clear-intermediate-files)
+- [FCM05C](#fcm05c)
+    - [FCM05C: download](#fcm05c-download)
+    - [FCM05C: preprocess Illumina reads](#fcm05c-preprocess-illumina-reads)
+    - [FCM05C: spades](#fcm05c-spades)
+    - [FCM05C: platanus](#fcm05c-platanus)
+    - [FCM05C: quorum](#fcm05c-quorum)
+    - [FCM05C: down sampling](#fcm05c-down-sampling)
+    - [FCM05C: k-unitigs and anchors (sampled)](#fcm05c-k-unitigs-and-anchors-sampled)
+    - [FCM05C: merge anchors](#fcm05c-merge-anchors)
+    - [FCM05C: final stats](#fcm05c-final-stats)
+    - [FCM05C: clear intermediate files](#fcm05c-clear-intermediate-files)
 - [FCM07](#fcm07)
     - [FCM07: download](#fcm07-download)
     - [FCM07: combinations of different quality values and read lengths](#fcm07-combinations-of-different-quality-values-and-read-lengths)
@@ -564,8 +586,37 @@ cat stat3.md
 ```bash
 cd ${HOME}/data/dna-seq/xjy2/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30,35}L{1,30,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,30,60,90,120}X*
+# bax2bam
+rm -fr 3_pacbio/bam/*
+rm -fr 3_pacbio/fasta/*
+rm -fr 3_pacbio/untar/*
+
+# quorum
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+
+# down sampling
+rm -fr 2_illumina/Q{15,20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{15,20,25,30,35}L{30,60,90,120}X*
+
+rm -fr mergeQ*
+rm -fr mergeL*
+
+# canu
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
+find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
+
+# spades
+find . -type d -path "*8_spades/*" | xargs rm -fr
+
+# platanus
+find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
+
 ```
 
 # FCM05
@@ -652,6 +703,110 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 | platanus.non-contained |  4577 | 168928590 |   51243 |
 
 * Clear QxxLxxXxx.
+
+# FCM05B
+
+## FCM05B: download
+
+* Settings
+
+```bash
+BASE_NAME=FCM05B
+REAL_G=530000000
+IS_EUK="true"
+COVERAGE2="10 20 30 40"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
+* Illumina
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy2/data/FCM05_H3T7VDMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy2/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
+
+```
+
+* FastQC
+
+* kmergenie
+
+## FCM05B: preprocess Illumina reads
+
+## FCM05B: spades
+
+## FCM05B: platanus
+
+## FCM05B: quorum
+
+## FCM05B: down sampling
+
+## FCM05B: k-unitigs and anchors (sampled)
+
+## FCM05B: merge anchors
+
+## FCM05B: final stats
+
+* Stats
+
+## FCM05B: clear intermediate files
+
+
+# FCM05C
+
+## FCM05C: download
+
+* Settings
+
+```bash
+BASE_NAME=FCM05C
+REAL_G=530000000
+IS_EUK="true"
+COVERAGE2="10 20 30 40"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
+* Illumina
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
+
+ln -s ~/data/dna-seq/xjy2/data/FCM05_H3TC3DMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s ~/data/dna-seq/xjy2/data/FCM05_H3TC3DMXX_L1_2.clean.fq.gz R2.fq.gz
+
+```
+
+* FastQC
+
+* kmergenie
+
+## FCM05C: preprocess Illumina reads
+
+## FCM05C: spades
+
+## FCM05C: platanus
+
+## FCM05C: quorum
+
+## FCM05C: down sampling
+
+## FCM05C: k-unitigs and anchors (sampled)
+
+## FCM05C: merge anchors
+
+## FCM05C: final stats
+
+* Stats
+
+## FCM05C: clear intermediate files
+
 
 # FCM07
 
@@ -740,7 +895,8 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM07_R2_001.fastq.gz R2.fq.gz
 
 * *Machilus thunbergii*
 * 红楠
-* Taxonomy ID: [128685](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=128685)
+* Taxonomy ID:
+  [128685](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=128685)
 
 ## FCM13: download
 
@@ -850,3 +1006,4 @@ done
 find ${HOME}/data/dna-seq/xjy2/ -type d -path "*8_spades/*" | xargs rm -fr
 find ${HOME}/data/dna-seq/xjy2/ -type f -path "*8_platanus/*" -name "R[12s].fa" | xargs rm
 ```
+
