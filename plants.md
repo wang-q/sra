@@ -451,7 +451,7 @@ done
 cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
 # k-unitigs (sampled)
-parallel --no-run-if-empty -j 2 "
+parallel --no-run-if-empty -j 1 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -479,7 +479,7 @@ parallel --no-run-if-empty -j 2 "
     " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # anchors (sampled)
-parallel --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
