@@ -5,6 +5,7 @@
 - [FCM03](#fcm03)
     - [FCM03: download](#fcm03-download)
     - [FCM03: preprocess Illumina reads](#fcm03-preprocess-illumina-reads)
+    - [FCM03: reads stats](#fcm03-reads-stats)
     - [FCM03: spades](#fcm03-spades)
     - [FCM03: platanus](#fcm03-platanus)
     - [FCM03: quorum](#fcm03-quorum)
@@ -16,7 +17,7 @@
     - [FCM03: clear intermediate files](#fcm03-clear-intermediate-files)
 - [FCM05](#fcm05)
     - [FCM05: download](#fcm05-download)
-    - [FCM05: combinations of different quality values and read lengths](#fcm05-combinations-of-different-quality-values-and-read-lengths)
+    - [FCM05: preprocess Illumina reads](#fcm05-preprocess-illumina-reads)
     - [FCM05: spades](#fcm05-spades)
     - [FCM05: platanus](#fcm05-platanus)
     - [FCM05: quorum](#fcm05-quorum)
@@ -26,26 +27,19 @@
     - [FCM05: final stats](#fcm05-final-stats)
 - [FCM05B](#fcm05b)
     - [FCM05B: download](#fcm05b-download)
-    - [FCM05B: preprocess Illumina reads](#fcm05b-preprocess-illumina-reads)
-    - [FCM05B: spades](#fcm05b-spades)
-    - [FCM05B: platanus](#fcm05b-platanus)
-    - [FCM05B: quorum](#fcm05b-quorum)
-    - [FCM05B: down sampling](#fcm05b-down-sampling)
-    - [FCM05B: k-unitigs and anchors (sampled)](#fcm05b-k-unitigs-and-anchors-sampled)
-    - [FCM05B: merge anchors](#fcm05b-merge-anchors)
-    - [FCM05B: final stats](#fcm05b-final-stats)
-    - [FCM05B: clear intermediate files](#fcm05b-clear-intermediate-files)
+    - [FCM05B: reads stats](#fcm05b-reads-stats)
 - [FCM05C](#fcm05c)
     - [FCM05C: download](#fcm05c-download)
-    - [FCM05C: preprocess Illumina reads](#fcm05c-preprocess-illumina-reads)
-    - [FCM05C: spades](#fcm05c-spades)
-    - [FCM05C: platanus](#fcm05c-platanus)
-    - [FCM05C: quorum](#fcm05c-quorum)
-    - [FCM05C: down sampling](#fcm05c-down-sampling)
-    - [FCM05C: k-unitigs and anchors (sampled)](#fcm05c-k-unitigs-and-anchors-sampled)
-    - [FCM05C: merge anchors](#fcm05c-merge-anchors)
-    - [FCM05C: final stats](#fcm05c-final-stats)
-    - [FCM05C: clear intermediate files](#fcm05c-clear-intermediate-files)
+    - [FCM05C: reads stats](#fcm05c-reads-stats)
+- [FCM05D](#fcm05d)
+    - [FCM05D: download](#fcm05d-download)
+    - [FCM05D: preprocess Illumina reads](#fcm05d-preprocess-illumina-reads)
+    - [FCM05D: reads stats](#fcm05d-reads-stats)
+    - [FCM05D: spades](#fcm05d-spades)
+    - [FCM05D: platanus](#fcm05d-platanus)
+    - [FCM05D: quorum](#fcm05d-quorum)
+    - [FCM05D: down sampling](#fcm05d-down-sampling)
+    - [FCM05D: k-unitigs and anchors (sampled)](#fcm05d-k-unitigs-and-anchors-sampled)
 - [FCM07](#fcm07)
     - [FCM07: download](#fcm07-download)
     - [FCM07: combinations of different quality values and read lengths](#fcm07-combinations-of-different-quality-values-and-read-lengths)
@@ -124,12 +118,13 @@ mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    kmergenie -l 21 -k 121 -s 10 -t 8 --one-pass ../{}.fq.gz -o {}
     " ::: R1 R2
 
 ```
 
 ## FCM03: preprocess Illumina reads
+
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -172,6 +167,11 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
 
+```
+
+## FCM03: reads stats
+
+```bash
 # Stats
 cd ${WORKING_DIR}/${BASE_NAME}
 printf "| %s | %s | %s | %s |\n" \
@@ -181,28 +181,47 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+if [ -e 2_illumina/R1.uniq.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.sample.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.scythe.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+fi
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
+    if [ ! -e 2_illumina/Q{1}L{2}/R1.sickle.fq.gz ]; then
+        exit;
+    fi
+
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo Q{1}L{2};
             if [[ {1} -ge '30' ]]; then
                 faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.sickle.fq.gz;
             else
                 faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
             fi
         )
     " ::: ${READ_QUAL} ::: ${READ_LEN} \
     >> stat.md
 
 cat stat.md
+
 ```
 
 | Name     | N50 |         Sum |         # |
@@ -628,10 +647,20 @@ find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
 
 ## FCM05: download
 
+* Settings
+
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05
 REAL_G=530000000
+IS_EUK="true"
+COVERAGE2="10 20 30 40"
+READ_QUAL="25 30"
+READ_LEN="60"
 
+```
+
+```bash
 mkdir -p ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
 cd ~/data/dna-seq/xjy2/${BASE_NAME}/2_illumina
 
@@ -645,10 +674,7 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 * kmergenie
 
 
-## FCM05: combinations of different quality values and read lengths
-
-* qual: 25 and 30
-* len: 60
+## FCM05: preprocess Illumina reads
 
 | Name     | N50 |         Sum |         # |
 |:---------|----:|------------:|----------:|
@@ -668,11 +694,7 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 | Q25L60 | 18.13G |  34.2 | 14.98G |   28.3 |  17.362% |     144 | "105" |  530M | 576.61M |     1.09 | 1:04'59'' |
 | Q30L60 | 17.39G |  32.8 |    15G |   28.3 |  13.773% |     141 |  "97" |  530M | 571.31M |     1.08 | 1:15'59'' |
 
-* Clear intermediate files.
-
-
 ## FCM05: down sampling
-
 
 ## FCM05: k-unitigs and anchors (sampled)
 
@@ -689,7 +711,6 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 
 ## FCM05: merge anchors
 
-
 ## FCM05: final stats
 
 * Stats
@@ -703,8 +724,6 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 | platanus.scaffold      |   844 | 351522180 | 1069499 |
 | platanus.non-contained |  4577 | 168928590 |   51243 |
 
-* Clear QxxLxxXxx.
-
 # FCM05B
 
 ## FCM05B: download
@@ -714,11 +733,6 @@ ln -s ~/data/dna-seq/xjy2/data/D7g7512_FCM05_R2_001.fastq.gz R2.fq.gz
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05B
-REAL_G=530000000
-IS_EUK="true"
-COVERAGE2="10 20 30 40"
-READ_QUAL="25 30"
-READ_LEN="60"
 
 ```
 
@@ -737,26 +751,11 @@ ln -s {WORKING_DIR}/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 * kmergenie
 
-## FCM05B: preprocess Illumina reads
+## FCM05B: reads stats
 
-## FCM05B: spades
-
-## FCM05B: platanus
-
-## FCM05B: quorum
-
-## FCM05B: down sampling
-
-## FCM05B: k-unitigs and anchors (sampled)
-
-## FCM05B: merge anchors
-
-## FCM05B: final stats
-
-* Stats
-
-## FCM05B: clear intermediate files
-
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 150 | 21181614300 | 141210762 |
 
 # FCM05C
 
@@ -767,11 +766,6 @@ ln -s {WORKING_DIR}/data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05C
-REAL_G=530000000
-IS_EUK="true"
-COVERAGE2="10 20 30 40"
-READ_QUAL="25 30"
-READ_LEN="60"
 
 ```
 
@@ -790,26 +784,62 @@ ln -s ${WORKING_DIR}/data/FCM05_H3TC3DMXX_L1_2.clean.fq.gz R2.fq.gz
 
 * kmergenie
 
-## FCM05C: preprocess Illumina reads
+## FCM05C: reads stats
 
-## FCM05C: spades
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 150 | 78098850000 | 520659000 |
 
-## FCM05C: platanus
+# FCM05D
 
-## FCM05C: quorum
+## FCM05D: download
 
-## FCM05C: down sampling
+* Settings
 
-## FCM05C: k-unitigs and anchors (sampled)
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05D
+REAL_G=530000000
+IS_EUK="true"
+COVERAGE2="40 80"
+READ_QUAL="25"
+READ_LEN="60"
 
-## FCM05C: merge anchors
+```
 
-## FCM05C: final stats
+* Illumina
 
-* Stats
+```bash
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
 
-## FCM05C: clear intermediate files
+gzip -d -c \
+    ${WORKING_DIR}/FCM05B/2_illumina/R1.fq.gz \
+    ${WORKING_DIR}/FCM05C/2_illumina/R1.fq.gz \
+    > R1.fq
 
+gzip -d -c \
+    ${WORKING_DIR}/FCM05B/2_illumina/R2.fq.gz \
+    ${WORKING_DIR}/FCM05C/2_illumina/R2.fq.gz \
+    > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+
+```
+
+## FCM05D: preprocess Illumina reads
+
+## FCM05D: reads stats
+
+## FCM05D: spades
+
+## FCM05D: platanus
+
+## FCM05D: quorum
+
+## FCM05D: down sampling
+
+## FCM05D: k-unitigs and anchors (sampled)
 
 # FCM07
 
