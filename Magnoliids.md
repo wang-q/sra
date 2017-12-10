@@ -841,6 +841,175 @@ find . -name "*.fq" | parallel -j 2 pigz -p 8
 
 ## FCM05D: k-unitigs and anchors (sampled)
 
+
+# FCM05SE
+
+## FCM05SE: download
+
+* Settings
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05SE
+REAL_G=530000000
+IS_EUK="true"
+COVERAGE2="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
+* Illumina
+
+```bash
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+
+ln -s ${WORKING_DIR}/FCM05D/2_illumina/R1.fq.gz R1.fq.gz
+
+```
+
+## FCM05SE: preprocess Illumina reads
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+cd 2_illumina
+
+anchr trim \
+    --uniq \
+    --nosickle \
+    R1.fq.gz \
+    -o trim.sh
+bash trim.sh
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        -q {1} -l {2} \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz'
+            fi
+        ) \
+         \
+        -o stdout \
+        | bash
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
+
+```
+
+## FCM05SE: reads stats
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz;) >> stat.md
+if [ -e 2_illumina/R1.uniq.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.sample.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.scythe.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz;) >> stat.md
+fi
+
+parallel --no-run-if-empty -k -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo Q{1}L{2};
+            faops n50 -H -S -C \
+                2_illumina/Q{1}L{2}/R1.sickle.fq.gz;
+        )
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
+    >> stat.md
+
+cat stat.md
+
+```
+
+| Name     | N50 |         Sum |         # |
+|:---------|----:|------------:|----------:|
+| Illumina | 150 | 49640232150 | 330934881 |
+| uniq     | 150 | 41080215750 | 273868105 |
+| Q25L60   | 150 | 40496607839 | 273078531 |
+| Q30L60   | 150 | 38980229662 | 267984250 |
+
+## FCM05SE: quorum
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo >&2 '==> Group Q{1}L{2} <=='
+
+    if [ ! -e R1.sickle.fq.gz ]; then
+        echo >&2 '    R1.sickle.fq.gz not exists'
+        exit;
+    fi
+
+    if [ -e pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa exists'
+        exit;
+    fi
+
+    anchr quorum \
+        R1.sickle.fq.gz \
+        -p 16 \
+        -o quorum.sh
+
+    bash quorum.sh
+    
+    echo >&2
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
+
+# Stats of processed reads
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > stat1.md
+
+parallel --no-run-if-empty -k -j 3 "
+    if [ ! -d 2_illumina/Q{1}L{2} ]; then
+        exit;
+    fi
+
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
+     >> stat1.md
+
+cat stat1.md
+
+```
+
 # FCM07
 
 * *Chimonanthus praecox*
