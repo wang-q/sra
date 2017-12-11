@@ -473,7 +473,10 @@ cat << EOF > source.csv
 #SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
 #SRX2717966,Lmon-pacbio,
 #SRX2107163,Cdif,Clostridioides difficile 630
-SRX2107164,Cdif-pacbio,
+#SRX2107164,Cdif-pacbio,
+#SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
+#SRX2107011,Cjej-pacbio,
+SRX2365802,lambda,Escherichia virus Lambda (viruses)
 #SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
 #SRX2107163,Cdif,Clostridioides difficile 630
 #SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
