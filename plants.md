@@ -165,6 +165,9 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 # preprocess Illumina reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
+# merge reads
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
+
 # reads stats
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
@@ -349,6 +352,8 @@ anchr template \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 ```
