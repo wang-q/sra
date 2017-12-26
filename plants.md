@@ -4,16 +4,22 @@
 - [Plants 2+3](#plants-23)
 - [ZS97, *Oryza sativa* Indica Group, Zhenshan 97](#zs97-oryza-sativa-indica-group-zhenshan-97)
     - [ZS97: download](#zs97-download)
-    - [ZS97: preprocess Illumina reads](#zs97-preprocess-illumina-reads)
-    - [ZS97: reads stats](#zs97-reads-stats)
-    - [ZS97: spades](#zs97-spades)
-    - [ZS97: platanus](#zs97-platanus)
-    - [ZS97: quorum](#zs97-quorum)
-    - [ZS97: down sampling](#zs97-down-sampling)
-    - [ZS97: k-unitigs and anchors (sampled)](#zs97-k-unitigs-and-anchors-sampled)
-    - [ZS97: merge anchors](#zs97-merge-anchors)
-    - [ZS97: final stats](#zs97-final-stats)
-    - [ZS97: clear intermediate files](#zs97-clear-intermediate-files)
+    - [ZS97: template](#zs97-template)
+    - [ZS97: run](#zs97-run)
+- [JDM](#jdm)
+    - [JDM: download](#jdm-download)
+- [JDM003](#jdm003)
+    - [JDM003: download](#jdm003-download)
+    - [JDM003: template](#jdm003-template)
+    - [JDM003: run](#jdm003-run)
+- [JDM006](#jdm006)
+    - [JDM006: download](#jdm006-download)
+    - [JDM006: template](#jdm006-template)
+    - [JDM006: run](#jdm006-run)
+- [JDM008](#jdm008)
+    - [JDM008: download](#jdm008-download)
+    - [JDM008: template](#jdm008-template)
+    - [JDM008: run](#jdm008-run)
 - [CgiA, Cercis gigantea, 巨紫荆 A](#cgia-cercis-gigantea-巨紫荆-a)
     - [CgiA: download](#cgia-download)
     - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
@@ -62,19 +68,6 @@
 
 ## ZS97: download
 
-* Settings
-
-```bash
-BASE_NAME=ZS97
-REAL_G=346663259
-COVERAGE2="30 40 50 60 70"
-#COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-#EXPAND_WITH="40"
-
-```
-
 * Reference genome
 
     * GenBank assembly accession: GCA_001623345.1
@@ -113,7 +106,8 @@ faops replace GCA_001623345.1_ZS97RS1_genomic.fna.gz replace.tsv stdout \
     * small-insert (~300 bp) pair-end WGS (2x100 bp read length)
     * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download from NCBI ftp.
     * `ftp://ftp-trace.ncbi.nih.gov`
-    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of accession>/<accession>/<accession>.sra`
+    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of
+      accession>/<accession>/<accession>.sra`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/ZS97/2_illumina
@@ -128,397 +122,122 @@ ln -s SRR3234372_1.fastq.gz R1.fq.gz
 ln -s SRR3234372_2.fastq.gz R2.fq.gz
 ```
 
-* FastQC
+## ZS97: template
+
+* Rsync to hpcc
 
 ```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+rsync -avP \
+    ~/data/dna-seq/chara/ZS97/ \
+    wangq@202.119.37.251:data/dna-seq/chara/ZS97
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/ZS97/ ~/data/dna-seq/chara/ZS97
 
 ```
 
-* kmergenie
-
 ```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=ZS97
+QUEUE_NAME=largemem
 
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
+cd ${WORKING_DIR}/${BASE_NAME}
 
-parallel -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
-    " ::: R1 R2
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 346663259 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 60 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
 
 ```
 
-## ZS97: preprocess Illumina reads
-
-* Peak memory: 138 GiB
+## ZS97: run
 
 ```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+# Illumina QC
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
+# preprocess Illumina reads
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
-cat <<EOF > 2_illumina/illumina_adapters.fa
->multiplexing-forward
-GATCGGAAGAGCACACGTCT
->solexa-forward
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
->truseq-forward-contam
-AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
->truseq-reverse-contam
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
->nextera-forward-read-contam
-CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
->nextera-reverse-read-contam
-CTGTCTCTTATACACATCTGACGCTGCCGACGA
->solexa-reverse
-AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+# reads stats
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
->TruSeq_Adapter_Index_7
-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGC
->Illumina_Single_End_PCR_Primer_1
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG
+# insert size
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
-EOF
+# spades and platanus
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
 
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.uniq.fq.gz \
-            -q sanger \
-            -a 2_illumina/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
 
-parallel --no-run-if-empty -j 4 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# quorum
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
+bsub -w "done(${BASE_NAME}-2_quorum)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
 
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+# down sampling, k-unitigs and anchors
+bsub -w "done(${BASE_NAME}-2_quorum)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
+bsub -w "done(${BASE_NAME}-4_kunitigs)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
+bsub -w "done(${BASE_NAME}-4_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+
+# merge anchors
+bsub -w "done(${BASE_NAME}-4_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+
+# stats
+#bash 9_statFinal.sh
+
+#bash 0_cleanup.sh
 
 ```
 
-## ZS97: reads stats
+| Name     |      N50 |       Sum |         # |
+|:---------|---------:|----------:|----------:|
+| Genome   | 27449063 | 346663259 |        12 |
+| Illumina |      101 |    34.17G | 338293782 |
+| uniq     |      101 |    33.82G | 334877960 |
+| Q25L60   |      101 |    27.11G | 273940552 |
+| Q30L60   |      101 |    26.04G | 269603470 |
 
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 279.7 |    267 |  81.6 |         18.16% |
+| Q30L60 | 278.9 |    266 |  80.8 |         19.10% |
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
+| Q25L60 |  78.2 |   71.3 |    8.82% |      99 | "71" | 346.66M | 298.24M |     0.86 | 0:58'15'' |
+| Q30L60 |  75.2 |   69.5 |    7.55% |      97 | "71" | 346.66M | 295.54M |     0.85 | 0:59'40'' |
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+```text
+#File	pe.cor.raw
+#Total	249508723
+#Matched	11742	0.00471%
+#Name	Reads	ReadsPct
+Reverse_adapter	11636	0.00466%
 
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-    >> stat.md
+#File	pe.cor.raw
+#Total	249284069
+#Matched	38058	0.01527%
+#Name	Reads	ReadsPct
+Reverse_adapter	37412	0.01501%
 
-cat stat.md
-
-```
-
-| Name     |      N50 |         Sum |         # |
-|:---------|---------:|------------:|----------:|
-| Genome   | 27449063 |   346663259 |        12 |
-| Illumina |      101 | 34167671982 | 338293782 |
-| uniq     |      101 | 33822673960 | 334877960 |
-| scythe   |      101 | 32399254278 | 334877960 |
-| Q25L60   |      101 | 27030520638 | 273011730 |
-| Q30L60   |      101 | 25959559694 | 268552482 |
-
-## ZS97: spades
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
-
-```
-
-## ZS97: platanus
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e pe.fa ]; then
-    faops interleave \
-        -p pe \
-        ../2_illumina/Q25L60/R1.fq.gz \
-        ../2_illumina/Q25L60/R2.fq.gz \
-        > pe.fa
-    
-    faops interleave \
-        -p se \
-        ../2_illumina/Q25L60/Rs.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f pe.fa se.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 pe.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -ip1 pe.fa \
-    2>&1 | tee gap_log.txt
-
-anchr contained \
-    out_gapClosed.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
-
-```
-
-## ZS97: quorum
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} == '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-    >> stat1.md
-
-cat stat1.md
-```
-
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
-| Q25L60 | 27.03G |  78.0 | 24.71G |   71.3 |   8.588% |     100 | "71" | 346.66M | 298.19M |     0.86 | 1:21'13'' |
-| Q30L60 | 25.98G |  74.9 |  24.1G |   69.5 |   7.236% |     100 | "71" | 346.66M | 295.49M |     0.85 | 1:22'38'' |
-
-## ZS97: down sampling
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in ${COVERAGE2}; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
-## ZS97: k-unitigs and anchors (sampled)
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    pe.anchor.fa already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
-    >> stat2.md
-
-cat stat2.md
 ```
 
 | Name          | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
@@ -549,111 +268,6 @@ cat stat2.md
 | Q30L60X30P001 |  10.4G |   30.0 |  3268 | 269.51M | 131494 |      3966 |    225M | 71243 |       744 | 44.51M | 60251 | "31,41,51,61,71,81" | 7:07'54'' | 0:27'36'' |
 | Q30L60X60P000 |  20.8G |   60.0 |  3977 |  280.5M | 118592 |      4598 | 244.18M | 69643 |       745 | 36.32M | 48949 | "31,41,51,61,71,81" | 6:53'31'' | 0:31'33'' |
 
-## ZS97: merge anchors
-
-```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel --no-run-if-empty -k -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel --no-run-if-empty -k -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o merge/others.merge0.fasta
-anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "merge,others" \
-    -o 9_qa
-
-```
-
-## ZS97: final stats
-
-* Stats
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.config"; faops n50 -H -S -C 8_spades/configs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/contigs.non-contained.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/gapClosed.non-contained.fasta;) >> stat3.md
-
-cat stat3.md
-
-```
 
 | Name                   |      N50 |       Sum |       # |
 |:-----------------------|---------:|----------:|--------:|
@@ -667,61 +281,309 @@ cat stat3.md
 | platanus.scaffold      |     7687 | 325245861 |  396499 |
 | platanus.non-contained |     9554 | 270282635 |   43521 |
 
-* quast
+
+# JDM
+
+* *Actinidia chinensis*
+* 猕猴桃
+* Taxonomy ID: [3625](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=3625)
+
+## JDM: download
+
+* Reference genome
+
+    * GenBank assembly accession: GCA_000467755.1
+    * Assembly name: Kiwifruit_v1
 
 ```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+mkdir -p ~/data/dna-seq/chara/JDM/1_genome
+cd ~/data/dna-seq/chara/JDM/1_genome
 
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    8_spades/contigs.non-contained.fasta \
-    8_platanus/gapClosed.non-contained.fasta \
-    --label "merge,spades,platanus" \
-    -o 9_qa_contig
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/467/755/GCA_000467755.1_Kiwifruit_v1/GCA_000467755.1_Kiwifruit_v1_genomic.fna.gz
 
 ```
 
-## ZS97: clear intermediate files
+# JDM003
+
+## JDM003: download
 
 ```bash
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+mkdir -p ~/data/dna-seq/chara/JDM003/2_illumina
+cd ~/data/dna-seq/chara/JDM003/2_illumina
 
-# bax2bam
-rm -fr 3_pacbio/bam/*
-rm -fr 3_pacbio/fasta/*
-rm -fr 3_pacbio/untar/*
-
-# quorum
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-
-# down sampling
-rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
-rm -fr Q{20,25,30,35}L{30,60,90,120}X*
-
-rm -fr mergeQ*
-rm -fr mergeL*
-
-# canu
-find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
-find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
-find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
-
-# spades
-find . -type d -path "*8_spades/*" | xargs rm -fr
-
-# platanus
-find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
+ln -s ../../RawData/JDM003_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM003_1.fq.gz R2.fq.gz
 
 ```
+
+## JDM003: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM003/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM003
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM003/ ~/data/dna-seq/chara/JDM003
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM003
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+```
+
+## JDM003: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 21.26G | 141737926 |
+| uniq     | 150 | 17.25G | 115023970 |
+| Q25L60   | 150 | 16.62G | 112626762 |
+| Q30L60   | 150 | 15.27G | 106192466 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.0 |    150 |  10.9 |          5.39% |
+| Q30L60 | 141.9 |    150 |  20.9 |          6.69% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
+| Q25L60 |  27.5 |   20.4 |   25.86% |     148 | "105" | 604.22M | 983.47M |     1.63 | 0:31'42'' |
+| Q30L60 |  25.3 |   20.0 |   21.03% |     144 | "105" | 604.22M | 951.09M |     1.57 | 0:31'38'' |
+
+```text
+#File	pe.cor.raw
+#Total	83340704
+#Matched	93346	0.11201%
+#Name	Reads	ReadsPct
+Reverse_adapter	93020	0.11161%
+
+#File	pe.cor.raw
+#Total	83796924
+#Matched	56020	0.06685%
+#Name	Reads	ReadsPct
+Reverse_adapter	55954	0.06677%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   20.4 |   0.50% |      1166 | 1.95M | 1598 |      1142 | 1.88M | 1567 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:01'52'' | 0:01'37'' |
+| Q30L60XallP000 |   20.0 |   0.56% |      1165 | 2.27M | 1846 |      1147 | 1.82M | 1511 |   12.0 | 3.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 1:54'06'' | 0:01'35'' |
+
+# JDM006
+
+## JDM006: download
+
+```bash
+mkdir -p ~/data/dna-seq/chara/JDM006/2_illumina
+cd ~/data/dna-seq/chara/JDM006/2_illumina
+
+ln -s ../../RawData/JDM006_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM006_1.fq.gz R2.fq.gz
+
+```
+
+## JDM006: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM006/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM006
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM006/ ~/data/dna-seq/chara/JDM006
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM006
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+```
+
+## JDM006: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 22.58G | 150520322 |
+| uniq     | 150 | 18.97G | 126484946 |
+| Q25L60   | 150 | 18.29G | 123845644 |
+| Q30L60   | 150 | 16.85G | 116917126 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.3 |    150 |  10.3 |          5.68% |
+| Q30L60 | 142.7 |    150 |  20.0 |          6.98% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
+| Q25L60 |  30.3 |   22.5 |   25.54% |     147 | "105" | 604.22M | 1.11G |     1.84 | 0:40'07'' |
+| Q30L60 |  27.9 |   22.1 |   20.88% |     144 | "105" | 604.22M | 1.07G |     1.78 | 0:38'10'' |
+
+```text
+#Q25L60
+#Matched	103806	0.11281%
+#Name	Reads	ReadsPct
+contam_27	103026	0.11196%
+contam_139	144	0.00016%
+contam_43	134	0.00015%
+contam_175	106	0.00012%
+
+#Q30L60
+#Matched	63108	0.06828%
+#Name	Reads	ReadsPct
+contam_27	62448	0.06757%
+contam_139	146	0.00016%
+contam_43	128	0.00014%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.5 |   1.15% |      1445 | 6.78M | 4421 |      1251 | 2.88M | 2165 |   11.0 | 2.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:21'07'' | 0:02'10'' |
+| Q30L60XallP000 |   22.1 |   1.27% |      1491 | 6.93M | 4354 |      1265 | 3.09M | 2287 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:13'56'' | 0:02'10'' |
+
+# JDM008
+
+## JDM008: download
+
+```bash
+mkdir -p ~/data/dna-seq/chara/JDM008/2_illumina
+cd ~/data/dna-seq/chara/JDM008/2_illumina
+
+ln -s ../../RawData/JDM008_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM008_1.fq.gz R2.fq.gz
+
+```
+
+## JDM008: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM008/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM008
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM008/ ~/data/dna-seq/chara/JDM008
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM008
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+```
+
+## JDM008: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 22.51G | 150077492 |
+| uniq     | 150 | 18.79G | 125253930 |
+| Q25L60   | 150 | 18.08G | 122597730 |
+| Q30L60   | 150 | 16.59G | 115506944 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.0 |    150 |  11.0 |          4.97% |
+| Q30L60 | 141.8 |    150 |  21.0 |          6.22% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
+| Q25L60 |  29.9 |   22.3 |   25.57% |     147 | "105" | 604.22M | 1.05G |     1.74 | 0:40'47'' |
+| Q30L60 |  27.5 |   21.8 |   20.57% |     143 | "105" | 604.22M | 1.01G |     1.67 | 0:34'24'' |
+
+```text
+#Q25L60
+#Matched	148646	0.16316%
+#Name	Reads	ReadsPct
+contam_27	147734	0.16216%
+contam_43	162	0.00018%
+contam_32	140	0.00015%
+contam_139	134	0.00015%
+contam_175	126	0.00014%
+TruSeq_Adapter_Index_16	104	0.00011%
+
+#Q30L60
+#Matched	85306	0.09305%
+#Name	Reads	ReadsPct
+contam_27	84638	0.09232%
+contam_43	144	0.00016%
+contam_32	144	0.00016%
+contam_139	132	0.00014%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.3 |   0.46% |      1176 | 2.02M | 1647 |      1146 | 1.94M | 1614 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:11'33'' | 0:01'40'' |
+| Q30L60XallP000 |   21.8 |   0.53% |      1173 | 2.29M | 1870 |      1147 | 1.92M | 1584 |   12.0 | 4.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 2:06'55'' | 0:01'44'' |
 
 # CgiA, Cercis gigantea, 巨紫荆 A
 
@@ -1485,12 +1347,10 @@ printf "| %s | %s | %s | %s |\n" \
 
 # moli, 茉莉
 
-SR had failed twice due to the calculating results from awk were larger
-than the MAX_INT
+SR had failed twice due to the calculating results from awk were larger than the MAX_INT
 
 * for jellyfish
-* for --number-reads of
-  `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
+* for --number-reads of `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/medfood
