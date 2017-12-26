@@ -362,6 +362,33 @@ anchr template \
 
 Same as [FCM05: run](plants.md#zs97-run)
 
+* Mapping reads against spades configs
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM003
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+cd 2_illumina/Q25L60
+
+bbmap.sh \
+    in=R1.sickle.fq.gz \
+    in2=R2.sickle.fq.gz \
+    out=pe.sam.gz \
+    ref=../../8_spades/spades.non-contained.fasta \
+    threads=16 \
+    maxindel=0 strictmaxindel perfectmode \
+    reads=2000000 \
+    nodisk overwrite
+
+reformat.sh \
+    in=pe.sam.gz \
+    ihist=ihist.spades.txt \
+    overwrite
+
+```
+
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
 | Illumina | 150 | 21.26G | 141737926 |
