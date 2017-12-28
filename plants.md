@@ -20,6 +20,18 @@
     - [JDM008: download](#jdm008-download)
     - [JDM008: template](#jdm008-template)
     - [JDM008: run](#jdm008-run)
+- [JDM009](#jdm009)
+    - [JDM009: download](#jdm009-download)
+    - [JDM009: template](#jdm009-template)
+    - [JDM009: run](#jdm009-run)
+- [JDM016](#jdm016)
+    - [JDM016: download](#jdm016-download)
+    - [JDM016: template](#jdm016-template)
+    - [JDM016: run](#jdm016-run)
+- [JDM018](#jdm018)
+    - [JDM018: download](#jdm018-download)
+    - [JDM018: template](#jdm018-template)
+    - [JDM018: run](#jdm018-run)
 - [CgiA, Cercis gigantea, 巨紫荆 A](#cgia-cercis-gigantea-巨紫荆-a)
     - [CgiA: download](#cgia-download)
     - [CgiA: combinations of different quality values and read lengths](#cgia-combinations-of-different-quality-values-and-read-lengths)
@@ -168,13 +180,13 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 # merge reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
 
-# reads stats
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
-
 # insert size
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+
+# reads stats
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
 # spades and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
@@ -304,6 +316,13 @@ cd ~/data/dna-seq/chara/JDM/1_genome
 
 aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/467/755/GCA_000467755.1_Kiwifruit_v1/GCA_000467755.1_Kiwifruit_v1_genomic.fna.gz
 
+gzip -d -c GCA_000467755.1_Kiwifruit_v1_genomic.fna.gz \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > genome.fa
+
 ```
 
 # JDM003
@@ -311,6 +330,11 @@ aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/467/755/GCA_0
 ## JDM003: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM003/1_genome
+cd ~/data/dna-seq/chara/JDM003/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM003/2_illumina
 cd ~/data/dna-seq/chara/JDM003/2_illumina
 
@@ -389,17 +413,39 @@ reformat.sh \
 
 ```
 
+* Mapping reads against reference genome
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM003
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+cd 2_illumina/Q25L60
+
+bbmap.sh \
+    in=R1.sickle.fq.gz \
+    in2=R2.sickle.fq.gz \
+    out=pe.sam.gz \
+    ref=../../1_genome/genome.fa \
+    threads=16 \
+    maxindel=0 strictmaxindel perfectmode \
+    reads=2000000 \
+    nodisk overwrite
+
+reformat.sh \
+    in=pe.sam.gz \
+    ihist=ihist.genome.txt \
+    overwrite
+
+```
+
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
 | Illumina | 150 | 21.26G | 141737926 |
 | uniq     | 150 | 17.25G | 115023970 |
 | Q25L60   | 150 | 16.62G | 112626762 |
 | Q30L60   | 150 | 15.27G | 106192466 |
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 148.0 |    150 |  10.9 |          5.39% |
-| Q30L60 | 141.9 |    150 |  20.9 |          6.69% |
 
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
@@ -427,6 +473,11 @@ contam_43	160	0.00029%
 contam_139	103	0.00019%
 ```
 
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.0 |    150 |  10.9 |          5.39% |
+| Q30L60 | 141.9 |    150 |  20.9 |          6.69% |
+
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
 | Q25L60 |  27.5 |   20.4 |   25.86% |     148 | "105" | 604.22M | 983.47M |     1.63 | 0:31'42'' |
@@ -452,14 +503,16 @@ Reverse_adapter	55954	0.06677%
 | Q25L60XallP000 |   20.4 |   0.50% |      1166 | 1.95M | 1598 |      1142 | 1.88M | 1567 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:01'52'' | 0:01'37'' |
 | Q30L60XallP000 |   20.0 |   0.56% |      1165 | 2.27M | 1846 |      1147 | 1.82M | 1511 |   12.0 | 3.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 1:54'06'' | 0:01'35'' |
 
-| Name                 |  N50 |        Sum |       # |
-|:---------------------|-----:|-----------:|--------:|
-| anchors              | 1171 |    2652062 |    2158 |
-| others               | 1146 |    2317623 |    1922 |
-| tadpole.Q25L60       |  167 |  219200568 | 1255408 |
-| tadpole.Q30L60       |  169 |  230766012 | 1311969 |
-| spades.contig        |  508 | 1116104293 | 3783739 |
-| spades.non-contained | 1816 |  331656423 |  185103 |
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 1171 |    2652062 |     2158 |
+| others                 | 1146 |    2317623 |     1922 |
+| tadpole.Q25L60         |  167 |  219200568 |  1255408 |
+| tadpole.Q30L60         |  169 |  230766012 |  1311969 |
+| spades.contig          |  508 | 1116104293 |  3783739 |
+| spades.non-contained   | 1816 |  331656423 |   185103 |
+| platanus.contig        |   68 | 1204577582 | 18195614 |
+| platanus.non-contained |    0 |          0 |        0 |
 
 # JDM006
 
@@ -583,6 +636,18 @@ contam_43	128	0.00014%
 | Q25L60XallP000 |   22.5 |   1.15% |      1445 | 6.78M | 4421 |      1251 | 2.88M | 2165 |   11.0 | 2.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:21'07'' | 0:02'10'' |
 | Q30L60XallP000 |   22.1 |   1.27% |      1491 | 6.93M | 4354 |      1265 | 3.09M | 2287 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:13'56'' | 0:02'10'' |
 
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 1500 |    7973331 |     4982 |
+| others                 | 1278 |    3882465 |     2852 |
+| tadpole.Q25L60         |  178 |  278979484 |  1500703 |
+| tadpole.Q30L60         |  179 |  290288863 |  1550302 |
+| spades.contig          |  494 | 1232457684 |  4121439 |
+| spades.non-contained   | 1807 |  348837928 |   194494 |
+| platanus.contig        |   66 | 1333438154 | 20228974 |
+| platanus.non-contained |    0 |          0 |        0 |
+
+
 # JDM008
 
 ## JDM008: download
@@ -629,6 +694,8 @@ anchr template \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 ```
@@ -644,6 +711,33 @@ Same as [FCM05: run](plants.md#zs97-run)
 | Q25L60   | 150 | 18.08G | 122597730 |
 | Q30L60   | 150 | 16.59G | 115506944 |
 
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 150 |      9G | 59997353 |
+| trimmed      | 150 |   8.81G | 59585788 |
+| filtered     | 150 |   8.81G | 59583285 |
+| ecco         | 150 |   8.73G | 59583284 |
+| ecct         | 150 |   3.75G | 25629337 |
+| extended     | 185 |   4.51G | 25629337 |
+| merged       | 181 | 261.03M |  1499529 |
+| unmerged.raw | 186 |      4G | 22630278 |
+| unmerged     | 183 |    3.7G | 22057741 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 148.3 |    149 |  37.6 |          9.06% |
+| ihist.merge.txt  | 174.1 |    175 |  36.1 |         11.70% |
+
+```text
+#mergeReads
+#Matched	2503	0.00420%
+#Name	Reads	ReadsPct
+contam_27	1862	0.00312%
+contam_43	139	0.00023%
+contam_175	134	0.00022%
+contam_32	101	0.00017%
+```
+
 | Group  |  Mean | Median | STDev | PercentOfPairs |
 |:-------|------:|-------:|------:|---------------:|
 | Q25L60 | 148.0 |    150 |  11.0 |          4.97% |
@@ -651,8 +745,8 @@ Same as [FCM05: run](plants.md#zs97-run)
 
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
-| Q25L60 |  29.9 |   22.3 |   25.57% |     147 | "105" | 604.22M | 1.05G |     1.74 | 0:40'47'' |
-| Q30L60 |  27.5 |   21.8 |   20.57% |     143 | "105" | 604.22M | 1.01G |     1.67 | 0:34'24'' |
+| Q25L60 |  29.9 |   22.3 |   25.57% |     147 | "105" | 604.22M | 1.05G |     1.74 | 0:34'50'' |
+| Q30L60 |  27.5 |   21.8 |   20.57% |     143 | "105" | 604.22M | 1.01G |     1.67 | 0:31'28'' |
 
 ```text
 #Q25L60
@@ -677,8 +771,417 @@ contam_139	132	0.00014%
 
 | Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60XallP000 |   22.3 |   0.46% |      1176 | 2.02M | 1647 |      1146 | 1.94M | 1614 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:11'33'' | 0:01'40'' |
-| Q30L60XallP000 |   21.8 |   0.53% |      1173 | 2.29M | 1870 |      1147 | 1.92M | 1584 |   12.0 | 4.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 2:06'55'' | 0:01'44'' |
+| Q25L60XallP000 |   22.3 |   0.46% |      1176 | 2.02M | 1647 |      1146 | 1.94M | 1614 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:12'04'' | 0:01'43'' |
+| Q30L60XallP000 |   21.8 |   0.53% |      1173 | 2.29M | 1870 |      1147 | 1.92M | 1584 |   12.0 | 4.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 2:07'45'' | 0:01'41'' |
+
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 1176 |    2684597 |     2188 |
+| others                 | 1146 |    2438734 |     2013 |
+| tadpole.Q25L60         |  169 |  233889899 |  1325523 |
+| tadpole.Q30L60         |  171 |  245658800 |  1381700 |
+| spades.contig          |  490 | 1179183220 |  4043921 |
+| spades.non-contained   | 1794 |  331971570 |   187024 |
+| platanus.contig        |   65 | 1295903737 | 19893464 |
+| platanus.non-contained |    0 |          0 |        0 |
+
+# JDM009
+
+## JDM009: download
+
+```bash
+mkdir -p ~/data/dna-seq/chara/JDM009/2_illumina
+cd ~/data/dna-seq/chara/JDM009/2_illumina
+
+ln -s ../../RawData/JDM009_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM009_1.fq.gz R2.fq.gz
+
+```
+
+## JDM009: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM009/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM009
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM009/ ~/data/dna-seq/chara/JDM009
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM009
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --mergereads \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## JDM009: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 22.55G | 150343844 |
+| uniq     | 150 | 18.81G | 125379732 |
+| Q25L60   | 150 |  18.1G | 122745054 |
+| Q30L60   | 150 | 16.54G | 115362118 |
+
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 150 |      9G | 59997867 |
+| trimmed      | 150 |   8.81G | 59616253 |
+| filtered     | 150 |   8.81G | 59614611 |
+| ecco         | 150 |   8.73G | 59614610 |
+| ecct         | 150 |    3.6G | 24632806 |
+| extended     | 183 |   4.33G | 24632806 |
+| merged       | 180 | 254.59M |  1469355 |
+| unmerged.raw | 185 |   3.83G | 21694096 |
+| unmerged     | 182 |   3.53G | 21115365 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 148.1 |    149 |  37.9 |          9.15% |
+| ihist.merge.txt  | 173.3 |    174 |  36.4 |         11.93% |
+
+```text
+#mergeReads
+#Matched	1642	0.00275%
+#Name	Reads	ReadsPct
+contam_27	1041	0.00175%
+contam_43	209	0.00035%
+```
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.1 |    150 |  10.7 |          5.60% |
+| Q30L60 | 141.9 |    150 |  20.9 |          7.00% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
+| Q25L60 |  30.0 |   22.0 |   26.52% |     147 | "105" | 604.22M | 1.07G |     1.77 | 0:35'01'' |
+| Q30L60 |  27.4 |   21.5 |   21.34% |     144 | "105" | 604.22M | 1.03G |     1.71 | 0:31'23'' |
+
+```text
+#Q25L60
+#Matched	110340	0.12259%
+#Name	Reads	ReadsPct
+contam_27	109630	0.12180%
+contam_43	268	0.00030%
+contam_139	124	0.00014%
+
+#Q30L60
+#Matched	61706	0.06806%
+#Name	Reads	ReadsPct
+contam_27	61076	0.06737%
+contam_43	264	0.00029%
+contam_139	116	0.00013%
+
+```
+
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 2157 |    8630604 |     4218 |
+| others                 | 1188 |    2326752 |     1831 |
+| tadpole.Q25L60         |  173 |  249717930 |  1376811 |
+| tadpole.Q30L60         |  174 |  262341035 |  1435298 |
+| spades.contig          |  498 | 1202053892 |  4071644 |
+| spades.non-contained   | 1812 |  347053383 |   192618 |
+| platanus.contig        |   66 | 1311171609 | 19953535 |
+| platanus.non-contained |    0 |          0 |        0 |
+
+# JDM016
+
+## JDM016: download
+
+```bash
+mkdir -p ~/data/dna-seq/chara/JDM016/2_illumina
+cd ~/data/dna-seq/chara/JDM016/2_illumina
+
+ln -s ../../RawData/JDM016_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM016_1.fq.gz R2.fq.gz
+
+```
+
+## JDM016: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM016/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM016
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM016/ ~/data/dna-seq/chara/JDM016
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM016
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --mergereads \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## JDM016: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 25.54G | 170279154 |
+| uniq     | 150 | 21.49G | 143290894 |
+| Q25L60   | 150 | 20.73G | 140399388 |
+| Q30L60   | 150 | 19.09G | 132624128 |
+
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 150 |   10.3G | 68684337 |
+| trimmed      | 150 |  10.09G | 68243010 |
+| filtered     | 150 |  10.09G | 68240358 |
+| ecco         | 150 |  10.01G | 68240358 |
+| ecct         | 150 |   4.87G | 33188143 |
+| extended     | 187 |   5.88G | 33188143 |
+| merged       | 182 | 333.79M |  1900104 |
+| unmerged.raw | 188 |   5.23G | 29387934 |
+| unmerged     | 183 |   4.85G | 28700939 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 148.3 |    149 |  36.4 |          9.01% |
+| ihist.merge.txt  | 175.7 |    177 |  35.4 |         11.45% |
+
+```text
+#mergeReads
+#Matched	2652	0.00389%
+#Name	Reads	ReadsPct
+contam_27	1817	0.00266%
+contam_43	247	0.00036%
+contam_32	114	0.00017%
+contam_139	109	0.00016%
+contam_175	116	0.00017%
+```
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.3 |    150 |  10.3 |          4.19% |
+| Q30L60 | 142.5 |    150 |  20.3 |          5.16% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
+| Q25L60 |  34.3 |   26.3 |   23.19% |     147 | "105" | 604.22M |  1.1G |     1.82 | 0:40'09'' |
+| Q30L60 |  31.6 |   25.9 |   18.05% |     144 | "105" | 604.22M | 1.06G |     1.76 | 0:36'08'' |
+
+```text
+#Q25L60
+#Matched	119296	0.11088%
+#Name	Reads	ReadsPct
+contam_27	117996	0.10967%
+contam_43	318	0.00030%
+contam_176	236	0.00022%
+contam_139	160	0.00015%
+contam_32	146	0.00014%
+contam_175	178	0.00017%
+
+#Q30L60
+#Matched	71796	0.06617%
+#Name	Reads	ReadsPct
+contam_27	70858	0.06530%
+contam_43	316	0.00029%
+contam_139	156	0.00014%
+contam_32	138	0.00013%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   26.3 |   0.49% |      1187 | 2.48M | 2004 |      1141 | 2.22M | 1853 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:31'04'' | 0:01'55'' |
+| Q30L60XallP000 |   25.9 |   0.56% |      1196 | 2.88M | 2308 |      1140 | 2.19M | 1835 |   12.0 | 3.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 2:23'21'' | 0:01'58'' |
+
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 1198 |    3356856 |     2692 |
+| others                 | 1140 |    2798615 |     2344 |
+| tadpole.Q25L60         |  168 |  216698860 |  1233874 |
+| tadpole.Q30L60         |  169 |  227859064 |  1289407 |
+| spades.contig          |  462 | 1286561733 |  4675119 |
+| spades.non-contained   | 1771 |  338522265 |   192345 |
+| platanus.contig        |   63 | 1503634982 | 24152905 |
+| platanus.non-contained |    0 |          0 |        0 |
+
+# JDM018
+
+## JDM018: download
+
+```bash
+mkdir -p ~/data/dna-seq/chara/JDM018/2_illumina
+cd ~/data/dna-seq/chara/JDM018/2_illumina
+
+ln -s ../../RawData/JDM018_1.fq.gz R1.fq.gz
+ln -s ../../RawData/JDM018_1.fq.gz R2.fq.gz
+
+```
+
+## JDM018: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/chara/RawData/ \
+    wangq@202.119.37.251:data/dna-seq/chara/RawData
+
+rsync -avP \
+    ~/data/dna-seq/chara/JDM018/ \
+    wangq@202.119.37.251:data/dna-seq/chara/JDM018
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/JDM018/ ~/data/dna-seq/chara/JDM018
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM018
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 604217145 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --mergereads \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## JDM018: run
+
+Same as [FCM05: run](plants.md#zs97-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 20.98G | 139887246 |
+| uniq     | 150 | 17.53G | 116853548 |
+| Q25L60   | 150 | 16.91G | 114491980 |
+| Q30L60   | 150 | 15.57G | 108124660 |
+
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 150 |   8.42G | 56122727 |
+| trimmed      | 150 |   8.26G | 55789050 |
+| filtered     | 150 |   8.25G | 55787450 |
+| ecco         | 150 |   8.18G | 55787450 |
+| ecct         | 150 |   3.25G | 22230011 |
+| extended     | 183 |   3.89G | 22230011 |
+| merged       | 179 | 233.94M |  1356645 |
+| unmerged.raw | 183 |   3.44G | 19516720 |
+| unmerged     | 181 |   3.19G | 19036569 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 148.3 |    149 |  38.1 |          9.40% |
+| ihist.merge.txt  | 172.4 |    173 |  36.4 |         12.21% |
+
+```text
+#mergeReads
+#Matched	1600	0.00287%
+#Name	Reads	ReadsPct
+contam_27	1004	0.00180%
+contam_43	171	0.00031%
+contam_139	119	0.00021%
+```
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.1 |    150 |  10.8 |          5.19% |
+| Q30L60 | 142.1 |    150 |  20.6 |          6.43% |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
+| Q25L60 |  28.0 |   20.8 |   25.57% |     147 | "105" | 604.22M |   1.03G |     1.71 | 0:32'28'' |
+| Q30L60 |  25.8 |   20.4 |   20.81% |     144 | "105" | 604.22M | 997.75M |     1.65 | 0:29'20'' |
+
+```text
+#Q25L60
+#Matched	83608	0.09834%
+#Name	Reads	ReadsPct
+contam_27	82704	0.09728%
+contam_43	210	0.00025%
+contam_175	232	0.00027%
+contam_139	168	0.00020%
+contam_32	106	0.00012%
+
+#Q30L60
+#Matched	49302	0.05765%
+#Name	Reads	ReadsPct
+contam_27	48592	0.05682%
+contam_43	210	0.00025%
+contam_139	160	0.00019%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   20.8 |   0.56% |      1180 | 2.59M | 2097 |      1146 | 2.02M | 1667 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:07'56'' | 0:01'41'' |
+| Q30L60XallP000 |   20.4 |   0.62% |      1178 | 2.56M | 2064 |      1154 | 2.25M | 1848 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:00'43'' | 0:01'41'' |
+
+| Name                   |  N50 |        Sum |        # |
+|:-----------------------|-----:|-----------:|---------:|
+| anchors                | 1181 |    3107209 |     2504 |
+| others                 | 1145 |    2597900 |     2145 |
+| tadpole.Q25L60         |  170 |  242369531 |  1365894 |
+| tadpole.Q30L60         |  172 |  254111528 |  1421879 |
+| spades.contig          |  514 | 1157647446 |  3815742 |
+| spades.non-contained   | 1795 |  341146096 |   191848 |
+| platanus.contig        |   68 | 1253459699 | 18917682 |
+| platanus.non-contained |    0 |          0 |        0 |
 
 # CgiA, Cercis gigantea, 巨紫荆 A
 
