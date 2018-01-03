@@ -177,6 +177,7 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM05
+QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
@@ -185,10 +186,15 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 530000000 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --tile \
+    --ecphase "1,2,3" \
     --parallel 24
 
 ```
@@ -197,42 +203,63 @@ anchr template \
 
 ```bash
 # Illumina QC
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
 # preprocess Illumina reads
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
 # reads stats
+bsub -w "ended(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+
+# merge reads
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
+
+# insert size
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # spades and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
 
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
 
 # quorum
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
 
 # down sampling, k-unitigs and anchors
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
+
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpole" "bash 4_tadpole.sh"
+bsub -w "done(${BASE_NAME}-4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q mpi -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_kunitigs" "bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors"
+
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_tadpole" "bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors"
+
+bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mergeAnchors_4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
 
 # stats
 #bash 9_statFinal.sh
