@@ -429,7 +429,6 @@ bbmap.sh \
     out=pe.sam.gz \
     ref=../../1_genome/genome.fa \
     threads=16 \
-    maxindel=0 strictmaxindel perfectmode \
     reads=2000000 \
     nodisk overwrite
 
