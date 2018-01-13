@@ -411,33 +411,6 @@ anchr template \
 
 Same as [FCM05: run](plants.md#zs97-run)
 
-* Mapping reads against spades configs
-
-```bash
-WORKING_DIR=${HOME}/data/dna-seq/chara
-BASE_NAME=JDM003
-
-cd ${WORKING_DIR}/${BASE_NAME}
-
-cd 2_illumina/Q25L60
-
-bbmap.sh \
-    in=R1.sickle.fq.gz \
-    in2=R2.sickle.fq.gz \
-    out=pe.sam.gz \
-    ref=../../8_spades/spades.non-contained.fasta \
-    threads=16 \
-    maxindel=0 strictmaxindel perfectmode \
-    reads=2000000 \
-    nodisk overwrite
-
-reformat.sh \
-    in=pe.sam.gz \
-    ihist=ihist.spades.txt \
-    overwrite
-
-```
-
 * Mapping reads against reference genome
 
 ```bash
@@ -460,6 +433,49 @@ bbmap.sh \
 reformat.sh \
     in=pe.sam.gz \
     ihist=ihist.genome.txt \
+    overwrite
+
+```
+
+* Sam to fastq
+
+```bash
+cd ~/data/dna-seq/chara/novo
+
+pigz -d -c NDSW08998_L1.sam.gz > NDSW08998_L1.sam
+
+reformat.sh \
+    in=NDSW08998_L1.sam \
+    ihist=ihist.novo.txt \
+    overwrite
+
+picard SortSam \
+    I=NDSW08998_L1.sam \
+    O=NDSW08998_L1.sort.sam \
+    SORT_ORDER=coordinate
+
+picard CollectInsertSizeMetrics \
+    I=NDSW08998_L1.sort.sam \
+    O=insert_size.metrics.txt \
+    HISTOGRAM_FILE=insert_size.metrics.pdf
+
+picard SamToFastq \
+    I=NDSW08998_L1.sam \
+    FASTQ=output.fq \
+    INTERLEAVE=True
+
+fastqc output.fq
+
+bbmap.sh \
+    in=output.fq \
+    out=pe.sam.gz \
+    ref=../JDM/1_genome/genome.fa \
+    threads=16 \
+    nodisk overwrite
+
+reformat.sh \
+    in=pe.sam.gz \
+    ihist=ihist.remap.txt \
     overwrite
 
 ```
