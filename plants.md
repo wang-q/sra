@@ -159,10 +159,14 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 346663259 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "40 60 all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 ```
@@ -177,6 +181,10 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 # preprocess Illumina reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
+# reads stats
+bsub -w "ended(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+
 # merge reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
 
@@ -184,13 +192,12 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
-# reads stats
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
-
-# spades and platanus
+# spades, megahit, and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
+
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_megahit" "bash 8_megahit.sh"
 
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
@@ -204,16 +211,34 @@ bsub -w "done(${BASE_NAME}-2_quorum)" \
 # down sampling, k-unitigs and anchors
 bsub -w "done(${BASE_NAME}-2_quorum)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 bsub -w "done(${BASE_NAME}-4_kunitigs)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
+
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpole" "bash 4_tadpole.sh"
+bsub -w "done(${BASE_NAME}-4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_kunitigs" "bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors"
+
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_tadpole" "bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors"
+
+bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mergeAnchors_4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
+
+# quast
+bsub -w "ended(${BASE_NAME}-6_mergeAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_quast" "bash 9_quast.sh"
 
 # stats
 #bash 9_statFinal.sh
