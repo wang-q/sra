@@ -419,17 +419,35 @@ BASE_NAME=JDM003
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-cd 2_illumina/Q25L60
+cd 2_illumina
 
 bbmap.sh \
-    in=R1.sickle.fq.gz \
-    in2=R2.sickle.fq.gz \
+    in=R1.fq.gz \
+    in2=R2.fq.gz \
     out=pe.sam.gz \
-    ref=../../1_genome/genome.fa \
+    ref=../1_genome/genome.fa \
     threads=16 \
-    reads=2000000 \
     nodisk overwrite
 
+# with picard
+# clean sam and convert to bam
+picard CleanSam \
+    I=pe.sam.gz \
+    O=pe.clean.bam
+
+# fix mate info and sort
+picard FixMateInformation \
+    I=pe.clean.bam \
+    O=pe.sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+picard CollectInsertSizeMetrics \
+    I=pe.sort.bam \
+    O=insert_size.metrics.txt \
+    HISTOGRAM_FILE=insert_size.metrics.pdf
+
+# with bbtools
 reformat.sh \
     in=pe.sam.gz \
     ihist=ihist.genome.txt \
