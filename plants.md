@@ -427,17 +427,12 @@ bbmap.sh \
     out=pe.sam.gz \
     ref=../1_genome/genome.fa \
     threads=16 \
-    nodisk overwrite
+    fast nodisk overwrite
 
 # with picard
-# clean sam and convert to bam
-picard CleanSam \
+# bam need to be sorted
+picard SortSam \
     I=pe.sam.gz \
-    O=pe.clean.bam
-
-# fix mate info and sort
-picard FixMateInformation \
-    I=pe.clean.bam \
     O=pe.sort.bam \
     SORT_ORDER=coordinate \
     VALIDATION_STRINGENCY=LENIENT
@@ -452,6 +447,26 @@ reformat.sh \
     in=pe.sam.gz \
     ihist=ihist.genome.txt \
     overwrite
+
+# bwa
+bwa index -a bwtsw ../1_genome/genome.fa
+samtools faidx ../1_genome/genome.fa
+bwa mem -M -t 16 \
+    ../1_genome/genome.fa \
+    R1.fq.gz \
+    R2.fq.gz \
+    | pigz -3 > bwa.sam.gz
+
+picard SortSam \
+    I=bwa.sam.gz \
+    O=bwa.sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+picard CollectInsertSizeMetrics \
+    I=bwa.sort.bam \
+    O=bwa.insert_size.txt \
+    HISTOGRAM_FILE=bwa.insert_size.pdf
 
 ```
 
