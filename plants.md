@@ -475,41 +475,70 @@ picard CollectInsertSizeMetrics \
 ```bash
 cd ~/data/dna-seq/chara/novo
 
-pigz -d -c NDSW08998_L1.sam.gz > NDSW08998_L1.sam
-
+# from novo
 reformat.sh \
-    in=NDSW08998_L1.sam \
-    ihist=ihist.novo.txt \
+    in=NDSW08998_L1.sam.gz \
+    ihist=NDSW08998_L1.ihist.txt \
     overwrite
 
 picard SortSam \
-    I=NDSW08998_L1.sam \
-    O=NDSW08998_L1.sort.sam \
+    I=NDSW08998_L1.sam.gz \
+    O=NDSW08998_L1.sort.bam \
     SORT_ORDER=coordinate
 
 picard CollectInsertSizeMetrics \
-    I=NDSW08998_L1.sort.sam \
-    O=insert_size.metrics.txt \
-    HISTOGRAM_FILE=insert_size.metrics.pdf
+    I=NDSW08998_L1.sort.bam \
+    O=NDSW08998_L1.insert_size.txt \
+    HISTOGRAM_FILE=NDSW08998_L1.insert_size.pdf
 
 picard SamToFastq \
-    I=NDSW08998_L1.sam \
-    FASTQ=output.fq \
+    I=NDSW08998_L1.sam.gz \
+    FASTQ=NDSW08998_L1.fq.gz \
     INTERLEAVE=True
 
-fastqc output.fq
+fastqc NDSW08998_L1.fq.gz
 
+# bbmap
 bbmap.sh \
-    in=output.fq \
+    in=NDSW08998_L1.fq.gz \
     out=pe.sam.gz \
     ref=../JDM/1_genome/genome.fa \
     threads=16 \
-    nodisk overwrite
+    fast nodisk overwrite
+
+picard SortSam \
+    I=pe.sam.gz \
+    O=pe.sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+picard CollectInsertSizeMetrics \
+    I=pe.sort.bam \
+    O=remap.insert_size.txt \
+    HISTOGRAM_FILE=remap.insert_size.pdf
 
 reformat.sh \
     in=pe.sam.gz \
-    ihist=ihist.remap.txt \
+    ihist=remap.ihist.txt \
     overwrite
+
+# bwa
+bwa index -a bwtsw ../JDM/1_genome/genome.fa
+bwa mem -M -t 16 -p \
+    ../JDM/1_genome/genome.fa \
+    NDSW08998_L1.fq.gz \
+    | pigz -3 > bwa.sam.gz
+
+picard SortSam \
+    I=bwa.sam.gz \
+    O=bwa.sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+picard CollectInsertSizeMetrics \
+    I=bwa.sort.bam \
+    O=bwa.insert_size.txt \
+    HISTOGRAM_FILE=bwa.insert_size.pdf
 
 ```
 
