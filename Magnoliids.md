@@ -488,166 +488,176 @@ READ_LEN="60"
 
 ```
 
+# FCM05DSE
+
+## FCM05DSE: download
+
 * Illumina
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
-cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+mkdir -p ${HOME}/data/dna-seq/xjy2/FCM05DSE/2_illumina
+cd ${HOME}/data/dna-seq/xjy2/FCM05DSE/2_illumina
 
-ln -s ${WORKING_DIR}/FCM05D/2_illumina/R1.fq.gz R1.fq.gz
-
-```
-
-## FCM05SE: preprocess Illumina reads
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-cd 2_illumina
-
-anchr trim \
-    --uniq \
-    --nosickle \
-    R1.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+ln -s ../../FCM05D/2_illumina/R1.fq.gz R1.fq.gz
 
 ```
 
-## FCM05SE: reads stats
+## FCM05DSE: template
+
+* Rsync to hpcc
 
 ```bash
-cd ${WORKING_DIR}/${BASE_NAME}
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
+rsync -avP \
+    ~/data/dna-seq/xjy2/FCM05DSE/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/FCM05DSE
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz;) >> stat.md
-if [ -e 2_illumina/R1.uniq.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.sample.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.scythe.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz;) >> stat.md
-fi
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            faops n50 -H -S -C \
-                2_illumina/Q{1}L{2}/R1.sickle.fq.gz;
-        )
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-    >> stat.md
-
-cat stat.md
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/FCM05DSE/ ~/data/dna-seq/xjy2/FCM05DSE
 
 ```
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 49640232150 | 330934881 |
-| uniq     | 150 | 41080215750 | 273868105 |
-| Q25L60   | 150 | 40496607839 | 273078531 |
-| Q30L60   | 150 | 38980229662 | 267984250 |
-
-## FCM05SE: spades
-
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05DSE
+QUEUE_NAME=largemem
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    --only-assembler \
-    -s 2_illumina/Q30L60/R1.sickle.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
+anchr template \
+    . \
+    --se \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
 
 ```
 
-## FCM05SE: platanus
+## FCM05DSE: run
+
+Same as [FCM05: run](#fcm05-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 49.64G | 330934881 |
+| uniq     | 150 | 41.08G | 273868105 |
+| Q25L60   | 150 |  40.5G | 273078531 |
+| Q30L60   | 150 | 38.98G | 267984250 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q25L60 |  76.9 |   61.3 |   20.36% |     148 | "31" |  530M | 810.42M |     1.53 | 1:33'00'' |
+| Q30L60 |  74.1 |   60.9 |   17.75% |     145 | "31" |  530M | 800.16M |     1.51 | 1:34'58'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |      # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|-------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000  |   40.0 |  48.03% |      3551 |  274.6M |  97917 |      1078 | 19.67M | 16545 |   31.0 | 4.0 |   6.3 |  62.0 | "31,41,51,61,71,81" | 4:09'06'' | 1:49'31'' |
+| Q25L60XallP000 |   61.3 |  47.33% |      3291 | 272.11M | 101351 |      1181 | 32.23M | 24587 |   48.0 | 6.0 |  10.0 |  96.0 | "31,41,51,61,71,81" | 5:09'40'' | 1:51'52'' |
+| Q30L60X40P000  |   40.0 |  48.94% |      3730 | 278.46M |  96393 |      1077 | 18.99M | 16010 |   31.0 | 4.0 |   6.3 |  62.0 | "31,41,51,61,71,81" | 4:08'53'' | 1:37'09'' |
+| Q30L60XallP000 |   60.9 |  48.51% |      3542 | 277.83M |  99239 |      1181 | 31.12M | 23781 |   48.0 | 6.0 |  10.0 |  96.0 | "31,41,51,61,71,81" | 5:12'06'' | 1:40'53'' |
+
+| Name                   |  N50 |        Sum |       # |
+|:-----------------------|-----:|-----------:|--------:|
+| anchors                | 3750 |  283419348 |   97828 |
+| others                 | 1188 |   42568787 |   32443 |
+| spades.contig          | 1365 | 1267080136 | 1906365 |
+| spades.scaffold        | 1382 | 1267825736 | 1898909 |
+| spades.non-contained   | 7909 |  690403764 |  166578 |
+| platanus.contig        |  316 |  817794289 | 5005046 |
+| platanus.non-contained | 4463 |  295914687 |   92873 |
+
+# FCM05DSE2
+
+## FCM05DSE2: download
+
+* Illumina
 
 ```bash
-cd ${WORKING_DIR}/${BASE_NAME}
+mkdir -p ${HOME}/data/dna-seq/xjy2/FCM05DSE2/2_illumina
+cd ${HOME}/data/dna-seq/xjy2/FCM05DSE2/2_illumina
 
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e se.fa ]; then
-    faops interleave \
-        -p se \
-        ../2_illumina/Q30L60/R1.sickle.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f se.fa \
-    2>&1 | tee ass_log.txt
-
-anchr contained \
-    out_contig.fa out_contigBubble.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
+ln -s ../../FCM05D/2_illumina/R2.fq.gz R1.fq.gz
 
 ```
 
-## FCM05SE: quorum
+## FCM05DSE2: template
+
+* Rsync to hpcc
 
 ```bash
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
+
+rsync -avP \
+    ~/data/dna-seq/xjy2/FCM05DSE2/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/FCM05DSE2
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/FCM05DSE2/ ~/data/dna-seq/xjy2/FCM05DSE2
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05DSE2
+QUEUE_NAME=largemem
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
+anchr template \
+    . \
+    --se \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+```
+
+## FCM05DSE2: run
+
+Same as [FCM05: run](#fcm05-run)
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 49.64G | 330934881 |
+| uniq     | 150 | 42.04G | 280267601 |
+| Q25L60   | 150 | 41.02G | 277539470 |
+| Q30L60   | 150 | 38.55G | 269782998 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q25L60 |  77.9 |   58.4 |   25.09% |     147 | "31" |  530M |  809.1M |     1.53 | 1:33'40'' |
+| Q30L60 |  73.2 |   57.7 |   21.17% |     142 | "31" |  530M | 793.26M |     1.50 | 1:33'44'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |      # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|-------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000  |   40.0 |  47.44% |      3527 | 271.68M |  97402 |      1073 | 19.14M | 16306 |   31.0 | 4.0 |   6.3 |  62.0 | "31,41,51,61,71,81" | 4:03'39'' | 1:31'56'' |
+| Q25L60XallP000 |   58.4 |  46.60% |      3252 | 269.12M | 101064 |      1151 | 28.68M | 22377 |   45.0 | 6.0 |   9.0 |  90.0 | "31,41,51,61,71,81" | 4:58'09'' | 1:35'42'' |
+| Q30L60X40P000  |   40.0 |  48.90% |      3776 | 277.04M |  95354 |      1071 | 18.29M | 15535 |   31.0 | 4.0 |   6.3 |  62.0 | "31,41,51,61,71,81" | 4:03'30'' | 1:38'17'' |
+| Q30L60XallP000 |   57.7 |  48.49% |      3581 |  277.3M |  98341 |      1147 |  26.9M | 21059 |   45.0 | 6.0 |   9.0 |  90.0 | "31,41,51,61,71,81" | 4:55'57'' | 1:40'58'' |
+
+| Name                   |  N50 |        Sum |       # |
+|:-----------------------|-----:|-----------:|--------:|
+| anchors                | 3803 |  283021078 |   96938 |
+| others                 | 1158 |   40674081 |   31706 |
+| spades.contig          | 1400 | 1249482518 | 1872897 |
+| spades.scaffold        | 1419 | 1250186118 | 1865861 |
+| spades.non-contained   | 7744 |  684835479 |  166141 |
+| platanus.contig        |  319 |  812849257 | 4968008 |
+| platanus.non-contained | 4376 |  293419551 |   93316 |
+
 
     if [ ! -e R1.sickle.fq.gz ]; then
         echo >&2 '    R1.sickle.fq.gz not exists'
