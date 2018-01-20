@@ -415,19 +415,22 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM003: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [ZS97: run](#zs97-run)
 
 * Mapping reads against reference genome
 
@@ -681,19 +684,22 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM006: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [ZS97: run](#zs97-run)
 
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
@@ -820,19 +826,22 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM008: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [FCM05: run](#zs97-run)
 
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
@@ -962,19 +971,22 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM009: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [FCM05: run](#zs97-run)
 
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
@@ -1093,19 +1105,22 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM016: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [FCM05: run](#zs97-run)
 
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
@@ -1236,19 +1251,48 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 604217145 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
 
 ## JDM018: run
 
-Same as [FCM05: run](plants.md#zs97-run)
+Same as [FCM05: run](#zs97-run)
+
+* Mapping reads against reference genome
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=JDM018
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+cd 2_illumina/Q25L60
+
+bbmap.sh \
+    in=R1.sickle.fq.gz \
+    in2=R2.sickle.fq.gz \
+    out=pe.sam.gz \
+    ref=../../1_genome/genome.fa \
+    threads=16 \
+    reads=2000000 \
+    nodisk overwrite
+
+reformat.sh \
+    in=pe.sam.gz \
+    ihist=ihist.genome.txt \
+    overwrite
+
+```
 
 | Name     | N50 |    Sum |         # |
 |:---------|----:|-------:|----------:|
