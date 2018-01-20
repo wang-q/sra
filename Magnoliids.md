@@ -12,10 +12,12 @@
     - [FCM05: run](#fcm05-run)
 - [FCM05B](#fcm05b)
     - [FCM05B: download](#fcm05b-download)
-    - [FCM05B: reads stats](#fcm05b-reads-stats)
+    - [FCM05B: template](#fcm05b-template)
+    - [FCM05B: run](#fcm05b-run)
 - [FCM05C](#fcm05c)
     - [FCM05C: download](#fcm05c-download)
-    - [FCM05C: reads stats](#fcm05c-reads-stats)
+    - [FCM05C: template](#fcm05c-template)
+    - [FCM05C: run](#fcm05c-run)
 - [FCM05D](#fcm05d)
     - [FCM05D: download](#fcm05d-download)
     - [FCM05D: template](#fcm05d-template)
@@ -86,6 +88,7 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy2
 BASE_NAME=FCM03
+QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
@@ -94,10 +97,15 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 550000000 \
     --is_euk \
-    --trim2 "--uniq " \
+    --trim2 "--uniq --bbduk" \
     --cov2 "all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --tile \
+    --ecphase "1,2,3" \
     --parallel 24
 
 ```
@@ -106,39 +114,75 @@ anchr template \
 
 Same as [FCM05: run](#fcm05-run)
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 151 | 23454552764 | 155328164 |
-| uniq     | 151 | 19303241134 | 127836034 |
-| Q25L60   | 151 | 17442922681 | 120543118 |
-| Q30L60   | 151 | 16704570709 | 118992276 |
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 151 | 23.45G | 155328164 |
+| uniq     | 151 |  19.3G | 127836034 |
+| bbduk    | 150 | 19.08G | 127628760 |
+| Q25L60   | 150 | 17.31G | 120249536 |
+| Q30L60   | 150 | 16.59G | 118666308 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 332.0 |    340 |  71.9 |          4.33% |
+| Q30L60 | 332.6 |    341 |  71.9 |          4.78% |
+
+| Name           | N50 |    Sum |         # |
+|:---------------|----:|-------:|----------:|
+| clumped        | 151 | 17.69G | 117149176 |
+| filteredbytile | 151 | 16.77G | 111083018 |
+| trimmed        | 150 |  16.1G | 109848094 |
+| filtered       | 150 |  16.1G | 109845134 |
+| ecco           | 150 |  16.1G | 109845134 |
+| eccc           | 150 |  16.1G | 109845134 |
+| ecct           | 150 | 12.48G |  84760194 |
+| extended       | 190 | 15.51G |  84760194 |
+| merged         | 387 | 12.52G |  33652070 |
+| unmerged.raw   | 179 |  3.02G |  17456054 |
+| unmerged       | 175 |  2.66G |  16414560 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 227.3 |    231 |  38.0 |         14.01% |
+| ihist.merge.txt  | 372.0 |    379 |  67.3 |         79.41% |
+
+```text
+#mergeReads
+#Matched	1490	0.00136%
+#Name	Reads	ReadsPct
+TruSeq_Universal_Adapter	531	0.00048%
+contam_256	219	0.00020%
+contam_129	159	0.00014%
+PhiX_read2_adapter	131	0.00012%
+```
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
+| Q25L60 |  31.5 |   27.2 |   13.62% |     143 | "105" |  550M | 543.83M |     0.99 | 0:32'55'' |
+| Q30L60 |  30.2 |   27.1 |   10.23% |     140 |  "99" |  550M | 540.14M |     0.98 | 0:34'59'' |
 
 
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
-| Q25L60 | 17.44G |  31.7 | 14.84G |   27.0 |  14.905% |     144 | "105" |  550M | 544.02M |     0.99 | 0:51'09'' |
-| Q30L60 | 16.71G |  30.4 | 14.84G |   27.0 |  11.200% |     140 |  "97" |  550M | 540.34M |     0.98 | 0:55'01'' |
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   27.0 |  21.27% |      1645 | 113.71M | 67685 |      1206 | 21.23M | 16808 |   18.0 | 5.0 |   2.0 |  36.0 | "31,41,51,61,71,81" | 1:54'47'' | 0:26'14'' |
+| Q30L60XallP000 |   27.0 |  21.80% |      1635 | 112.54M | 67305 |      1220 | 22.22M | 17438 |   18.0 | 5.0 |   2.0 |  36.0 | "31,41,51,61,71,81" | 1:53'03'' | 0:25'57'' |
 
-| Name          | SumCor | CovCor | N50SR |     Sum |      # | N50Anchor |     Sum |     # | N50Others |     Sum |      # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|-------:|-------:|------:|--------:|-------:|----------:|--------:|------:|----------:|--------:|-------:|--------------------:|----------:|:----------|
-| Q25L60X10P000 |   5.5G |   10.0 |   871 |  255.3M | 294060 |      1598 |  91.24M | 56071 |       690 | 164.06M | 237989 | "31,41,51,61,71,81" | 3:09'45'' | 0:17'37'' |
-| Q25L60X10P001 |   5.5G |   10.0 |   871 | 255.25M | 294138 |      1601 |  91.08M | 55937 |       689 | 164.18M | 238201 | "31,41,51,61,71,81" | 3:13'05'' | 0:17'37'' |
-| Q25L60X20P000 |    11G |   20.0 |   965 | 281.94M | 300082 |      1694 | 125.86M | 73365 |       692 | 156.08M | 226717 | "31,41,51,61,71,81" | 4:35'51'' | 0:24'44'' |
-| Q25L60X25P000 | 13.75G |   25.0 |   985 | 280.44M | 293516 |      1708 | 130.35M | 75264 |       692 | 150.09M | 218252 | "31,41,51,61,71,81" | 5:02'23'' | 0:25'51'' |
-| Q30L60X10P000 |   5.5G |   10.0 |   870 | 253.75M | 292252 |      1598 |  90.87M | 55802 |       688 | 162.88M | 236450 | "31,41,51,61,71,81" | 3:04'03'' | 0:17'39'' |
-| Q30L60X10P001 |   5.5G |   10.0 |   871 | 254.12M | 292751 |      1605 |  90.88M | 55808 |       689 | 163.24M | 236943 | "31,41,51,61,71,81" | 2:32'31'' | 0:17'52'' |
-| Q30L60X20P000 |    11G |   20.0 |   964 | 281.41M | 299387 |      1694 |  125.8M | 73373 |       692 | 155.61M | 226014 | "31,41,51,61,71,81" | 2:57'27'' | 0:24'25'' |
-| Q30L60X25P000 | 13.75G |   25.0 |   986 |  280.1M | 292855 |      1707 | 130.48M | 75447 |       693 | 149.62M | 217408 | "31,41,51,61,71,81" | 3:10'28'' | 0:26'39'' |
-
-
-| Name                   |  N50 |       Sum |       # |
-|:-----------------------|-----:|----------:|--------:|
-| anchor.merge           | 1762 | 185901183 |  104610 |
-| others.merge           | 1055 |  50591371 |   46126 |
-| spades.contig          | 4073 | 691875031 | 1465734 |
-| spades.non-contained   | 9477 | 460154902 |   88826 |
-| platanus.scaffold      |  401 | 345280915 | 1171002 |
-| platanus.non-contained | 2381 | 128103732 |   58367 |
+| Name                           |  N50 |       Sum |        # |
+|:-------------------------------|-----:|----------:|---------:|
+| 6_mergeKunitigsAnchors.anchors | 1651 | 129067164 |    76897 |
+| 6_mergeKunitigsAnchors.others  | 1084 |  39480152 |    33841 |
+| 6_mergeTadpoleAnchors.anchors  | 1591 | 114706228 |    70610 |
+| 6_mergeTadpoleAnchors.others   | 1071 |  24493606 |    21239 |
+| 6_mergeAnchors.anchors         | 1651 | 129063933 |    76894 |
+| 6_mergeAnchors.others          | 1084 |  39486706 |    33847 |
+| tadpole.Q25L60                 |  265 | 269294361 |  1068895 |
+| tadpole.Q30L60                 |  266 | 268181459 |  1061328 |
+| spades.contig                  | 3500 | 715063366 |  1629119 |
+| spades.scaffold                | 4148 | 715983793 |  1618660 |
+| spades.non-contained           | 8927 | 460553220 |    92153 |
+| platanus.contig                |   77 | 792545775 | 10966995 |
+| platanus.scaffold              |  387 | 344965047 |  1175883 |
+| platanus.non-contained         | 2363 | 126282645 |    57856 |
 
 # FCM05
 
@@ -262,9 +306,9 @@ bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mer
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
 
 # stats
-#bash 9_statFinal.sh
+# bash 9_statFinal.sh
 
-#bash 0_cleanup.sh
+# bash 0_cleanup.sh
 
 ```
 
@@ -345,14 +389,6 @@ contam_32	111	0.00010%
 
 ## FCM05B: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/dna-seq/xjy2
-BASE_NAME=FCM05B
-
-```
-
 * Illumina
 
 ```bash
@@ -364,27 +400,125 @@ ln -s ../../data/FCM05_H3T7VDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 ```
 
-* FastQC
+## FCM05B: template
 
-* kmergenie
+* Rsync to hpcc
 
-## FCM05B: reads stats
+```bash
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 21181614300 | 141210762 |
+rsync -avP \
+    ~/data/dna-seq/xjy2/FCM05B/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/FCM05B
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/FCM05B/ ~/data/dna-seq/xjy2/FCM05B
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05B
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq --bbduk" \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --tile \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## FCM05B: run
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 21.18G | 141210762 |
+| uniq     | 150 | 20.22G | 134815654 |
+| bbduk    | 150 | 20.19G | 134812846 |
+| Q25L60   | 150 | 19.63G | 132483396 |
+| Q30L60   | 150 | 18.51G | 129153502 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 239.5 |    237 |  52.2 |          8.36% |
+| Q30L60 | 239.9 |    237 |  52.2 |          9.10% |
+
+| Name           | N50 |     Sum |         # |
+|:---------------|----:|--------:|----------:|
+| clumped        | 150 |  19.78G | 131834220 |
+| filteredbytile | 150 |   18.9G | 126007332 |
+| trimmed        | 150 |  18.67G | 125365952 |
+| filtered       | 150 |  18.67G | 125364714 |
+| ecco           | 150 |  18.67G | 125364714 |
+| ecct           | 150 |   14.3G |  95801430 |
+| extended       | 190 |  17.85G |  95801430 |
+| merged         | 289 |  13.11G |  46426096 |
+| unmerged.raw   | 186 | 514.28M |   2949238 |
+| unmerged       | 181 |  425.4M |   2646556 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 226.6 |    230 |  35.0 |         69.60% |
+| ihist.merge.txt  | 282.3 |    280 |  51.3 |         96.92% |
+
+```text
+#mergeReads
+#Matched	692	0.00055%
+#Name	Reads	ReadsPct
+contam_32	142	0.00011%
+Reverse_adapter	135	0.00011%
+```
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
+| Q25L60 |  37.0 |   29.0 |   21.70% |     148 | "105" |  530M | 662.57M |     1.25 | 0:37'53'' |
+| Q30L60 |  34.9 |   28.5 |   18.29% |     144 | "105" |  530M | 652.62M |     1.23 | 0:41'18'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   29.0 |  47.94% |      3674 |  277.3M | 98760 |      1014 | 16.36M | 228951 |   21.0 | 4.0 |   3.0 |  42.0 | "31,41,51,61,71,81" | 3:16'18'' | 1:39'51'' |
+| Q30L60XallP000 |   28.5 |  48.90% |      3716 | 278.56M | 98439 |      1013 |  15.2M | 231098 |   21.0 | 4.0 |   3.0 |  42.0 | "31,41,51,61,71,81" | 3:13'30'' | 1:41'42'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   29.0 |  51.99% |      3760 | 262.98M | 92529 |      1021 | 24.27M | 229768 |   22.0 | 3.0 |   4.3 |  44.0 | "31,41,51,61,71,81" | 1:54'08'' | 1:33'37'' |
+| Q30L60XallP000 |   28.5 |  52.64% |      3710 | 264.76M | 94257 |      1017 | 19.92M | 235820 |   21.0 | 3.0 |   4.0 |  42.0 | "31,41,51,61,71,81" | 1:52'28'' | 1:35'55'' |
+
+| Name                           |   N50 |        Sum |       # |
+|:-------------------------------|------:|-----------:|--------:|
+| 6_mergeKunitigsAnchors.anchors |  3789 |  282595595 |   98835 |
+| 6_mergeKunitigsAnchors.others  |  1037 |   13358375 |   12346 |
+| 6_mergeTadpoleAnchors.anchors  |  3865 |  288963542 |  100028 |
+| 6_mergeTadpoleAnchors.others   |  1048 |   25934259 |   23584 |
+| 6_mergeAnchors.anchors         |  3865 |  288983555 |  100038 |
+| 6_mergeAnchors.others          |  1048 |   25938378 |   23588 |
+| tadpole.Q25L60                 |   271 |  390486342 | 1442650 |
+| tadpole.Q30L60                 |   277 |  383193489 | 1401543 |
+| spades.contig                  |  1114 | 1149023785 | 2210954 |
+| spades.scaffold                |  1119 | 1149700814 | 2203789 |
+| spades.non-contained           | 10634 |  589069452 |  124736 |
+| platanus.contig                |    90 |  754846112 | 9790115 |
+| platanus.scaffold              |   996 |  356276187 | 1025911 |
+| platanus.non-contained         |  3984 |  177930474 |   59216 |
+
 
 # FCM05C
 
 ## FCM05C: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/dna-seq/xjy2
-BASE_NAME=FCM05C
-
-```
 
 * Illumina
 
@@ -397,94 +531,171 @@ ln -s ../../data/FCM05_H3TC3DMXX_L1_2.clean.fq.gz R2.fq.gz
 
 ```
 
-* FastQC
+## FCM05C: template
 
-* kmergenie
+* Rsync to hpcc
 
-## FCM05C: reads stats
+```bash
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 78098850000 | 520659000 |
+rsync -avP \
+    ~/data/dna-seq/xjy2/FCM05C/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/FCM05C
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/FCM05C/ ~/data/dna-seq/xjy2/FCM05C
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05C
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq --bbduk" \
+    --cov2 "all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --tile \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## FCM05C: run
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 |  78.1G | 520659000 |
+| uniq     | 150 | 73.33G | 488862228 |
+| bbduk    | 150 | 73.24G | 488857586 |
+| Q25L60   | 150 | 71.77G | 484415246 |
+| Q30L60   | 150 | 68.87G | 477261181 |
+
+| Name           | N50 |    Sum |         # |
+|:---------------|----:|-------:|----------:|
+| clumped        | 150 | 71.69G | 477958536 |
+| filteredbytile | 150 | 68.16G | 454410152 |
+| trimmed        | 150 | 67.55G | 453564752 |
+| filtered       | 150 | 67.55G | 453559670 |
+| ecco           | 150 | 67.55G | 453559670 |
+| ecct           | 150 | 54.14G | 362477206 |
+| extended       | 190 | 67.56G | 362477206 |
+| merged         | 290 | 49.79G | 175770628 |
+| unmerged.raw   | 187 |  1.91G |  10935950 |
+| unmerged       | 182 |   1.7G |  10561948 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 227.2 |    231 |  34.9 |         70.56% |
+| ihist.merge.txt  | 283.3 |    281 |  51.3 |         96.98% |
+
+```text
+#mergeReads
+#Matched	2726	0.00060%
+#Name	Reads	ReadsPct
+Reverse_adapter	683	0.00015%
+TruSeq_Universal_Adapter	627	0.00014%
+contam_32	381	0.00008%
+contam_159	167	0.00004%
+contam_1	100	0.00002%
+```
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|------:|------:|---------:|----------:|
+| Q25L60 | 135.4 |  112.4 |   16.97% |     147 | "105" |  530M | 1.06G |     2.00 | 2:22'42'' |
+| Q30L60 | 130.0 |  111.3 |   14.38% |     144 | "105" |  530M | 1.03G |     1.95 | 2:16'49'' |
+
 
 # FCM05D
 
 ## FCM05D: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/dna-seq/xjy2
-BASE_NAME=FCM05D
-REAL_G=530000000
-IS_EUK="true"
-COVERAGE2="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-
-```
-
 * Illumina
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
-cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+mkdir -p ${HOME}/data/dna-seq/xjy2/FCM05D/2_illumina
+cd ${HOME}/data/dna-seq/xjy2/FCM05D/2_illumina
 
 gzip -d -c \
-    ${WORKING_DIR}/FCM05B/2_illumina/R1.fq.gz \
-    ${WORKING_DIR}/FCM05C/2_illumina/R1.fq.gz \
+    ../../FCM05B/2_illumina/R1.fq.gz \
+    ../../FCM05C/2_illumina/R1.fq.gz \
     > R1.fq
 
 gzip -d -c \
-    ${WORKING_DIR}/FCM05B/2_illumina/R2.fq.gz \
-    ${WORKING_DIR}/FCM05C/2_illumina/R2.fq.gz \
+    ../../FCM05B/2_illumina/R2.fq.gz \
+    ../../FCM05C/2_illumina/R2.fq.gz \
     > R2.fq
 
 find . -name "*.fq" | parallel -j 2 pigz -p 8
 
 ```
 
-## FCM05D: preprocess Illumina reads
+## FCM05D: template
 
-## FCM05D: reads stats
+* Rsync to hpcc
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 99280464300 | 661869762 |
-| uniq     | 150 | 93376142100 | 622507614 |
-| Q25L60   | 150 | 91328055756 | 615818436 |
-| Q30L60   | 150 | 87307736280 | 605367143 |
+```bash
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
 
-## FCM05D: spades
+rsync -avP \
+    ~/data/dna-seq/xjy2/FCM05D/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/FCM05D
 
-## FCM05D: platanus
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/FCM05D/ ~/data/dna-seq/xjy2/FCM05D
 
-## FCM05D: quorum
-
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |  EstG | Est/Real |    RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|------:|------:|---------:|-----------:|
-| Q25L60 | 91.33G | 172.3 | 74.88G |  141.3 |  18.015% |     148 | "105" |  530M |  1.2G |     2.26 |  9:09'49'' |
-| Q30L60 | 87.32G | 164.8 |    74G |  139.6 |  15.253% |     144 | "105" |  530M | 1.16G |     2.20 | 10:31'08'' |
-
-## FCM05D: down sampling
-
-## FCM05D: k-unitigs and anchors (sampled)
-
-
-# FCM05SE
-
-## FCM05SE: download
-
-* Settings
+```
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy2
-BASE_NAME=FCM05SE
-REAL_G=530000000
-IS_EUK="true"
-COVERAGE2="30 60"
-READ_QUAL="25 30"
-READ_LEN="60"
+BASE_NAME=FCM05D
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 80 all" \
+    --qual2 "25" \
+    --len2 "60" \
+    --parallel 24
+
+```
+
+## FCM05D: run
+
+Same as [FCM05: run](#fcm05-run)
+
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 99.28G | 661869762 |
+| uniq     | 150 | 93.38G | 622507614 |
+| Q25L60   | 150 | 91.33G | 615818436 |
+| Q30L60   | 150 | 87.31G | 605367143 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer | RealG | EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|------:|-----:|---------:|----------:|
+| Q25L60 | 172.3 |  141.3 |   18.03% |     148 | "105" |  530M | 1.2G |     2.26 | 3:24'51'' |
+
+```text
 
 ```
 
@@ -659,66 +870,86 @@ Same as [FCM05: run](#fcm05-run)
 | platanus.non-contained | 4376 |  293419551 |   93316 |
 
 
-    if [ ! -e R1.sickle.fq.gz ]; then
-        echo >&2 '    R1.sickle.fq.gz not exists'
-        exit;
-    fi
+# FCM05E
 
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
+## FCM05E: download
 
-    anchr quorum \
-        R1.sickle.fq.gz \
-        -p 16 \
-        -o quorum.sh
+* Illumina
 
-    bash quorum.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+```bash
+mkdir -p ${HOME}/data/dna-seq/xjy2/FCM05E/2_illumina
+cd ${HOME}/data/dna-seq/xjy2/FCM05E/2_illumina
 
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel --no-run-if-empty -k -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-     >> stat1.md
-
-cat stat1.md
+ln -s ../../data/FCM05_H5WKJDMXX_L1_1.clean.fq.gz R1.fq.gz
+ln -s ../../data/FCM05_H5WKJDMXX_L1_2.clean.fq.gz R2.fq.gz
 
 ```
 
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
-| Q25L60 | 40.77G |  76.9 | 32.48G |   61.3 |  20.338% |     148 | "31" |  530M | 810.42M |     1.53 | 3:29'58'' |
-| Q30L60 | 39.25G |  74.1 | 32.29G |   60.9 |  17.727% |     145 | "31" |  530M | 800.16M |     1.51 | 4:10'15'' |
+## FCM05E: template
 
-## FCM05SE: down sampling
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05E
+QUEUE_NAME=largemem
 
-## FCM05SE: k-unitigs and anchors (sampled)
+cd ${WORKING_DIR}/${BASE_NAME}
 
-| Name          | SumCor | CovCor | N50Anchor |     Sum |     # | N50Others |     Sum |      # | median |  MAD | lower | upper |                Kmer |  RunTimeKU | RunTimeAN |
-|:--------------|-------:|-------:|----------:|--------:|------:|----------:|--------:|-------:|-------:|-----:|------:|------:|--------------------:|-----------:|----------:|
-| Q25L60X30P000 |  15.9G |   30.0 |      2868 | 226.12M | 91314 |       735 | 152.64M | 204739 |   18.0 |  6.0 |   2.0 |  36.0 | "31,41,51,61,71,81" | 16:27'17'' | 1:54'57'' |
-| Q25L60X30P001 |  15.9G |   30.0 |      2229 | 174.52M | 82305 |       775 | 173.81M | 217933 |   17.0 |  6.0 |   2.0 |  34.0 | "31,41,51,61,71,81" | 16:22'52'' | 1:37'04'' |
-| Q25L60X60P000 |  31.8G |   60.0 |      2093 |  85.78M | 42183 |      1353 | 373.14M | 315128 |   27.0 | 18.0 |   2.0 |  54.0 | "31,41,51,61,71,81" | 11:48'22'' | 1:14'10'' |
-| Q30L60X30P000 |  15.9G |   30.0 |      2088 | 155.06M | 76399 |       799 | 180.76M | 218328 |   17.0 |  6.0 |   2.0 |  34.0 | "31,41,51,61,71,81" |  9:45'34'' | 1:24'51'' |
-| Q30L60X30P001 |  15.9G |   30.0 |      2216 | 169.85M | 80345 |       778 | 174.47M | 217654 |   17.0 |  6.0 |   2.0 |  34.0 | "31,41,51,61,71,81" |  9:36'27'' | 1:28'13'' |
-| Q30L60X60P000 |  31.8G |   60.0 |      2124 |  86.06M | 41891 |      1433 | 374.89M | 309034 |   27.0 | 18.0 |   2.0 |  54.0 | "31,41,51,61,71,81" | 10:57'54'' | 1:10'24'' |
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 530000000 \
+    --is_euk \
+    --trim2 "--uniq --bbduk" \
+    --cov2 "all" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --tile \
+    --ecphase "1,2,3" \
+    --parallel 16
 
-## FCM05SE: merge anchors
+```
 
-## FCM05SE: final stats
+## FCM05E: run
 
-## FCM05SE: clear intermediate files
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=FCM05E
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bash 2_fastqc.sh
+bash 2_kmergenie.sh
+
+bash 2_mergereads.sh
+
+```
+
+| Name           | N50 |     Sum |        # |
+|:---------------|----:|--------:|---------:|
+| clumped        | 150 |   4.96G | 33081122 |
+| filteredbytile | 150 |   4.68G | 31218532 |
+| trimmed        | 150 |   4.63G | 31008994 |
+| filtered       | 150 |   4.63G | 31008642 |
+| ecco           | 150 |   4.63G | 31008642 |
+| eccc           | 150 |   4.63G | 31008642 |
+| ecct           | 150 |   2.17G | 14522722 |
+| extended       | 190 |   2.62G | 14522722 |
+| merged         | 292 |   1.89G |  6651670 |
+| unmerged.raw   | 170 | 203.13M |  1219382 |
+| unmerged       | 170 | 178.88M |  1131772 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 235.9 |    241 |  32.6 |         56.96% |
+| ihist.merge.txt  | 284.0 |    283 |  52.2 |         91.60% |
+
+```text
+#mergeReads
+#Matched	187	0.00060%
+#Name	Reads	ReadsPct
+```
 
 # FCM07
 
@@ -1014,10 +1245,10 @@ for BASE_NAME in FCM03 FCM05 FCM07 FCM13; do
         tar -czvf \
             ../${BASE_NAME}.tar.gz \
             2_illumina/fastqc/*.html \
-            8_spades/contigs.non-contained.fasta \
-            8_platanus/gapClosed.non-contained.fasta \
-            merge/anchor.merge.fasta \
-            merge/others.merge.fasta
+            8_spades/spades.non-contained.fasta \
+            8_platanus/platanus.non-contained.fasta \
+            6_mergeAnchors/anchor.merge.fasta \
+            6_mergeAnchors/others.non-contained.fasta
     fi
 
     popd
