@@ -382,7 +382,7 @@ mkdir -p ~/data/dna-seq/chara/JDM003/2_illumina
 cd ~/data/dna-seq/chara/JDM003/2_illumina
 
 ln -s ../../RawData/JDM003_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM003_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM003_2.fq.gz R2.fq.gz
 
 ```
 
@@ -639,11 +639,16 @@ Reverse_adapter	55954	0.06677%
 ## JDM006: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM006/1_genome
+cd ~/data/dna-seq/chara/JDM006/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM006/2_illumina
 cd ~/data/dna-seq/chara/JDM006/2_illumina
 
 ln -s ../../RawData/JDM006_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM006_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM006_2.fq.gz R2.fq.gz
 
 ```
 
@@ -773,11 +778,16 @@ contam_43	128	0.00014%
 ## JDM008: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM008/1_genome
+cd ~/data/dna-seq/chara/JDM008/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM008/2_illumina
 cd ~/data/dna-seq/chara/JDM008/2_illumina
 
 ln -s ../../RawData/JDM008_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM008_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM008_2.fq.gz R2.fq.gz
 
 ```
 
@@ -910,11 +920,16 @@ contam_139	132	0.00014%
 ## JDM009: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM009/1_genome
+cd ~/data/dna-seq/chara/JDM009/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM009/2_illumina
 cd ~/data/dna-seq/chara/JDM009/2_illumina
 
 ln -s ../../RawData/JDM009_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM009_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM009_2.fq.gz R2.fq.gz
 
 ```
 
@@ -1036,11 +1051,16 @@ contam_139	116	0.00013%
 ## JDM016: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM016/1_genome
+cd ~/data/dna-seq/chara/JDM016/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM016/2_illumina
 cd ~/data/dna-seq/chara/JDM016/2_illumina
 
 ln -s ../../RawData/JDM016_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM016_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM016_2.fq.gz R2.fq.gz
 
 ```
 
@@ -1174,11 +1194,16 @@ contam_32	138	0.00013%
 ## JDM018: download
 
 ```bash
+mkdir -p ~/data/dna-seq/chara/JDM018/1_genome
+cd ~/data/dna-seq/chara/JDM018/1_genome
+
+ln -s ../../JDM/1_genome/genome.fa genome.fa
+
 mkdir -p ~/data/dna-seq/chara/JDM018/2_illumina
 cd ~/data/dna-seq/chara/JDM018/2_illumina
 
 ln -s ../../RawData/JDM018_1.fq.gz R1.fq.gz
-ln -s ../../RawData/JDM018_1.fq.gz R2.fq.gz
+ln -s ../../RawData/JDM018_2.fq.gz R2.fq.gz
 
 ```
 
