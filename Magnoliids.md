@@ -896,6 +896,82 @@ Same as [FCM05: run](#fcm05-run)
 | spades.non-contained   | 8410 | 621971771 | 131159 |
 | platanus.scaffold      | 1487 |    665925 |   1867 |
 | platanus.non-contained | 4281 |    371926 |    108 |
+# XIAN01
+
+## XIAN01: download
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/XIAN01/2_illumina
+cd ~/data/dna-seq/xjy2/XIAN01/2_illumina
+
+ln -s ../../data/XIAN/CL100036849_L02_9_1.fq.gz R1.fq.gz
+ln -s ../../data/XIAN/CL100036849_L02_9_2.fq.gz R2.fq.gz
+
+```
+
+## XIAN01: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/dna-seq/xjy2/data/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/data
+
+rsync -avP \
+    ~/data/dna-seq/xjy2/XIAN01/ \
+    wangq@202.119.37.251:data/dna-seq/xjy2/XIAN01
+
+#rsync -avP wangq@202.119.37.251:data/dna-seq/xjy2/XIAN01/ ~/data/dna-seq/xjy2/XIAN01
+
+```
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=XIAN01
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 430000000 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "all" \
+    --qual2 "25" \
+    --len2 "60" \
+    --parallel 16
+
+```
+
+## XIAN01: run
+
+Same as [FCM05: run](#fcm05-run)
+
+| Name     | N50 |   Sum |        # |
+|:---------|----:|------:|---------:|
+| Illumina | 100 | 6.38G | 63763512 |
+| uniq     | 100 | 6.35G | 63473944 |
+| Q25L60   | 100 | 4.59G | 46442650 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 148.1 |    135 |  43.7 |          0.36% |
+
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 100 |   6.32G | 63249872 |
+| filterbytile |   0 |       0 |        0 |
+| trimmed      | 100 |   5.39G | 55761436 |
+| filtered     | 100 |   5.39G | 55761392 |
+| ecco         | 100 |   5.39G | 55761392 |
+| eccc         | 100 |   5.39G | 55761392 |
+| ecct         | 100 | 249.64M |  2610784 |
+| extended     | 117 | 291.97M |  2610784 |
+| merged       | 179 |   99.8M |   603676 |
+| unmerged.raw | 100 | 151.11M |  1403432 |
+| unmerged     | 100 | 111.24M |  1060982 |
 
 # Create tarballs
 
