@@ -42,6 +42,10 @@
     - [FCM13: download](#fcm13-download)
     - [FCM13: template](#fcm13-template)
     - [FCM13: run](#fcm13-run)
+- [Blasia](#blasia)
+    - [Blasia: download](#blasia-download)
+    - [Blasia: template](#blasia-template)
+    - [Blasia: run](#blasia-run)
 - [XIAN01](#xian01)
     - [XIAN01: download](#xian01-download)
     - [XIAN01: template](#xian01-template)
@@ -1154,6 +1158,85 @@ Reverse_adapter	150123	0.13482%
 | platanus.scaffold      | 1298 |    703697 |   1960 |
 | platanus.non-contained | 5575 |    384225 |    104 |
 
+# Blasia
+
+## Blasia: download
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/Blasia/2_illumina
+cd ~/data/dna-seq/xjy2/Blasia/2_illumina
+
+ln -s ../../data/Blasia_H3TK5DMXX_L1_1.fq.gz R1.fq.gz
+ln -s ../../data/Blasia_H3TK5DMXX_L1_2.fq.gz R2.fq.gz
+
+```
+
+## Blasia: template
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/xjy2
+BASE_NAME=Blasia
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 430000000 \
+    --is_euk \
+    --trim2 "--uniq --bbduk" \
+    --cov2 "all" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --insertsize \
+    --parallel 16
+
+```
+
+## Blasia: run
+
+```bash
+bash 2_fastqc.sh
+bash 2_kmergenie.sh
+bash 2_insertSize.sh
+
+bash 2_mergereads.sh
+
+bash 2_trim.sh
+bash 9_statReads.sh
+
+bash 2_quorum.sh
+bash 9_statQuorum.sh
+
+
+bash 4_downSampling.sh
+
+bash 4_kunitigs.sh
+bash 4_anchors.sh
+bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md
+
+bash 4_tadpole.sh
+bash 4_tadpoleAnchors.sh
+bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md
+
+bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors
+bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors
+bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors
+
+bash 8_spades.sh
+bash 8_megahit.sh
+bash 8_platanus.sh
+
+bash 9_statFinal.sh
+bash 9_quast.sh
+
+# bash 0_cleanup.sh
+
+```
 
 # XIAN01
 
