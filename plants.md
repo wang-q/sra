@@ -167,6 +167,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -178,6 +179,9 @@ anchr template \
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
+# insert size
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+
 # preprocess Illumina reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
@@ -187,10 +191,6 @@ bsub -w "ended(${BASE_NAME}-2_trim)" \
 
 # merge reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
-
-# insert size
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # spades, megahit, and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
@@ -225,6 +225,24 @@ bsub -w "done(${BASE_NAME}-4_tadpole)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
 bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
+
+# down sampling mergereads
+bsub -w "done(${BASE_NAME}-2_mergereads)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_downSampling" "bash 6_downSampling.sh"
+
+bsub -w "done(${BASE_NAME}-6_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_kunitigs" "bash 6_kunitigs.sh"
+bsub -w "done(${BASE_NAME}-6_kunitigs)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchors" "bash 6_anchors.sh"
+bsub -w "done(${BASE_NAME}-6_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_kunitigs" "bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md"
+
+bsub -w "done(${BASE_NAME}-6_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpole" "bash 6_tadpole.sh"
+bsub -w "done(${BASE_NAME}-6_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
+bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_tadpole" "bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
