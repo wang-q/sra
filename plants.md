@@ -116,10 +116,11 @@ faops replace GCA_001623345.1_ZS97RS1_genomic.fna.gz replace.tsv stdout \
 * Illumina
 
     * small-insert (~300 bp) pair-end WGS (2x100 bp read length)
-    * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download from NCBI ftp.
+    * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download
+      from NCBI ftp.
     * `ftp://ftp-trace.ncbi.nih.gov`
-    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of
-      accession>/<accession>/<accession>.sra`
+    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6
+      characters of accession>/<accession>/<accession>.sra`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/ZS97/2_illumina
@@ -246,16 +247,19 @@ bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_kunitigs" "bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors"
-
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
 bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_tadpole" "bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
+bsub -w "done(${BASE_NAME}-6_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_kunitigs" "bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors"
+bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
 
-bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mergeAnchors_4_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
+bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole) && done(${BASE_NAME}-7_mergeAnchors_6_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_6_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
 
 # quast
-bsub -w "ended(${BASE_NAME}-6_mergeAnchors)" \
+bsub -w "ended(${BASE_NAME}-7_mergeAnchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_quast" "bash 9_quast.sh"
 
 # stats
