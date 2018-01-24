@@ -2353,10 +2353,12 @@ printf "| %s | %s | %s | %s |\n" \
 
 # moli, 茉莉
 
-SR had failed twice due to the calculating results from awk were larger than the MAX_INT
+SR had failed twice due to the calculating results from awk were larger
+than the MAX_INT
 
 * for jellyfish
-* for --number-reads of `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
+* for --number-reads of
+  `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/medfood
