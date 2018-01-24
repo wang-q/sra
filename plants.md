@@ -116,11 +116,10 @@ faops replace GCA_001623345.1_ZS97RS1_genomic.fna.gz replace.tsv stdout \
 * Illumina
 
     * small-insert (~300 bp) pair-end WGS (2x100 bp read length)
-    * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download
-      from NCBI ftp.
+    * ENA hasn't synced with SRA for SRX1639981 (SRR3234372), download from NCBI ftp.
     * `ftp://ftp-trace.ncbi.nih.gov`
-    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6
-      characters of accession>/<accession>/<accession>.sra`
+    * `/sra/sra-instant/reads/ByRun/sra/{SRR|ERR|DRR}/<first 6 characters of
+      accession>/<accession>/<accession>.sra`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/ZS97/2_illumina
@@ -269,7 +268,6 @@ bsub -w "ended(${BASE_NAME}-7_mergeAnchors)" \
 
 ```
 
-
 Table: statInsertSize
 
 | Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
@@ -278,6 +276,7 @@ Table: statInsertSize
 | tadpole.bbtools | 276.8 |    264 |   86.6 |                         20.21% |
 | genome.picard   | 290.8 |    275 |   88.1 |                             FR |
 | tadpole.picard  | 275.6 |    263 |   84.6 |                             FR |
+
 
 Table: statReads
 
@@ -321,6 +320,7 @@ I7_Adapter_Nextera_No_Barcode	1868	0.00056%
 RNA_PCR_Primer_Index_35_(RPI35)	1624	0.00048%
 RNA_PCR_Primer_Index_14_(RPI14)	1095	0.00033%
 ```
+
 
 Table: statMergeReads
 
@@ -385,12 +385,14 @@ TruSeq_Universal_Adapter	175	0.00007%
 contam_32	104	0.00004%
 ```
 
+
 Table: statQuorum
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
 | Q25L60 |  81.5 |   75.2 |    7.68% |      98 | "71" | 346.66M | 299.29M |     0.86 | 1:04'30'' |
 | Q30L60 |  74.4 |   69.6 |    6.53% |      96 | "71" | 346.66M | 295.47M |     0.85 | 1:01'58'' |
+
 
 Table: statKunitigsAnchors.md
 
@@ -415,6 +417,7 @@ Table: statTadpoleAnchors.md
 | Q30L60X60P000  |   60.0 |  79.49% |      3747 | 229.79M | 78930 |      1009 | 26.53M | 316164 |   54.0 | 6.0 |  12.0 | 108.0 | "31,41,51,61,71,81" | 1:05'47'' | 2:15'01'' |
 | Q30L60XallP000 |   69.6 |  80.24% |      3904 | 234.48M | 78209 |      1008 | 26.09M | 318055 |   62.0 | 8.0 |  12.7 | 124.0 | "31,41,51,61,71,81" | 1:10'57'' | 2:20'12'' |
 
+
 Table: statMRKunitigsAnchors.md
 
 | Name       | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
@@ -423,6 +426,7 @@ Table: statMRKunitigsAnchors.md
 | MRX40P001  |   40.0 |  77.51% |      4569 | 241.34M | 70663 |       896 | 15.68M | 189558 |   37.0 |  5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 2:07'12'' | 0:58'00'' |
 | MRX60P000  |   60.0 |  77.04% |      4503 | 243.14M | 71637 |       846 | 13.31M | 184720 |   56.0 |  8.0 |  10.7 | 112.0 | "31,41,51,61,71,81" | 2:37'16'' | 0:57'31'' |
 | MRXallP000 |   92.0 |  76.45% |      4344 | 241.98M | 73057 |       812 |  13.3M | 183226 |   86.0 | 12.0 |  16.7 | 172.0 | "31,41,51,61,71,81" | 3:25'29'' | 0:57'29'' |
+
 
 Table: statMRTadpoleAnchors.md
 
@@ -466,8 +470,7 @@ Table: statFinal
 
 * *Actinidia chinensis*
 * 猕猴桃
-* Taxonomy ID:
-  [3625](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=3625)
+* Taxonomy ID: [3625](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=3625)
 
 ## JDM: download
 
@@ -921,108 +924,182 @@ anchr template \
 
 Same as [ZS97: run](#zs97-run)
 
+Table: statInsertSize
+
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 314.1 |    289 | 656.5 |                         21.06% |
+| tadpole.bbtools | 262.6 |    261 |  65.0 |                          7.58% |
+| genome.picard   | 291.9 |    289 |  60.6 |                             FR |
+| tadpole.picard  | 257.6 |    258 |  67.8 |                             FR |
+
+
+Table: statReads
+
 | Name     |   N50 |       Sum |         # |
 |:---------|------:|----------:|----------:|
 | Genome   | 58864 | 604217145 |     26721 |
 | Illumina |   150 |    22.58G | 150520322 |
-| uniq     |   150 |    18.97G | 126484946 |
-| bbduk    |   150 |    18.95G | 126484018 |
-| Q25L60   |   150 |    18.28G | 123795068 |
-| Q30L60   |   150 |    16.84G | 116878858 |
+| uniq     |     0 |         0 |         0 |
+| bbduk    |     0 |         0 |         0 |
+| Q25L60   |   150 |    20.31G | 137935159 |
+| Q30L60   |   150 |    18.34G | 129215286 |
 
 ```text
 #trimmedReads
-#Matched	486740	0.38482%
+#Matched	505147	0.35707%
 #Name	Reads	ReadsPct
-Reverse_adapter	312428	0.24701%
-TruSeq_Adapter_Index_1_6	103150	0.08155%
-PhiX_read2_adapter	30488	0.02410%
-PhiX_read1_adapter	4950	0.00391%
-I5_Nextera_Transposase_1	4694	0.00371%
-RNA_Adapter_(RA5)_part_#_15013205	3320	0.00262%
-Nextera_LMP_Read2_External_Adapter	2978	0.00235%
-TruSeq_Adapter_Index_2	2542	0.00201%
-Nextera_LMP_Read1_External_Adapter	2354	0.00186%
-TruSeq_Adapter_Index_16	2094	0.00166%
-RNA_PCR_Primer_Index_1_(RPI1)_2,9	1934	0.00153%
-I5_Nextera_Transposase_2	1780	0.00141%
-Bisulfite_R1	1730	0.00137%
-I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1612	0.00127%
-I7_Nextera_Transposase_2	1558	0.00123%
-I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	1554	0.00123%
-TruSeq_Universal_Adapter	1090	0.00086%
+Reverse_adapter	169194	0.11960%
+pcr_dimer	83405	0.05896%
+TruSeq_Adapter_Index_1_6	72399	0.05118%
+PCR_Primers	47109	0.03330%
+PhiX_read2_adapter	34803	0.02460%
+Nextera_LMP_Read2_External_Adapter	30626	0.02165%
+TruSeq_Universal_Adapter	30170	0.02133%
+PhiX_read1_adapter	5524	0.00390%
+I5_Nextera_Transposase_1	5426	0.00384%
+RNA_Adapter_(RA5)_part_#_15013205	3634	0.00257%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	2446	0.00173%
+Nextera_LMP_Read1_External_Adapter	2127	0.00150%
+I5_Nextera_Transposase_2	1866	0.00132%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	1810	0.00128%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1785	0.00126%
+I7_Nextera_Transposase_2	1623	0.00115%
+Bisulfite_R2	1461	0.00103%
+Bisulfite_R1	1419	0.00100%
+TruSeq_Adapter_Index_2	1271	0.00090%
+I5_Adapter_Nextera	1097	0.00078%
+I7_Adapter_Nextera_No_Barcode	1083	0.00077%
+TruSeq_Adapter_Index_16	1047	0.00074%
 ```
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 148.2 |    150 |  10.4 |          5.70% |
-| Q30L60 | 142.6 |    150 |  20.0 |          7.00% |
 
-| Name         | N50 |     Sum |        # |
-|:-------------|----:|--------:|---------:|
-| clumped      | 150 |   9.12G | 60778008 |
-| trimmed      | 150 |   8.97G | 60402159 |
-| filtered     | 150 |   8.97G | 60400287 |
-| ecco         | 150 |   8.89G | 60400286 |
-| ecct         | 150 |   4.78G | 32513042 |
-| extended     | 186 |   5.71G | 32513042 |
-| merged       | 181 | 345.19M |  1995589 |
-| unmerged.raw | 187 |   5.04G | 28521864 |
-| unmerged     | 182 |   4.69G | 27868846 |
+Table: statMergeReads
+
+| Name          | N50 |     Sum |         # |
+|:--------------|----:|--------:|----------:|
+| clumped       | 150 |  21.22G | 141445852 |
+| trimmed       | 150 |  20.72G | 139709700 |
+| filtered      | 150 |  20.72G | 139707076 |
+| ecco          | 150 |  20.72G | 139707076 |
+| ecct          | 150 |  12.83G |  86206630 |
+| extended      | 190 |  15.68G |  86206630 |
+| merged        | 325 |  11.83G |  37466340 |
+| unmerged.raw  | 174 |   1.93G |  11273950 |
+| unmerged.trim | 170 |   1.63G |  10391020 |
+| U1            | 170 | 852.64M |   5195510 |
+| U2            | 170 | 781.17M |   5195510 |
+| Us            |   0 |       0 |         0 |
+| pe.cor        | 316 |   13.5G |  85323700 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
-| ihist.merge1.txt | 148.3 |    149 |  37.8 |          9.22% |
-| ihist.merge.txt  | 173.0 |    174 |  38.3 |         12.28% |
+| ihist.merge1.txt | 241.3 |    248 |  33.3 |         35.95% |
+| ihist.merge.txt  | 315.8 |    315 |  57.6 |         86.92% |
 
 ```text
 #trimmedReads
-#Matched	238937	0.39313%
+#Matched	505107	0.35710%
 #Name	Reads	ReadsPct
-Reverse_adapter	154139	0.25361%
-TruSeq_Adapter_Index_1_6	50497	0.08308%
-PhiX_read2_adapter	14639	0.02409%
-PhiX_read1_adapter	2362	0.00389%
-I5_Nextera_Transposase_1	2235	0.00368%
-RNA_Adapter_(RA5)_part_#_15013205	1580	0.00260%
-Nextera_LMP_Read2_External_Adapter	1447	0.00238%
-TruSeq_Adapter_Index_2	1267	0.00208%
-Nextera_LMP_Read1_External_Adapter	1146	0.00189%
-TruSeq_Adapter_Index_16	1047	0.00172%
+Reverse_adapter	169185	0.11961%
+pcr_dimer	83403	0.05896%
+TruSeq_Adapter_Index_1_6	72383	0.05117%
+PCR_Primers	47108	0.03330%
+PhiX_read2_adapter	34801	0.02460%
+Nextera_LMP_Read2_External_Adapter	30620	0.02165%
+TruSeq_Universal_Adapter	30170	0.02133%
+PhiX_read1_adapter	5523	0.00390%
+I5_Nextera_Transposase_1	5423	0.00383%
+RNA_Adapter_(RA5)_part_#_15013205	3634	0.00257%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	2446	0.00173%
+Nextera_LMP_Read1_External_Adapter	2127	0.00150%
+I5_Nextera_Transposase_2	1866	0.00132%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	1810	0.00128%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1785	0.00126%
+I7_Nextera_Transposase_2	1623	0.00115%
+Bisulfite_R2	1461	0.00103%
+Bisulfite_R1	1419	0.00100%
+TruSeq_Adapter_Index_2	1271	0.00090%
+I5_Adapter_Nextera	1097	0.00078%
+I7_Adapter_Nextera_No_Barcode	1083	0.00077%
+TruSeq_Adapter_Index_16	1047	0.00074%
 ```
 
 ```text
 #filteredReads
-#Matched	1872	0.00310%
+#Matched	1357	0.00097%
 #Name	Reads	ReadsPct
-Reverse_adapter	1253	0.00207%
-contam_43	132	0.00022%
-contam_139	108	0.00018%
+contam_43	294	0.00021%
+contam_139	216	0.00015%
+contam_32	195	0.00014%
+Reverse_adapter	158	0.00011%
 ```
 
 
-| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
-|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
-| Q25L60 |  30.2 |   22.6 |   25.38% |     147 | "105" | 604.22M | 1.11G |     1.84 | 0:40'40'' |
-| Q30L60 |  27.9 |   22.1 |   20.74% |     144 | "105" | 604.22M | 1.07G |     1.77 | 0:36'39'' |
+Table: statQuorum
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
+| Q25L60 |  33.6 |   22.7 |   32.56% |     147 | "105" | 604.22M |    991M |     1.64 | 0:55'06'' |
+| Q30L60 |  30.4 |   22.3 |   26.70% |     143 | "105" | 604.22M | 955.33M |     1.58 | 0:51'50'' |
 
 
-| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60XallP000 |   22.5 |   1.15% |      1445 | 6.78M | 4421 |      1251 | 2.88M | 2165 |   11.0 | 2.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:21'07'' | 0:02'10'' |
-| Q30L60XallP000 |   22.1 |   1.27% |      1491 | 6.93M | 4354 |      1265 | 3.09M | 2287 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:13'56'' | 0:02'10'' |
+Table: statKunitigsAnchors.md
 
-| Name                   |  N50 |        Sum |        # |
-|:-----------------------|-----:|-----------:|---------:|
-| anchors                | 1500 |    7973331 |     4982 |
-| others                 | 1278 |    3882465 |     2852 |
-| tadpole.Q25L60         |  178 |  278979484 |  1500703 |
-| tadpole.Q30L60         |  179 |  290288863 |  1550302 |
-| spades.contig          |  494 | 1232457684 |  4121439 |
-| spades.non-contained   | 1807 |  348837928 |   194494 |
-| platanus.contig        |   66 | 1333438154 | 20228974 |
-| platanus.non-contained |    0 |          0 |        0 |
+| Name           | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.7 |   3.10% |      1298 |  13.7M |  9952 |      1251 | 25.47M | 35456 |    7.0 | 2.0 |   3.0 |  14.0 | "31,41,51,61,71,81" | 2:28'55'' | 0:04'11'' |
+| Q30L60XallP000 |   22.3 |   3.45% |      1328 | 16.55M | 11733 |      1177 | 21.37M | 37276 |    8.0 | 2.0 |   3.0 |  16.0 | "31,41,51,61,71,81" | 2:22'05'' | 0:04'11'' |
 
+
+Table: statTadpoleAnchors.md
+
+| Name           | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|-------:|-----:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.7 |  15.50% |      1542 | 15.11M | 8331 |      1123 | 11.59M | 27137 |   11.0 | 3.0 |   3.0 |  22.0 | "31,41,51,61,71,81" | 0:55'15'' | 0:03'39'' |
+| Q30L60XallP000 |   22.3 |  15.94% |      1502 | 16.52M | 9255 |      1109 | 10.43M | 28159 |   12.0 | 3.0 |   3.0 |  24.0 | "31,41,51,61,71,81" | 0:53'53'' | 0:03'43'' |
+
+
+Table: statMRKunitigsAnchors.md
+
+| Name       | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|------:|-----:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRXallP000 |   22.3 |   4.56% |      1227 | 7.93M | 6124 |      1257 | 17.84M | 23700 |   10.0 | 4.0 |   3.0 |  20.0 | "31,41,51,61,71,81" | 2:09'18'' | 0:03'01'' |
+
+
+Table: statMRTadpoleAnchors.md
+
+| Name       | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRXallP000 |   22.3 |  19.56% |      1258 | 19.88M | 15052 |      1198 | 28.12M | 46229 |   10.0 | 3.0 |   3.0 |  20.0 | "31,41,51,61,71,81" | 0:59'18'' | 0:04'28'' |
+
+
+Table: statFinal
+
+| Name                             |   N50 |        Sum |       # |
+|:---------------------------------|------:|-----------:|--------:|
+| Genome                           | 58864 |  604217145 |   26721 |
+| 7_mergeKunitigsAnchors.anchors   |  1325 |   19307869 |   13717 |
+| 7_mergeKunitigsAnchors.others    |  1226 |   27657395 |   19398 |
+| 7_mergeTadpoleAnchors.anchors    |  1447 |   18530238 |   10659 |
+| 7_mergeTadpoleAnchors.others     |  1128 |   13037722 |   10181 |
+| 7_mergeMRKunitigsAnchors.anchors |  1227 |    7925945 |    6124 |
+| 7_mergeMRKunitigsAnchors.others  |  1296 |   16471159 |   11368 |
+| 7_mergeMRTadpoleAnchors.anchors  |  1258 |   19876598 |   15052 |
+| 7_mergeMRTadpoleAnchors.others   |  1224 |   26403917 |   18379 |
+| 7_mergeAnchors.anchors           |  1336 |   40368857 |   26616 |
+| 7_mergeAnchors.others            |  1183 |   57365421 |   41577 |
+| spades.contig                    |  3514 |  964928110 |  936978 |
+| spades.scaffold                  |  3561 |  965033788 |  934820 |
+| spades.non-contained             |  7007 |  678934105 |  166419 |
+| spades.anchor                    |  1036 |       2041 |       2 |
+| megahit.contig                   |   668 | 1089592973 | 1960130 |
+| megahit.non-contained            |  1648 |  360851537 |  213657 |
+| megahit.anchor                   |  1098 |     515903 |     455 |
+| platanus.contig                  |   249 |     949774 |    3616 |
+| platanus.scaffold                |  5475 |     420306 |     603 |
+| platanus.non-contained           |  8176 |     308614 |      69 |
+| platanus.anchor                  |  2497 |      86016 |      38 |
 
 # JDM008
 
@@ -1088,86 +1165,180 @@ anchr template \
 
 Same as [FCM05: run](#zs97-run)
 
-| Name     | N50 |    Sum |         # |
-|:---------|----:|-------:|----------:|
-| Illumina | 150 | 22.51G | 150077492 |
-| uniq     | 150 | 18.79G | 125253930 |
-| Q25L60   | 150 | 18.08G | 122597730 |
-| Q30L60   | 150 | 16.59G | 115506944 |
+Table: statInsertSize
 
-| Name         | N50 |     Sum |        # |
-|:-------------|----:|--------:|---------:|
-| clumped      | 150 |      9G | 59997353 |
-| trimmed      | 150 |   8.81G | 59585788 |
-| filtered     | 150 |   8.81G | 59583285 |
-| ecco         | 150 |   8.73G | 59583284 |
-| ecct         | 150 |   3.75G | 25629337 |
-| extended     | 185 |   4.51G | 25629337 |
-| merged       | 181 | 261.03M |  1499529 |
-| unmerged.raw | 186 |      4G | 22630278 |
-| unmerged     | 183 |    3.7G | 22057741 |
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 338.4 |    314 | 677.7 |                         21.83% |
+| tadpole.bbtools | 281.2 |    281 |  72.1 |                          6.42% |
+| genome.picard   | 314.4 |    314 |  66.8 |                             FR |
+| tadpole.picard  | 276.2 |    278 |  74.8 |                             FR |
+
+
+Table: statReads
+
+| Name     |   N50 |       Sum |         # |
+|:---------|------:|----------:|----------:|
+| Genome   | 58864 | 604217145 |     26721 |
+| Illumina |   150 |    22.51G | 150077492 |
+| uniq     |     0 |         0 |         0 |
+| bbduk    |     0 |         0 |         0 |
+| Q25L60   |   150 |    20.18G | 137237156 |
+| Q30L60   |   150 |     18.1G | 128092308 |
+
+```text
+#trimmedReads
+#Matched	587551	0.41694%
+#Name	Reads	ReadsPct
+Reverse_adapter	209688	0.14880%
+pcr_dimer	109524	0.07772%
+TruSeq_Adapter_Index_1_6	64750	0.04595%
+PCR_Primers	61242	0.04346%
+TruSeq_Universal_Adapter	40703	0.02888%
+PhiX_read2_adapter	34692	0.02462%
+Nextera_LMP_Read2_External_Adapter	29209	0.02073%
+PhiX_read1_adapter	5600	0.00397%
+I5_Nextera_Transposase_1	5417	0.00384%
+RNA_Adapter_(RA5)_part_#_15013205	3572	0.00253%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	2415	0.00171%
+Nextera_LMP_Read1_External_Adapter	2235	0.00159%
+TruSeq_Adapter_Index_16	1929	0.00137%
+TruSeq_Adapter_Index_2	1786	0.00127%
+Bisulfite_R2	1724	0.00122%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1621	0.00115%
+I5_Nextera_Transposase_2	1569	0.00111%
+Bisulfite_R1	1512	0.00107%
+I7_Nextera_Transposase_2	1504	0.00107%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	1349	0.00096%
+```
+
+
+Table: statMergeReads
+
+| Name          | N50 |    Sum |         # |
+|:--------------|----:|-------:|----------:|
+| clumped       | 150 | 21.13G | 140895462 |
+| trimmed       | 150 |  20.6G | 139016610 |
+| filtered      | 150 |  20.6G | 139013760 |
+| ecco          | 150 |  20.6G | 139013760 |
+| ecct          | 150 | 12.77G |  85863784 |
+| extended      | 190 |  15.6G |  85863784 |
+| merged        | 347 | 11.72G |  35162494 |
+| unmerged.raw  | 175 |  2.67G |  15538796 |
+| unmerged.trim | 170 |  2.24G |  14333994 |
+| U1            | 171 |  1.18G |   7166997 |
+| U2            | 168 |  1.07G |   7166997 |
+| Us            |   0 |      0 |         0 |
+| pe.cor        | 332 |    14G |  84658982 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
-| ihist.merge1.txt | 148.3 |    149 |  37.6 |          9.06% |
-| ihist.merge.txt  | 174.1 |    175 |  36.1 |         11.70% |
+| ihist.merge1.txt | 240.8 |    249 |  36.5 |         24.43% |
+| ihist.merge.txt  | 333.4 |    336 |  62.7 |         81.90% |
 
 ```text
-#mergeReads
-#Matched	2503	0.00420%
+#trimmedReads
+#Matched	587512	0.41698%
 #Name	Reads	ReadsPct
-contam_27	1862	0.00312%
-contam_43	139	0.00023%
-contam_175	134	0.00022%
-contam_32	101	0.00017%
+Reverse_adapter	209677	0.14882%
+pcr_dimer	109522	0.07773%
+TruSeq_Adapter_Index_1_6	64738	0.04595%
+PCR_Primers	61240	0.04346%
+TruSeq_Universal_Adapter	40703	0.02889%
+PhiX_read2_adapter	34689	0.02462%
+Nextera_LMP_Read2_External_Adapter	29205	0.02073%
+PhiX_read1_adapter	5598	0.00397%
+I5_Nextera_Transposase_1	5416	0.00384%
+RNA_Adapter_(RA5)_part_#_15013205	3571	0.00253%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	2414	0.00171%
+Nextera_LMP_Read1_External_Adapter	2235	0.00159%
+TruSeq_Adapter_Index_16	1929	0.00137%
+TruSeq_Adapter_Index_2	1786	0.00127%
+Bisulfite_R2	1724	0.00122%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1621	0.00115%
+I5_Nextera_Transposase_2	1569	0.00111%
+Bisulfite_R1	1512	0.00107%
+I7_Nextera_Transposase_2	1504	0.00107%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	1349	0.00096%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 148.0 |    150 |  11.0 |          4.97% |
-| Q30L60 | 141.8 |    150 |  21.0 |          6.22% |
-
-| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |  EstG | Est/Real |   RunTime |
-|:-------|------:|-------:|---------:|--------:|------:|--------:|------:|---------:|----------:|
-| Q25L60 |  29.9 |   22.3 |   25.57% |     147 | "105" | 604.22M | 1.05G |     1.74 | 0:34'50'' |
-| Q30L60 |  27.5 |   21.8 |   20.57% |     143 | "105" | 604.22M | 1.01G |     1.67 | 0:31'28'' |
 
 ```text
-#Q25L60
-#Matched	148646	0.16316%
+#filteredReads
+#Matched	1447	0.00104%
 #Name	Reads	ReadsPct
-contam_27	147734	0.16216%
-contam_43	162	0.00018%
-contam_32	140	0.00015%
-contam_139	134	0.00015%
-contam_175	126	0.00014%
-TruSeq_Adapter_Index_16	104	0.00011%
-
-#Q30L60
-#Matched	85306	0.09305%
-#Name	Reads	ReadsPct
-contam_27	84638	0.09232%
-contam_43	144	0.00016%
-contam_32	144	0.00016%
-contam_139	132	0.00014%
-
+contam_43	267	0.00019%
+contam_32	216	0.00016%
+contam_139	211	0.00015%
+Reverse_adapter	222	0.00016%
+TruSeq_Universal_Adapter	148	0.00011%
+contam_158	110	0.00008%
 ```
 
-| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60XallP000 |   22.3 |   0.46% |      1176 | 2.02M | 1647 |      1146 | 1.94M | 1614 |   11.0 | 3.0 |   2.0 |  22.0 | "31,41,51,61,71,81" | 2:12'04'' | 0:01'43'' |
-| Q30L60XallP000 |   21.8 |   0.53% |      1173 | 2.29M | 1870 |      1147 | 1.92M | 1584 |   12.0 | 4.0 |   2.0 |  24.0 | "31,41,51,61,71,81" | 2:07'45'' | 0:01'41'' |
 
-| Name                   |  N50 |        Sum |        # |
-|:-----------------------|-----:|-----------:|---------:|
-| anchors                | 1176 |    2684597 |     2188 |
-| others                 | 1146 |    2438734 |     2013 |
-| tadpole.Q25L60         |  169 |  233889899 |  1325523 |
-| tadpole.Q30L60         |  171 |  245658800 |  1381700 |
-| spades.contig          |  490 | 1179183220 |  4043921 |
-| spades.non-contained   | 1794 |  331971570 |   187024 |
-| platanus.contig        |   65 | 1295903737 | 19893464 |
-| platanus.non-contained |    0 |          0 |        0 |
+Table: statQuorum
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
+| Q25L60 |  33.4 |   22.5 |   32.69% |     147 | "105" | 604.22M | 944.54M |     1.56 | 0:52'52'' |
+| Q30L60 |  30.0 |   22.1 |   26.30% |     142 | "105" | 604.22M | 910.12M |     1.51 | 0:52'18'' |
+
+
+Table: statKunitigsAnchors.md
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.5 |   1.88% |      1208 | 8.27M | 6502 |      1113 | 14.65M | 25321 |    7.0 | 2.0 |   3.0 |  14.0 | "31,41,51,61,71,81" | 2:22'13'' | 0:03'09'' |
+| Q30L60XallP000 |   22.1 |   2.09% |      1218 | 9.73M | 7609 |      1097 | 13.15M | 26595 |    8.0 | 2.0 |   3.0 |  16.0 | "31,41,51,61,71,81" | 2:14'01'' | 0:03'09'' |
+
+
+Table: statTadpoleAnchors.md
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |   Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   22.5 |  15.75% |      1192 | 8.15M | 6519 |      1125 | 9.23M | 20657 |   12.0 | 4.0 |   3.0 |  24.0 | "31,41,51,61,71,81" | 0:52'14'' | 0:02'54'' |
+| Q30L60XallP000 |   22.1 |  15.84% |      1198 |  9.5M | 7572 |      1100 | 8.35M | 22339 |   13.0 | 4.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:52'28'' | 0:03'01'' |
+
+
+Table: statMRKunitigsAnchors.md
+
+| Name       | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|------:|-----:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRXallP000 |   23.2 |   4.41% |      1179 | 5.84M | 4758 |      1115 | 13.29M | 20390 |    9.0 | 3.0 |   3.0 |  18.0 | "31,41,51,61,71,81" | 2:11'34'' | 0:02'41'' |
+
+
+Table: statMRTadpoleAnchors.md
+
+| Name       | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRXallP000 |   23.2 |  19.14% |      1228 | 16.62M | 12948 |      1140 | 23.22M | 42452 |   10.0 | 3.0 |   3.0 |  20.0 | "31,41,51,61,71,81" | 1:00'37'' | 0:04'02'' |
+
+
+Table: statFinal
+
+| Name                             |   N50 |        Sum |       # |
+|:---------------------------------|------:|-----------:|--------:|
+| Genome                           | 58864 |  604217145 |   26721 |
+| 7_mergeKunitigsAnchors.anchors   |  1216 |   12013129 |    9384 |
+| 7_mergeKunitigsAnchors.others    |  1117 |   17655738 |   14888 |
+| 7_mergeTadpoleAnchors.anchors    |  1199 |   11138396 |    8858 |
+| 7_mergeTadpoleAnchors.others     |  1115 |   10559654 |    8224 |
+| 7_mergeMRKunitigsAnchors.anchors |  1179 |    5843636 |    4758 |
+| 7_mergeMRKunitigsAnchors.others  |  1125 |   12700439 |   10577 |
+| 7_mergeMRTadpoleAnchors.anchors  |  1228 |   16622779 |   12948 |
+| 7_mergeMRTadpoleAnchors.others   |  1160 |   21943901 |   17324 |
+| 7_mergeAnchors.anchors           |  1222 |   30769302 |   23952 |
+| 7_mergeAnchors.others            |  1128 |   44534635 |   36544 |
+| spades.contig                    |  4079 |  870140463 |  764186 |
+| spades.scaffold                  |  4146 |  870255034 |  760990 |
+| spades.non-contained             |  7165 |  637623913 |  152574 |
+| spades.anchor                    |  1118 |    1698174 |    1480 |
+| megahit.contig                   |   647 | 1031850699 | 1912421 |
+| megahit.non-contained            |  1615 |  327096784 |  198445 |
+| megahit.anchor                   |  1104 |     430037 |     377 |
+| platanus.contig                  |   248 |     898300 |    3396 |
+| platanus.scaffold                |  5366 |     395330 |     590 |
+| platanus.non-contained           | 10074 |     294428 |      60 |
+| platanus.anchor                  |  2300 |      87051 |      43 |
 
 # JDM009
 
@@ -2353,12 +2524,10 @@ printf "| %s | %s | %s | %s |\n" \
 
 # moli, 茉莉
 
-SR had failed twice due to the calculating results from awk were larger
-than the MAX_INT
+SR had failed twice due to the calculating results from awk were larger than the MAX_INT
 
 * for jellyfish
-* for --number-reads of
-  `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
+* for --number-reads of `getSuperReadInsertCountsFromReadPlacementFileTwoPasses`
 
 ```bash
 mkdir -p ~/data/dna-seq/chara/medfood
