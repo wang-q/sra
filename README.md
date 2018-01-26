@@ -503,7 +503,9 @@ mkdir -p ~/data/dna-seq/other_plants/sra
 cd ~/data/dna-seq/other_plants/sra
 
 cat << EOF > source.csv
-SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
+SRX179262,nip-MiSeq,
+SRX734432,nip-180bp,
+#SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
 #SRX202247,Ler-0-2,Ler_XL_4
 #SRX202246,Col-0,Col_G
