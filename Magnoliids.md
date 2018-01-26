@@ -1202,6 +1202,7 @@ anchr template \
 ```bash
 bash 2_fastqc.sh
 bash 2_kmergenie.sh
+
 bash 2_insertSize.sh
 
 bash 2_mergereads.sh
@@ -1211,7 +1212,6 @@ bash 9_statReads.sh
 
 bash 2_quorum.sh
 bash 9_statQuorum.sh
-
 
 bash 4_downSampling.sh
 
@@ -1237,6 +1237,136 @@ bash 9_quast.sh
 # bash 0_cleanup.sh
 
 ```
+
+Table: statReads
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 41.25G | 274986152 |
+| uniq     | 150 | 38.84G | 258955364 |
+| bbduk    | 150 | 38.82G | 258949166 |
+| Q25L60   | 150 | 38.15G | 257233348 |
+
+```text
+#trimmedReads
+#Matched        602135  0.23252%
+#Name   Reads   ReadsPct
+Reverse_adapter 139694  0.05395%
+TruSeq_Adapter_Index_1_6        109641  0.04234%
+pcr_dimer       66553   0.02570%
+Nextera_LMP_Read2_External_Adapter      44353   0.01713%
+PCR_Primers     38204   0.01475%
+I5_Nextera_Transposase_1        35518   0.01372%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501  33087   0.01278%
+I5_Adapter_Nextera      18073   0.00698%
+PhiX_read2_adapter      15287   0.00590%
+TruSeq_Universal_Adapter        14373   0.00555%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701        13054   0.00504%
+I7_Nextera_Transposase_2        13028   0.00503%
+I5_Nextera_Transposase_2        12762   0.00493%
+RNA_Adapter_(RA5)_part_#_15013205       10492   0.00405%
+I7_Adapter_Nextera_No_Barcode   10282   0.00397%
+PhiX_read1_adapter      5934    0.00229%
+I7_Nextera_Transposase_1        5763    0.00223%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9       4161    0.00161%
+Nextera_LMP_Read1_External_Adapter      2767    0.00107%
+Bisulfite_R1    2231    0.00086%
+RNA_PCR_Primer_(RP1)_part_#_15013198    2052    0.00079%
+Bisulfite_R2    2048    0.00079%
+```
+
+
+Table: statMergeReads
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| clumped  | 150 | 38.84G | 258929014 |
+| trimmed  | 150 | 38.45G | 257877030 |
+| filtered | 150 | 38.45G | 257875238 |
+| ecco     | 150 | 38.45G | 257875238 |
+| eccc     | 150 | 38.45G | 257875238 |
+| pe.cor   |   0 |      0 |         0 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 245.3 |    252 |  30.8 |         35.34% |
+| ihist.merge.txt  |   0.0 |        |   0.0 |          0.00% |
+
+```text
+#trimmedReads
+#Matched        602078  0.23253%
+#Name   Reads   ReadsPct
+Reverse_adapter 139682  0.05395%
+TruSeq_Adapter_Index_1_6        109627  0.04234%
+pcr_dimer       66545   0.02570%
+Nextera_LMP_Read2_External_Adapter      44351   0.01713%
+PCR_Primers     38202   0.01475%
+I5_Nextera_Transposase_1        35513   0.01372%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501  33085   0.01278%
+I5_Adapter_Nextera      18071   0.00698%
+PhiX_read2_adapter      15286   0.00590%
+TruSeq_Universal_Adapter        14373   0.00555%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701        13053   0.00504%
+I7_Nextera_Transposase_2        13026   0.00503%
+I5_Nextera_Transposase_2        12761   0.00493%
+RNA_Adapter_(RA5)_part_#_15013205       10492   0.00405%
+I7_Adapter_Nextera_No_Barcode   10281   0.00397%
+PhiX_read1_adapter      5932    0.00229%
+I7_Nextera_Transposase_1        5762    0.00223%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9       4160    0.00161%
+Nextera_LMP_Read1_External_Adapter      2767    0.00107%
+Bisulfite_R1    2231    0.00086%
+RNA_PCR_Primer_(RP1)_part_#_15013198    2052    0.00079%
+Bisulfite_R2    2048    0.00079%
+```
+
+```text
+#filteredReads
+#Matched        942     0.00037%
+#Name   Reads   ReadsPct
+TruSeq_Universal_Adapter        199     0.00008%
+contam_32       152     0.00006%
+Reverse_adapter 110     0.00004%
+```
+
+
+Table: statQuorum
+
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 |  88.7 |   46.0 |   48.14% |     148 | "75" |  430M | 2.05G |     4.76 | 2:51'15'' |
+
+
+Table: statKunitigsAnchors.md
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |      # | N50Others |     Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|-------:|----------:|--------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   46.0 |  34.71% |      1569 | 234.17M | 146794 |      1644 | 318.78M | 447932 |    6.0 | 1.0 |   3.0 |  12.0 | "31,41,51,61,71,81" | 6:46'13'' | 0:58'12'' |
+
+
+Table: statTadpoleAnchors.md
+
+| Name           | CovCor | Mapped% | N50Anchor |     Sum |      # | N50Others |     Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|--------:|-------:|----------:|--------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60XallP000 |   46.0 |  39.62% |      1451 | 152.75M | 102180 |      2722 | 250.61M | 313423 |    7.0 | 2.0 |   3.0 |  14.0 | "31,41,51,61,71,81" | 3:20'05'' | 0:37'33'' |
+
+
+Table: statFinal
+
+| Name                           |   N50 |       Sum |      # |
+|:-------------------------------|------:|----------:|-------:|
+| 7_mergeKunitigsAnchors.anchors |  1569 | 234173592 | 146794 |
+| 7_mergeKunitigsAnchors.others  |  1779 | 288994736 | 156891 |
+| 7_mergeTadpoleAnchors.anchors  |  1451 | 152752794 | 102180 |
+| 7_mergeTadpoleAnchors.others   |  2993 | 233361135 | 101265 |
+| 7_mergeAnchors.anchors         |  1597 | 268302128 | 165450 |
+| 7_mergeAnchors.others          |  1953 | 375664501 | 193240 |
+| spades.non-contained           |     0 |         0 |      0 |
+| platanus.contig                |  1322 |  24712868 |  47402 |
+| platanus.scaffold              | 17270 |  20078385 |  10550 |
+| platanus.non-contained         | 20717 |  18259155 |   2167 |
+| platanus.anchor                |  7812 |  16004544 |   3311 |
+
 
 # XIAN01
 
@@ -1330,8 +1460,8 @@ for BASE_NAME in FCM03 FCM05 FCM07 FCM13; do
             2_illumina/fastqc/*.html \
             8_spades/spades.non-contained.fasta \
             8_platanus/platanus.non-contained.fasta \
-            6_mergeAnchors/anchor.merge.fasta \
-            6_mergeAnchors/others.non-contained.fasta
+            7_mergeAnchors/anchor.merge.fasta \
+            7_mergeAnchors/others.non-contained.fasta
     fi
 
     popd
