@@ -505,6 +505,7 @@ cd ~/data/dna-seq/other_plants/sra
 cat << EOF > source.csv
 SRX179262,nip-MiSeq,
 SRX734432,nip-180bp,
+SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
 #SRX202247,Ler-0-2,Ler_XL_4
