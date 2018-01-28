@@ -15,7 +15,7 @@
     - [Scer S288c](#scer-s288c)
     - [GAGE-B](#gage-b)
     - [Other bacteria (2+3)](#other-bacteria-23)
-    - [Other plants](#other-plants)
+    - [Other eukaryotes](#other-eukaryotes)
     - [Caenorhabditis elegans](#caenorhabditis-elegans)
     - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
@@ -490,7 +490,7 @@ perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
 ```
 
-## Other plants
+## Other eukaryotes
 
 * Atha Col-0 Ler-0
 * Osat ZS97 and MH63;
@@ -499,13 +499,17 @@ perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 Grab information and download.
 
 ```bash
-mkdir -p ~/data/dna-seq/other_plants/sra
-cd ~/data/dna-seq/other_plants/sra
+mkdir -p ~/data/dna-seq/other_euk/sra
+cd ~/data/dna-seq/other_euk/sra
 
 cat << EOF > source.csv
-SRX179262,nip-MiSeq,
-SRX734432,nip-180bp,
-SRX1897300,nip-pacbio,
+ERX1725441,s288c-pacbio,
+ERX1725435,s288c-pacbio,
+ERX1725434,s288c-pacbio,
+ERX1999216,s288c-MiSeq,
+#SRX179262,nip-MiSeq,
+#SRX734432,nip-180bp,
+#SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
 #SRX202247,Ler-0-2,Ler_XL_4
