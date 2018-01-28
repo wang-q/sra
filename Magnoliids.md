@@ -1206,48 +1206,7 @@ bash 2_kmergenie.sh
 
 bash 2_insertSize.sh
 
-bash 2_trim.sh
-bash 9_statReads.sh
-
-bash 2_mergereads.sh
-
-bash 2_quorum.sh
-bash 9_statQuorum.sh
-
-bash 4_downSampling.sh
-
-bash 4_kunitigs.sh
-bash 4_anchors.sh
-bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md
-
-bash 4_tadpole.sh
-bash 4_tadpoleAnchors.sh
-bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md
-
-bash 6_downSampling.sh
-
-bash 6_kunitigs.sh
-bash 6_anchors.sh
-bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md
-
-bash 6_tadpole.sh
-bash 6_tadpoleAnchors.sh
-bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md
-
-bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors
-bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors
-
-bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors
-bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors
-
-bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors
-
-bash 8_spades.sh
-bash 8_megahit.sh
-bash 8_platanus.sh
-
-bash 9_statFinal.sh
-bash 9_quast.sh
+bash 0_master.sh
 
 # bash 0_cleanup.sh
 
