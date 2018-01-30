@@ -581,11 +581,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-* FastQC
-
-* kmergenie
-
-
 ## m08: combinations of different quality values and read lengths
 
 * qual: 25 and 30
@@ -598,23 +593,10 @@ ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q25L60   | 150 | 3747791294 | 25336226 |
 | Q30L60   | 150 | 3637564323 | 25146240 |
 
-## m08: spades
-
-
-## m08: quorum
-
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
 | Q25L60 | 3.75G | 749.6 |  2.16G |  432.6 |  42.290% |     148 | "105" |    5M | 272.67M |    54.53 | 0:19'02'' |
 | Q30L60 | 3.64G | 727.6 |  2.15G |  430.0 |  40.904% |     145 | "105" |    5M | 268.31M |    53.66 | 0:19'16'' |
-
-* Clear intermediate files.
-
-
-## m08: down sampling
-
-
-## m08: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |    # | N50Anchor |     Sum |   # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|:-------|-------:|------:|--------:|-----:|----------:|--------:|----:|----------:|--------:|-----:|--------------------:|----------:|----------:|
@@ -647,18 +629,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q30L60X160P000 | 800M   |  160.0 |   660 |   2.56M | 3029 |      1346 |  27.56K |  20 |       656 |   2.54M | 3009 | "31,41,51,61,71,81" | 0:10'26'' | 0:00'21'' |
 | Q30L60X160P001 | 800M   |  160.0 |   657 |   2.57M | 3020 |      1333 |  42.21K |  29 |       650 |   2.53M | 2991 | "31,41,51,61,71,81" | 0:10'32'' | 0:00'21'' |
 
-## m08: merge anchors
-
-
-## m08: expand anchors
-
-* contigTrim
-
-
-## m08: final stats
-
-* Stats
-
 | Name                 |   N50 |       Sum |      # |
 |:---------------------|------:|----------:|-------:|
 | anchor.merge         |  1669 |   1076402 |    641 |
@@ -666,8 +636,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | contigTrim           | 20993 |    928522 |    104 |
 | spades.contig        |   964 | 403808501 | 623552 |
 | spades.non-contained |  1805 | 195666641 | 109369 |
-
-* Clear QxxLxxXxx.
 
 # m15
 
@@ -684,11 +652,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-* FastQC
-
-* kmergenie
-
-
 ## m15: combinations of different quality values and read lengths
 
 * qual: 25 and 30
@@ -701,23 +664,10 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q25L60   | 150 | 5537686393 | 37150680 |
 | Q30L60   | 150 | 5401706841 | 36955329 |
 
-## m15: spades
-
-
-## m15: quorum
-
 | Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|-------:|-------:|---------:|--------:|------:|------:|-------:|---------:|----------:|
 | Q25L60 | 5.54G | 1107.5 |  2.13G |  426.8 |  61.460% |     149 | "105" |    5M | 96.64M |    19.33 | 0:26'25'' |
 | Q30L60 |  5.4G | 1080.4 |   2.1G |  420.9 |  61.041% |     146 | "105" |    5M | 91.82M |    18.36 | 0:28'59'' |
-
-* Clear intermediate files.
-
-
-## m15: down sampling
-
-
-## m15: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |   # | N50Anchor |     Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|:-------|-------:|------:|--------:|----:|----------:|--------:|----:|----------:|--------:|----:|--------------------:|----------:|----------:|
@@ -750,18 +700,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q30L60X160P000 | 800M   |  160.0 |  1172 | 170.17K | 165 |      1201 |   3.81K |   3 |      1126 | 166.36K | 162 | "31,41,51,61,71,81" | 0:10'28'' | 0:00'24'' |
 | Q30L60X160P001 | 800M   |  160.0 |  1174 | 180.65K | 179 |      1198 |   2.36K |   2 |      1174 | 178.29K | 177 | "31,41,51,61,71,81" | 0:10'16'' | 0:00'24'' |
 
-## m15: merge anchors
-
-
-## m15: expand anchors
-
-* contigTrim
-
-
-## m15: final stats
-
-* Stats
-
 | Name                 |   N50 |       Sum |       # |
 |:---------------------|------:|----------:|--------:|
 | anchor.merge         | 18461 |   1050354 |     120 |
@@ -769,8 +707,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m15_H3HTCDMXX_L1_2.clean.fq.gz R2.fq.gz
 | contigTrim           | 35778 |    855518 |      58 |
 | spades.contig        |   285 | 459823867 | 1432956 |
 | spades.non-contained |  1441 |  31715024 |   20536 |
-
-* Clear QxxLxxXxx.
 
 # m17
 
@@ -787,11 +723,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-* FastQC
-
-* kmergenie
-
-
 ## m17: combinations of different quality values and read lengths
 
 * qual: 25 and 30
@@ -804,23 +735,10 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q25L60   | 150 | 4298180667 | 28999450 |
 | Q30L60   | 150 | 4180574936 | 28801284 |
 
-## m17: spades
-
-
-## m17: quorum
-
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
 | Q25L60 |  4.3G | 859.6 |  2.96G |  592.7 |  31.051% |     148 | "105" |    5M | 379.46M |    75.89 | 0:23'32'' |
 | Q30L60 | 4.18G | 836.2 |  2.96G |  591.2 |  29.294% |     145 | "105" |    5M | 375.71M |    75.14 | 0:22'21'' |
-
-* Clear intermediate files.
-
-
-## m17: down sampling
-
-
-## m17: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |    # | N50Anchor |     Sum |   # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|:-------|-------:|------:|--------:|-----:|----------:|--------:|----:|----------:|--------:|-----:|--------------------:|----------:|----------:|
@@ -855,17 +773,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q30L60X160P001 | 800M   |  160.0 |   599 |   5.02M | 7470 |      1154 |  29.85K |  25 |       598 |   4.99M | 7445 | "31,41,51,61,71,81" | 0:23'27'' | 0:00'36'' |
 | Q30L60X160P002 | 800M   |  160.0 |   599 |   4.85M | 7212 |      1300 |   38.4K |  29 |       597 |   4.81M | 7183 | "31,41,51,61,71,81" | 0:19'51'' | 0:00'32'' |
 
-## m17: merge anchors
-
-
-## m17: expand anchors
-
-* contigTrim
-
-
-## m17: final stats
-
-* Stats
 
 | Name                 |   N50 |       Sum |      # |
 |:---------------------|------:|----------:|-------:|
@@ -874,8 +781,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m17_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | contigTrim           | 33478 |   1438879 |    194 |
 | spades.contig        |  2016 | 465173951 | 422022 |
 | spades.non-contained |  2673 | 348073390 | 147336 |
-
-* Clear QxxLxxXxx.
 
 # m19
 
@@ -892,10 +797,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-* FastQC
-
-* kmergenie
-
 
 ## m19: combinations of different quality values and read lengths
 
@@ -909,23 +810,10 @@ ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q25L60   | 150 | 5171514024 | 34908498 |
 | Q30L60   | 150 | 5036343271 | 34707064 |
 
-## m19: spades
-
-
-## m19: quorum
-
 | Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|-------:|-------:|---------:|--------:|------:|------:|--------:|---------:|----------:|
 | Q25L60 | 5.17G | 1034.3 |  1.56G |  313.0 |  69.740% |     148 | "105" |    5M | 143.26M |    28.65 | 0:34'33'' |
 | Q30L60 | 5.04G | 1007.3 |  1.56G |  312.3 |  68.996% |     145 | "105" |    5M | 140.46M |    28.09 | 0:31'22'' |
-
-* Clear intermediate files.
-
-
-## m19: down sampling
-
-
-## m19: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |    # | N50Anchor |     Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|:-------|-------:|------:|--------:|-----:|----------:|--------:|----:|----------:|--------:|----:|--------------------:|----------:|----------:|
@@ -956,18 +844,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q30L60X80P002  | 400M   |   80.0 |   720 | 415.32K |  550 |      1340 |  48.59K |  36 |       676 | 366.73K | 514 | "31,41,51,61,71,81" | 0:08'23'' | 0:00'27'' |
 | Q30L60X160P000 | 800M   |  160.0 |   782 | 936.76K | 1133 |      1791 | 275.67K | 157 |       652 |  661.1K | 976 | "31,41,51,61,71,81" | 0:15'44'' | 0:00'50'' |
 
-## m19: merge anchors
-
-
-## m19: expand anchors
-
-* contigTrim
-
-
-## m19: final stats
-
-* Stats
-
 | Name                 |   N50 |       Sum |       # |
 |:---------------------|------:|----------:|--------:|
 | anchor.merge         |  2284 |    535008 |     233 |
@@ -975,8 +851,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m19_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | contigTrim           | 10766 |    560441 |     119 |
 | spades.contig        |   292 | 357083219 | 1124150 |
 | spades.non-contained |  1761 |  34758783 |   19397 |
-
-* Clear QxxLxxXxx.
 
 # m20
 
@@ -993,11 +867,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-* FastQC
-
-* kmergenie
-
-
 ## m20: combinations of different quality values and read lengths
 
 * qual: 25 and 30
@@ -1010,23 +879,10 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q25L60   | 150 | 5381411918 | 36089936 |
 | Q30L60   | 150 | 5267126278 | 35937929 |
 
-## m20: spades
-
-
-## m20: quorum
-
 | Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|-------:|-------:|---------:|--------:|------:|------:|-------:|---------:|----------:|
 | Q25L60 | 5.38G | 1076.3 |  4.36G |  872.9 |  18.893% |     149 | "105" |    5M | 82.28M |    16.46 | 0:57'12'' |
 | Q30L60 | 5.27G | 1053.5 |  4.31G |  862.0 |  18.178% |     147 | "105" |    5M | 79.09M |    15.82 | 0:48'04'' |
-
-* Clear intermediate files.
-
-
-## m20: down sampling
-
-
-## m20: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |    # | N50Anchor |     Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|-------:|------:|--------:|-----:|----------:|--------:|----:|----------:|--------:|----:|--------------------:|----------:|:----------|
@@ -1061,18 +917,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | Q30L60X160P001 |   800M |  160.0 |   630 | 678.91K |  983 |      1336 |  51.15K |  32 |       616 | 627.76K | 951 | "31,41,51,61,71,81" | 0:05'25'' | 0:00'15'' |
 | Q30L60X160P002 |   800M |  160.0 |   634 | 628.34K |  918 |      1660 |  36.24K |  21 |       619 |  592.1K | 897 | "31,41,51,61,71,81" | 0:05'22'' | 0:00'15'' |
 
-## m20: merge anchors
-
-
-## m20: expand anchors
-
-* contigTrim
-
-
-## m20: final stats
-
-* Stats
-
 | Name                 |   N50 |       Sum |      # |
 |:---------------------|------:|----------:|-------:|
 | anchor.merge         | 11071 |   1353094 |    418 |
@@ -1080,8 +924,6 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 | contigTrim           | 21785 |   1050355 |    210 |
 | spades.contig        |   384 | 182028086 | 465531 |
 | spades.non-contained |  2838 |  41985607 |  16992 |
-
-* Clear QxxLxxXxx.
 
 # m22
 
@@ -1097,11 +939,6 @@ cd ~/data/dna-seq/xjy/${BASE_NAME}/2_illumina
 ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
-
-* FastQC
-
-* kmergenie
-
 
 ## m22: combinations of different quality values and read lengths
 
@@ -1147,20 +984,10 @@ anchr contained \
 
 ```
 
-## m22: quorum
-
 | Name   | SumIn |  CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
 | Q25L60 | 10.2G | 2039.5 |  3.55G |  709.1 |  65.230% |     149 | "75" |    5M |  444.7M |    88.94 | 0:40'11'' |
 | Q30L60 | 9.98G | 1995.5 |  3.49G |  698.9 |  64.978% |     146 | "75" |    5M | 430.68M |    86.14 | 0:46'15'' |
-
-* Clear intermediate files.
-
-
-## m22: down sampling
-
-
-## m22: k-unitigs and anchors (sampled)
 
 | Name           | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|:-------|-------:|------:|--------:|------:|----------:|--------:|-----:|----------:|--------:|-----:|--------------------:|----------:|----------:|
@@ -1195,18 +1022,6 @@ anchr contained \
 | Q30L60X160P001 | 800M   |  160.0 |  1053 |  11.23M | 10212 |      1415 |   1.23M |  820 |       908 |     10M | 9392 | "31,41,51,61,71,81" | 0:15'15'' | 0:00'52'' |
 | Q30L60X160P002 | 800M   |  160.0 |  1051 |  11.11M | 10161 |      1406 |    1.2M |  814 |       902 |   9.91M | 9347 | "31,41,51,61,71,81" | 0:14'31'' | 0:00'51'' |
 
-## m22: merge anchors
-
-
-## m22: expand anchors
-
-* contigTrim
-
-
-## m22: final stats
-
-* Stats
-
 | Name                 |   N50 |       Sum |       # |
 |:---------------------|------:|----------:|--------:|
 | anchor.merge         |  4938 |   9236311 |    3164 |
@@ -1215,7 +1030,7 @@ anchr contained \
 | spades.contig        |   285 | 443831113 | 1289399 |
 | spades.non-contained |  1583 |  59215300 |   35218 |
 
-* Clear QxxLxxXxx.
+
 
 # Create tarballs
 
