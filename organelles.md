@@ -26,16 +26,13 @@
     - [m19: combinations of different quality values and read lengths](#m19-combinations-of-different-quality-values-and-read-lengths)
 - [m20](#m20)
     - [m20: download](#m20-download)
-    - [m20: template](#m20-template)
     - [m20: run](#m20-run)
 - [m22](#m22)
     - [m22: download](#m22-download)
-    - [m22: template](#m22-template)
     - [m22: run](#m22-run)
     - [m22: spades](#m22-spades)
 - [mt203](#mt203)
     - [mt203: download](#mt203-download)
-    - [mt203: template](#mt203-template)
     - [mt203: run](#mt203-run)
 - [mt301](#mt301)
     - [mt301: download](#mt301-download)
@@ -856,7 +853,7 @@ ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m20_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-## m20: template
+## m20: run
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
@@ -959,18 +956,18 @@ ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m22_H3JJGDMXX_L1_2.clean.fq.gz R2.fq.gz
 ```
 
-## m22: template
+## m22: run
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=m22
-QUEUE_NAME=mpi
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue mpi \
     --genome 5000000 \
     --is_euk \
     --trim2 "--dedupe --tile" \
@@ -984,19 +981,16 @@ anchr template \
     --insertsize \
     --parallel 24
 
-```
+# run
+bash 0_bsub.sh
 
-## m22: run
+```
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
-BASE_NAME=m20
+BASE_NAME=m22
 
 cd ${WORKING_DIR}/${BASE_NAME}
-
-bash 0_master.sh
-
-# bash 0_cleanup.sh
 
 ```
 
@@ -1101,18 +1095,18 @@ ln -s ../../raw_data/MT203_H3LCYDMXX_L1_2.fq.gz R2.fq.gz
 
 ```
 
-## mt203: template
+## mt203: run
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=mt203
-QUEUE_NAME=mpi
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue mpi \
     --genome 5000000 \
     --is_euk \
     --trim2 "--dedupe --tile" \
@@ -1126,19 +1120,18 @@ anchr template \
     --insertsize \
     --parallel 24
 
-```
+# run
+#bash 0_bsub.sh
 
-## mt203: run
+bash 0_master.sh
+
+```
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=mt203
 
 cd ${WORKING_DIR}/${BASE_NAME}
-
-bash 0_master.sh
-
-# bash 0_cleanup.sh
 
 ```
 
@@ -1180,18 +1173,23 @@ anchr template \
     --mergereads \
     --ecphase "1,2,3" \
     --insertsize \
+    --fillanchor \
     --parallel 24
 
-# run
-bash 0_bsub.sh
-
 ```
+
+## mt301: run
 
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=mt301
 
 cd ${WORKING_DIR}/${BASE_NAME}
+
+#bash 0_bsub.sh
+bash 0_master.sh
+
+bash 0_cleanup.sh
 
 ```
 
@@ -1379,6 +1377,8 @@ Table: statFinal
 | 7_mergeMRTadpoleAnchors.others   | 2275 |    817383 |    420 |
 | 7_mergeAnchors.anchors           | 1585 |   1562311 |    911 |
 | 7_mergeAnchors.others            | 1363 |   2950334 |   1957 |
+| anchorLong                       | 1849 |   1444014 |    756 |
+| anchorFill                       | 7084 |   1823886 |    463 |
 | spades.contig                    |  316 | 293663182 | 827859 |
 | spades.scaffold                  |  316 | 293664912 | 827695 |
 | spades.non-contained             | 1723 |  35217638 |  19283 |
@@ -1388,6 +1388,7 @@ Table: statFinal
 | platanus.scaffold                | 1801 |    725216 |   2395 |
 | platanus.non-contained           | 6665 |    397626 |     85 |
 | platanus.anchor                  | 3931 |    335187 |    102 |
+
 
 # mt302
 
@@ -1410,13 +1411,13 @@ ln -s ../../raw_data/mt302_H73Y3DMXX_L1_2.fq.gz R2.fq.gz
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=mt302
-QUEUE_NAME=mpi
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue mpi \
     --genome 5000000 \
     --is_euk \
     --trim2 "--dedupe --tile" \
@@ -1428,6 +1429,7 @@ anchr template \
     --mergereads \
     --ecphase "1,2,3" \
     --insertsize \
+    --fillanchor \
     --parallel 24
 
 ```
@@ -1440,9 +1442,10 @@ BASE_NAME=mt302
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
+#bash 0_bsub.sh
 bash 0_master.sh
 
-# bash 0_cleanup.sh
+bash 0_cleanup.sh
 
 ```
 
@@ -1634,6 +1637,8 @@ Table: statFinal
 | 7_mergeMRTadpoleAnchors.others   |  3832 |    183499 |     86 |
 | 7_mergeAnchors.anchors           | 19297 |   1130343 |    171 |
 | 7_mergeAnchors.others            |  1572 |   3878454 |   2505 |
+| anchorLong                       | 28647 |   1092178 |    108 |
+| anchorFill                       | 38355 |   1100439 |     61 |
 | spades.contig                    |   365 | 188351151 | 499381 |
 | spades.scaffold                  |   365 | 188353079 | 499286 |
 | spades.non-contained             |  1430 |  20316929 |  13183 |
@@ -1646,14 +1651,22 @@ Table: statFinal
 
 # Create tarballs
 
-* FastQC reports
-* Spades assemblies
+* Illumina QC
+    * FastQC
+    * InsertSize
+* Other assemblies
+    * Spades
+    * Megahit
+    * Platanus
 * Our assemblies
-* Slightly unreliable parts of our assemblies
+* Unreliable parts of our assemblies
 * Short gaps (fill gaps shorter than 2000 bp)
 
 ```bash
-for BASE_NAME in m07 m08 m15 m17 m19 m20 m22; do
+cd ${HOME}/data/dna-seq/xjy
+
+#for BASE_NAME in m07 m08 m15 m17 m19 m20 m22 mt203 mt301 ; do
+for BASE_NAME in mt301 mt302; do
     echo >&2 "==> ${BASE_NAME}"
     pushd ${HOME}/data/dna-seq/xjy/${BASE_NAME}
     
@@ -1663,15 +1676,17 @@ for BASE_NAME in m07 m08 m15 m17 m19 m20 m22; do
         tar -czvf \
             ../${BASE_NAME}.tar.gz \
             2_illumina/fastqc/*.html \
-            8_spades/contigs.non-contained.fasta \
-            merge/anchor.merge.fasta \
-            merge/others.merge.fasta \
-            contigTrim/contig.fasta
+            2_illumina/insertSize/*.pdf \
+            8_spades/spades.non-contained.fasta \
+            8_megahit/megahit.non-contained.fasta \
+            8_platanus/platanus.non-contained.fasta \
+            7_mergeAnchors/anchor.merge.fasta \
+            7_mergeAnchors/others.non-contained.fasta \
+            7_anchorFill/contig.fasta
     fi
 
     popd
 done
 
-find ${HOME}/data/dna-seq/xjy/ -type d -path "*8_spades/*" | xargs rm -fr
 ```
 
