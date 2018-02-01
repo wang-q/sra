@@ -1,7 +1,7 @@
-# Organelles: anchr + spades
+# Organelles: anchr and others
 
 [TOC levels=1-3]: # " "
-- [Organelles: anchr + spades](#organelles-anchr--spades)
+- [Organelles: anchr and others](#organelles-anchr-and-others)
 - [m07](#m07)
     - [m07: download](#m07-download)
     - [m07: template](#m07-template)
