@@ -150,16 +150,16 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/dna-seq/chara
 BASE_NAME=ZS97
-QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue largemem \
     --genome 346663259 \
     --is_euk \
-    --trim2 "--uniq --bbduk" \
+    --trim2 "--dedupe" \
     --cov2 "40 60 all" \
     --qual2 "25 30" \
     --len2 "60" \
@@ -168,6 +168,7 @@ anchr template \
     --mergereads \
     --ecphase "1,3" \
     --insertsize \
+    --fillanchor \
     --parallel 24
 
 ```
