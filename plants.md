@@ -143,7 +143,7 @@ rsync -avP \
     ~/data/dna-seq/chara/ZS97/ \
     wangq@202.119.37.251:data/dna-seq/chara/ZS97
 
-#rsync -avP wangq@202.119.37.251:data/dna-seq/chara/ZS97/ ~/data/dna-seq/chara/ZS97
+# rsync -avP wangq@202.119.37.251:data/dna-seq/chara/ZS97/ ~/data/dna-seq/chara/ZS97
 
 ```
 
@@ -168,6 +168,7 @@ anchr template \
     --mergereads \
     --ecphase "1,3" \
     --insertsize \
+    --sgapreqc \
     --fillanchor \
     --parallel 24
 
@@ -176,94 +177,13 @@ anchr template \
 ## ZS97: run
 
 ```bash
-# Illumina QC
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=ZS97
 
-# insert size
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+cd ${WORKING_DIR}/${BASE_NAME}
 
-# preprocess Illumina reads
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
-
-# reads stats
-bsub -w "ended(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
-
-# merge reads
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
-
-# spades, megahit, and platanus
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
-
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_megahit" "bash 8_megahit.sh"
-
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
-
-# quorum
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
-bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
-
-# down sampling, k-unitigs and anchors
-bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
-
-bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
-bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
-bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
-
-bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpole" "bash 4_tadpole.sh"
-bsub -w "done(${BASE_NAME}-4_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
-bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
-
-# down sampling mergereads
-bsub -w "done(${BASE_NAME}-2_mergereads)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_downSampling" "bash 6_downSampling.sh"
-
-bsub -w "done(${BASE_NAME}-6_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_kunitigs" "bash 6_kunitigs.sh"
-bsub -w "done(${BASE_NAME}-6_kunitigs)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchors" "bash 6_anchors.sh"
-bsub -w "done(${BASE_NAME}-6_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_kunitigs" "bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md"
-
-bsub -w "done(${BASE_NAME}-6_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpole" "bash 6_tadpole.sh"
-bsub -w "done(${BASE_NAME}-6_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
-bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_tadpole" "bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
-
-# merge anchors
-bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
-bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
-bsub -w "done(${BASE_NAME}-6_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_kunitigs" "bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors"
-bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
-
-bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole) && done(${BASE_NAME}-7_mergeAnchors_6_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_6_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
-
-# quast
-bsub -w "ended(${BASE_NAME}-7_mergeAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_quast" "bash 9_quast.sh"
-
-# stats
-#bash 9_statFinal.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
 #bash 0_cleanup.sh
 
@@ -273,10 +193,19 @@ Table: statInsertSize
 
 | Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
 |:----------------|------:|-------:|-------:|-------------------------------:|
-| genome.bbtools  | 410.5 |    275 | 2076.3 |                         42.23% |
-| tadpole.bbtools | 276.8 |    264 |   86.6 |                         20.21% |
-| genome.picard   | 290.8 |    275 |   88.1 |                             FR |
-| tadpole.picard  | 275.6 |    263 |   84.6 |                             FR |
+| genome.bbtools  | 410.7 |    275 | 2078.2 |                         42.24% |
+| tadpole.bbtools | 280.0 |    266 |   88.1 |                         24.48% |
+| genome.picard   | 290.9 |    275 |   88.1 |                             FR |
+| tadpole.picard  | 278.9 |    266 |   86.1 |                             FR |
+
+
+Table: statSgaPreQC
+
+| Item           |   Value |
+|:---------------|--------:|
+| incorrectBases |   0.17% |
+| perfectReads   |  89.89% |
+| overlapDepth   | 3953.47 |
 
 
 Table: statReads
@@ -285,69 +214,25 @@ Table: statReads
 |:---------|---------:|----------:|----------:|
 | Genome   | 27449063 | 346663259 |        12 |
 | Illumina |      101 |    34.17G | 338293782 |
-| uniq     |      101 |    33.82G | 334877960 |
-| bbduk    |      100 |    33.16G | 331892946 |
-| Q25L60   |      100 |    28.23G | 288860270 |
-| Q30L60   |      100 |    25.77G | 268373759 |
+| trim     |      100 |    25.97G | 265113983 |
+| Q25L60   |      100 |     24.3G | 248320199 |
+| Q30L60   |      100 |    22.25G | 231091722 |
+
+
+Table: statTrimReads
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| clumpify | 101 | 29.62G | 293293306 |
+| trim     | 100 | 25.97G | 265114916 |
+| filter   | 100 | 25.97G | 265113983 |
+| R1       | 100 | 11.18G | 113720856 |
+| R2       | 100 | 11.18G | 113720856 |
+| Rs       | 100 |  3.61G |  37672271 |
+
 
 ```text
-#trimmedReads
-#Matched	2817355	0.84131%
-#Name	Reads	ReadsPct
-Reverse_adapter	1549468	0.46270%
-TruSeq_Universal_Adapter	793969	0.23709%
-pcr_dimer	101067	0.03018%
-TruSeq_Adapter_Index_1_6	79842	0.02384%
-PhiX_read2_adapter	52789	0.01576%
-TruSeq_Adapter_Index_7	44198	0.01320%
-PCR_Primers	41056	0.01226%
-Nextera_LMP_Read2_External_Adapter	36022	0.01076%
-I5_Nextera_Transposase_1	12936	0.00386%
-PhiX_read1_adapter	12520	0.00374%
-RNA_Adapter_(RA5)_part_#_15013205	9365	0.00280%
-I5_Nextera_Transposase_2	7565	0.00226%
-RNA_PCR_Primer_Index_1_(RPI1)_2,9	7055	0.00211%
-TruSeq_Adapter_Index_2	5066	0.00151%
-I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	4939	0.00147%
-I7_Nextera_Transposase_2	4558	0.00136%
-I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	4142	0.00124%
-Nextera_LMP_Read1_External_Adapter	4025	0.00120%
-I7_Nextera_Transposase_1	3833	0.00114%
-Bisulfite_R1	2814	0.00084%
-Bisulfite_R2	2671	0.00080%
-I5_Adapter_Nextera	2536	0.00076%
-RNA_PCR_Primer_(RP1)_part_#_15013198	2067	0.00062%
-I7_Adapter_Nextera_No_Barcode	1868	0.00056%
-RNA_PCR_Primer_Index_35_(RPI35)	1624	0.00048%
-RNA_PCR_Primer_Index_14_(RPI14)	1095	0.00033%
-```
-
-
-Table: statMergeReads
-
-| Name          | N50 |     Sum |         # |
-|:--------------|----:|--------:|----------:|
-| clumped       | 101 |  29.62G | 293293306 |
-| trimmed       | 100 |  25.97G | 265114916 |
-| filtered      | 100 |  25.97G | 265113983 |
-| ecco          | 100 |  25.92G | 265113982 |
-| ecct          | 100 |  24.72G | 252646762 |
-| extended      | 140 |  33.96G | 252646762 |
-| merged        | 141 | 804.95M |   5772282 |
-| unmerged.raw  | 140 |  32.41G | 241102198 |
-| unmerged.trim | 140 |  31.02G | 235237769 |
-| U1            | 140 |  12.24G |  91927833 |
-| U2            | 140 |  12.24G |  91927833 |
-| Us            | 140 |   6.54G |  51382103 |
-| pe.cor        | 140 |  31.88G | 298164436 |
-
-| Group            |  Mean | Median | STDev | PercentOfPairs |
-|:-----------------|------:|-------:|------:|---------------:|
-| ihist.merge1.txt | 100.8 |    101 |  17.1 |          4.33% |
-| ihist.merge.txt  | 139.4 |    140 |  26.8 |          4.57% |
-
-```text
-#trimmedReads
+#trim
 #Matched	2796177	0.95337%
 #Name	Reads	ReadsPct
 Reverse_adapter	1546422	0.52726%
@@ -379,7 +264,7 @@ RNA_PCR_Primer_Index_14_(RPI14)	1081	0.00037%
 ```
 
 ```text
-#filteredReads
+#filter
 #Matched	933	0.00035%
 #Name	Reads	ReadsPct
 TruSeq_Universal_Adapter	175	0.00007%
@@ -387,84 +272,116 @@ contam_32	104	0.00004%
 ```
 
 
+Table: statMergeReads
+
+| Name          | N50 |    Sum |         # |
+|:--------------|----:|-------:|----------:|
+| clumped       | 100 | 22.53G | 230644785 |
+| ecco          | 100 | 22.51G | 230644784 |
+| ecct          | 100 | 21.41G | 219212397 |
+| extended      | 140 | 29.46G | 219212397 |
+| merged        | 139 | 536.2M |   3890862 |
+| unmerged.raw  | 140 | 28.42G | 211430672 |
+| unmerged.trim | 140 | 28.42G | 211384925 |
+| U1            | 140 | 10.22G |  75470060 |
+| U2            | 140 | 10.22G |  75470060 |
+| Us            | 140 |  7.98G |  60444805 |
+| pe.cor        | 140 | 29.02G | 279611454 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt |  97.4 |     99 |  11.2 |          3.28% |
+| ihist.merge.txt  | 137.8 |    139 |  29.3 |          3.55% |
+
+
 Table: statQuorum
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
-| Q25L60 |  81.5 |   75.2 |    7.68% |      98 | "71" | 346.66M | 299.29M |     0.86 | 1:04'30'' |
-| Q30L60 |  74.4 |   69.6 |    6.53% |      96 | "71" | 346.66M | 295.47M |     0.85 | 1:01'58'' |
+| Q0L0   |  75.0 |   67.1 |   10.56% |      98 | "71" | 346.66M | 304.64M |     0.88 | 0:50'58'' |
+| Q25L60 |  70.2 |   64.1 |    8.72% |      98 | "71" | 346.66M | 299.02M |     0.86 | 0:48'03'' |
+| Q30L60 |  64.3 |   59.5 |    7.52% |      97 | "71" | 346.66M | 295.26M |     0.85 | 0:43'53'' |
 
 
 Table: statKunitigsAnchors.md
 
 | Name           | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000  |   40.0 |  76.58% |      4263 | 242.33M | 76190 |      1006 | 25.74M | 300192 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 1:47'39'' | 2:10'56'' |
-| Q25L60X60P000  |   60.0 |  77.72% |      4776 | 249.53M | 71836 |      1001 | 25.62M | 287842 |   51.0 | 6.0 |  11.0 | 102.0 | "31,41,51,61,71,81" | 2:19'03'' | 2:19'21'' |
-| Q25L60XallP000 |   75.2 |  77.81% |      4994 | 251.96M | 69962 |      1000 | 24.36M | 275670 |   63.0 | 8.0 |  13.0 | 126.0 | "31,41,51,61,71,81" | 2:41'44'' | 2:20'23'' |
-| Q30L60X40P000  |   40.0 |  75.77% |      3747 |  229.8M | 79040 |      1010 | 26.05M | 300025 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 1:40'18'' | 2:00'20'' |
-| Q30L60X60P000  |   60.0 |  77.33% |      4139 | 237.96M | 75916 |      1009 |  27.9M | 300981 |   53.0 | 7.0 |  10.7 | 106.0 | "31,41,51,61,71,81" | 2:11'33'' | 2:16'40'' |
-| Q30L60XallP000 |   69.6 |  77.61% |      4237 | 238.62M | 74696 |      1010 | 29.93M | 296937 |   61.0 | 8.0 |  12.3 | 122.0 | "31,41,51,61,71,81" | 2:24'20'' | 2:14'07'' |
+| Q0L0X40P000    |   40.0 |  80.44% |      4595 | 252.32M | 75144 |      1000 |  21.3M | 297117 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 1:40'39'' | 2:17'43'' |
+| Q0L0X60P000    |   60.0 |  80.77% |      4958 | 254.93M | 71030 |       924 | 22.02M | 271101 |   54.0 | 6.0 |  12.0 | 108.0 | "31,41,51,61,71,81" | 2:05'49'' | 2:08'20'' |
+| Q0L0XallP000   |   67.1 |  80.69% |      5013 | 255.87M | 70518 |       907 | 20.99M | 264446 |   60.0 | 7.0 |  13.0 | 120.0 | "31,41,51,61,71,81" | 2:13'34'' | 2:03'27'' |
+| Q25L60X40P000  |   40.0 |  80.80% |      4446 | 244.97M | 74466 |      1005 | 26.99M | 296302 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 1:39'55'' | 2:12'35'' |
+| Q25L60X60P000  |   60.0 |  81.47% |      4939 |  251.5M | 70370 |       979 | 24.15M | 276335 |   55.0 | 7.0 |  11.3 | 110.0 | "31,41,51,61,71,81" | 2:06'26'' | 2:15'48'' |
+| Q25L60XallP000 |   64.1 |  81.50% |      4986 | 251.26M | 69733 |      1000 | 25.08M | 272346 |   58.0 | 7.0 |  12.3 | 116.0 | "31,41,51,61,71,81" | 2:10'31'' | 2:14'21'' |
+| Q30L60X40P000  |   40.0 |  79.95% |      3904 | 235.69M | 78656 |      1006 | 23.01M | 302297 |   38.0 | 5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:32'21'' | 2:09'06'' |
+| Q30L60XallP000 |   59.5 |  81.13% |      4238 | 240.08M | 75096 |      1006 | 27.31M | 295775 |   56.0 | 7.0 |  11.7 | 112.0 | "31,41,51,61,71,81" | 1:59'19'' | 2:11'40'' |
 
 
 Table: statTadpoleAnchors.md
 
 | Name           | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000  |   40.0 |  77.74% |      3745 | 231.17M | 80018 |      1005 | 21.05M | 302871 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:51'03'' | 1:56'11'' |
-| Q25L60X60P000  |   60.0 |  80.48% |      4324 | 243.06M | 75709 |      1004 | 26.51M | 314191 |   52.0 | 6.0 |  11.3 | 104.0 | "31,41,51,61,71,81" | 1:12'05'' | 2:28'19'' |
-| Q25L60XallP000 |   75.2 |  81.24% |      4644 | 248.15M | 72987 |      1002 |  25.9M | 306753 |   64.0 | 8.0 |  13.3 | 128.0 | "31,41,51,61,71,81" | 1:20'58'' | 2:35'03'' |
-| Q30L60X40P000  |   40.0 |  76.56% |      3351 | 214.79M | 80045 |      1010 | 23.86M | 295395 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:47'30'' | 1:39'37'' |
-| Q30L60X60P000  |   60.0 |  79.49% |      3747 | 229.79M | 78930 |      1009 | 26.53M | 316164 |   54.0 | 6.0 |  12.0 | 108.0 | "31,41,51,61,71,81" | 1:05'47'' | 2:15'01'' |
-| Q30L60XallP000 |   69.6 |  80.24% |      3904 | 234.48M | 78209 |      1008 | 26.09M | 318055 |   62.0 | 8.0 |  12.7 | 124.0 | "31,41,51,61,71,81" | 1:10'57'' | 2:20'12'' |
+| Q0L0X40P000    |   40.0 |  79.22% |      4126 | 241.86M | 78126 |      1002 |  22.2M | 308016 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:54'14'' | 2:09'06'' |
+| Q0L0X60P000    |   60.0 |  81.40% |      4850 | 251.81M | 72097 |       915 | 24.09M | 301824 |   55.0 | 6.0 |  12.3 | 109.5 | "31,41,51,61,71,81" | 1:10'22'' | 2:31'00'' |
+| Q0L0XallP000   |   67.1 |  81.60% |      5021 | 253.94M | 70696 |       871 | 23.14M | 294616 |   61.0 | 7.0 |  13.3 | 122.0 | "31,41,51,61,71,81" | 1:13'47'' | 2:25'49'' |
+| Q25L60X40P000  |   40.0 |  79.18% |      3936 | 236.57M | 78981 |      1003 | 22.19M | 308141 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:53'16'' | 2:02'55'' |
+| Q25L60X60P000  |   60.0 |  81.51% |      4547 | 246.71M | 73709 |      1000 | 25.64M | 308098 |   56.0 | 6.0 |  12.7 | 111.0 | "31,41,51,61,71,81" | 1:09'02'' | 2:22'15'' |
+| Q25L60XallP000 |   64.1 |  81.71% |      4647 | 249.25M | 73205 |       983 | 23.77M | 305488 |   59.0 | 7.0 |  12.7 | 118.0 | "31,41,51,61,71,81" | 1:10'45'' | 2:25'19'' |
+| Q30L60X40P000  |   40.0 |  77.90% |      3467 | 222.57M | 80890 |      1006 |  21.8M | 304012 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:47'36'' | 1:49'15'' |
+| Q30L60XallP000 |   59.5 |  80.56% |      3891 | 235.61M | 78800 |      1005 | 23.68M | 318220 |   57.0 | 7.0 |  12.0 | 114.0 | "31,41,51,61,71,81" | 1:01'16'' | 2:17'13'' |
 
 
 Table: statMRKunitigsAnchors.md
 
 | Name       | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:-----------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
-| MRX40P000  |   40.0 |  77.56% |      4553 |  241.5M | 70819 |       941 | 15.72M | 190022 |   37.0 |  5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 2:07'06'' | 0:58'05'' |
-| MRX40P001  |   40.0 |  77.51% |      4569 | 241.34M | 70663 |       896 | 15.68M | 189558 |   37.0 |  5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 2:07'12'' | 0:58'00'' |
-| MRX60P000  |   60.0 |  77.04% |      4503 | 243.14M | 71637 |       846 | 13.31M | 184720 |   56.0 |  8.0 |  10.7 | 112.0 | "31,41,51,61,71,81" | 2:37'16'' | 0:57'31'' |
-| MRXallP000 |   92.0 |  76.45% |      4344 | 241.98M | 73057 |       812 |  13.3M | 183226 |   86.0 | 12.0 |  16.7 | 172.0 | "31,41,51,61,71,81" | 3:25'29'' | 0:57'29'' |
+| MRX40P000  |   40.0 |  77.95% |      4368 | 243.57M | 73439 |       634 | 11.99M | 187590 |   38.0 |  5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:53'41'' | 0:54'10'' |
+| MRX40P001  |   40.0 |  77.92% |      4370 |  243.4M | 73136 |       649 | 11.98M | 186973 |   38.0 |  5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:53'10'' | 0:53'49'' |
+| MRX60P000  |   60.0 |  77.32% |      4164 | 242.12M | 75326 |       654 | 12.04M | 188410 |   57.0 |  7.0 |  12.0 | 114.0 | "31,41,51,61,71,81" | 2:19'42'' | 0:53'47'' |
+| MRXallP000 |   83.7 |  76.63% |      3968 | 239.67M | 77012 |       665 |  12.4M | 189217 |   80.0 | 10.0 |  16.7 | 160.0 | "31,41,51,61,71,81" | 2:51'25'' | 0:54'29'' |
 
 
 Table: statMRTadpoleAnchors.md
 
-| Name       | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:-----------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
-| MRX40P000  |   40.0 |  79.41% |      4652 | 242.15M | 70387 |       789 | 15.44M | 212690 |   37.0 |  5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 1:12'29'' | 1:10'54'' |
-| MRX40P001  |   40.0 |  79.39% |      4668 |  242.3M | 70170 |       639 | 14.78M | 211867 |   38.0 |  5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:12'26'' | 1:11'28'' |
-| MRX60P000  |   60.0 |  79.18% |      4850 | 244.24M | 68644 |       766 | 14.91M | 193820 |   56.0 |  7.0 |  11.7 | 112.0 | "31,41,51,61,71,81" | 1:20'44'' | 1:06'20'' |
-| MRXallP000 |   92.0 |  78.97% |      4903 | 246.15M | 68669 |       698 |    13M | 187545 |   86.0 | 12.0 |  16.7 | 172.0 | "31,41,51,61,71,81" | 1:32'21'' | 1:05'54'' |
+| Name       | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |      # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|--------:|------:|----------:|-------:|-------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000  |   40.0 |  79.51% |      4843 | 246.39M | 69418 |       284 | 11.62M | 197236 |   38.0 | 5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:07'10'' | 1:04'57'' |
+| MRX40P001  |   40.0 |  79.49% |      4834 | 246.27M | 69375 |       289 | 11.65M | 197333 |   38.0 | 5.0 |   7.7 |  76.0 | "31,41,51,61,71,81" | 1:06'45'' | 1:04'44'' |
+| MRX60P000  |   60.0 |  79.32% |      4905 | 247.46M | 68879 |       378 | 11.54M | 188875 |   57.0 | 7.0 |  12.0 | 114.0 | "31,41,51,61,71,81" | 1:12'21'' | 1:03'15'' |
+| MRXallP000 |   83.7 |  79.21% |      4856 | 246.17M | 69108 |       518 | 13.11M | 190047 |   80.0 | 9.0 |  17.7 | 160.0 | "31,41,51,61,71,81" | 1:18'26'' | 1:04'36'' |
+
+
+Table: statMergeAnchors.md
+
+| Name                     | Mapped% | N50Anchor |     Sum |     # | N50Others |     Sum |      # | median | MAD | lower | upper | RunTimeAN |
+|:-------------------------|--------:|----------:|--------:|------:|----------:|--------:|-------:|-------:|----:|------:|------:|----------:|
+| 7_mergeAnchors           |  59.16% |      2673 | 206.22M | 87310 |      1145 | 145.04M | 121649 |   27.0 | 3.0 |   6.0 |  54.0 | 0:48'08'' |
+| 7_mergeKunitigsAnchors   |  71.88% |      2593 | 210.36M | 91126 |      1160 |  91.23M |  77819 |   27.0 | 3.0 |   6.0 |  54.0 | 0:59'45'' |
+| 7_mergeMRKunitigsAnchors |  68.80% |      2490 | 200.04M | 89249 |      1213 |  63.32M |  53310 |   27.0 | 3.0 |   6.0 |  54.0 | 0:45'43'' |
+| 7_mergeMRTadpoleAnchors  |  69.00% |      2520 | 200.97M | 88926 |      1190 |  59.44M |  50478 |   27.0 | 3.0 |   6.0 |  54.0 | 0:45'38'' |
+| 7_mergeTadpoleAnchors    |  70.42% |      2566 | 206.36M | 90154 |      1106 |   89.8M |  77935 |   28.0 | 3.0 |   6.3 |  55.5 | 0:54'06'' |
 
 
 Table: statFinal
 
-| Name                             |      N50 |       Sum |       # |
-|:---------------------------------|---------:|----------:|--------:|
-| Genome                           | 27449063 | 346663259 |      12 |
-| 7_mergeKunitigsAnchors.anchors   |     5202 | 254759651 |   68862 |
-| 7_mergeKunitigsAnchors.others    |     1081 |  43543952 |   39006 |
-| 7_mergeTadpoleAnchors.anchors    |     4695 | 250036556 |   73094 |
-| 7_mergeTadpoleAnchors.others     |     1060 |  43141307 |   38651 |
-| 7_mergeMRKunitigsAnchors.anchors |     5158 | 249918447 |   67109 |
-| 7_mergeMRKunitigsAnchors.others  |     1085 |  16505542 |   14963 |
-| 7_mergeMRTadpoleAnchors.anchors  |     5062 | 249502144 |   68008 |
-| 7_mergeMRTadpoleAnchors.others   |     1070 |  15910348 |   14446 |
-| 7_mergeAnchors.anchors           |     5855 | 262843845 |   64842 |
-| 7_mergeAnchors.others            |     1070 |  71389392 |   63817 |
-| spades.contig                    |    11495 | 356732192 |  522159 |
-| spades.scaffold                  |    12074 | 356757610 |  520764 |
-| spades.non-contained             |    14866 | 291946827 |   34248 |
-| spades.anchor                    |     6637 | 265879012 |   56518 |
-| megahit.contig                   |     6329 | 311632902 |  150108 |
-| megahit.non-contained            |     7458 | 272700006 |   55953 |
-| megahit.anchor                   |     4746 | 244692400 |   68677 |
-| platanus.contig                  |     1355 | 426620446 | 1614003 |
-| platanus.scaffold                |     7547 | 326320668 |  416433 |
-| platanus.non-contained           |     9508 | 268787420 |   43446 |
-| platanus.anchor                  |     6722 | 254084936 |   54252 |
+| Name                   |      N50 |       Sum |       # |
+|:-----------------------|---------:|----------:|--------:|
+| Genome                 | 27449063 | 346663259 |      12 |
+| 7_mergeAnchors.anchors |     2673 | 206216068 |   87310 |
+| 7_mergeAnchors.others  |     1145 | 145038943 |  121649 |
+| anchorLong             |     4805 |   6869498 |    1726 |
+| anchorFill             |     4975 |   6861638 |    1683 |
+| spades.contig          |    12537 | 359483295 |  534175 |
+| spades.scaffold        |    12962 | 359506023 |  533080 |
+| spades.non-contained   |    16349 | 293363347 |   32267 |
+| spades.anchor          |     3095 | 237731804 |   90463 |
+| megahit.contig         |     6826 | 313019771 |  148671 |
+| megahit.non-contained  |     8081 | 274126385 |   53578 |
+| megahit.anchor         |     2707 | 216322785 |   90984 |
+| platanus.contig        |     1149 | 429018643 | 1893357 |
+| platanus.scaffold      |     6897 | 336821293 |  557433 |
+| platanus.non-contained |     9595 | 261494308 |   42477 |
+| platanus.anchor        |     2770 | 208748330 |   86253 |
 
 
 # JDM
