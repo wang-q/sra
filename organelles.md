@@ -56,7 +56,7 @@ rsync -avP \
     ~/data/dna-seq/xjy/raw_data/ \
     wangq@202.119.37.251:data/dna-seq/xjy/raw_data
 
-# rsync -avP wangq@202.119.37.251:data/dna-seq/xjy/ data/dna-seq/xjy
+# rsync -avP wangq@202.119.37.251:data/dna-seq/xjy/ ~/data/dna-seq/xjy
 
 ```
 
@@ -88,15 +88,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -110,10 +113,10 @@ BASE_NAME=m07
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -322,15 +325,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -344,10 +350,10 @@ BASE_NAME=m08
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -546,15 +552,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -568,10 +577,10 @@ BASE_NAME=m15
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -838,15 +847,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -860,10 +872,10 @@ BASE_NAME=m17
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -1172,15 +1184,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -1194,10 +1209,10 @@ BASE_NAME=m19
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -1470,15 +1485,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -1492,10 +1510,10 @@ BASE_NAME=m20
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -1767,15 +1785,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -1789,10 +1810,10 @@ BASE_NAME=m22
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -2060,15 +2081,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -2082,10 +2106,10 @@ BASE_NAME=mt203
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -2317,15 +2341,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -2339,10 +2366,10 @@ BASE_NAME=mt301
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -2573,15 +2600,18 @@ anchr template \
     --queue mpi \
     --genome 5000000 \
     --is_euk \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
     --trim2 "--dedupe --tile" \
-    --cov2 "10 20 40 80 160" \
     --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
-    --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
-    --insertsize \
+    --cov2 "10 20 40 80 160" \
+    --tadpole \
+    --statp 3 \
     --fillanchor \
     --parallel 24
 
@@ -2595,10 +2625,10 @@ BASE_NAME=mt302
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-#bash 0_bsub.sh
-bash 0_master.sh
+bash 0_bsub.sh
+#bash 0_master.sh
 
-bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
