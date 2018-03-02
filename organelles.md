@@ -369,6 +369,7 @@ cd ~/data/dna-seq/xjy/m08/2_illumina
 
 ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/xjy/clean_data/m08_H3J5KDMXX_L1_2.clean.fq.gz R2.fq.gz
+
 ```
 
 ## m08: template
@@ -381,15 +382,18 @@ BASE_NAME=m08
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
+rm -f *.sh
 anchr template \
     . \
     --basename ${BASE_NAME} \
     --queue largemem \
     --genome 1000000 \
+    --fastqc \
+    --kmergenie \
     --insertsize \
     --sgapreqc \
     --sgastats \
-    --trim2 "--dedupe --tile" \
+    --trim2 "--dedupe --tile --cutoff 30 --cutk 31" \
     --qual2 "25" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
@@ -397,7 +401,7 @@ anchr template \
     --ecphase "1,2,3" \
     --cov2 "40 80 120 160 240 320" \
     --tadpole \
-    --splitp 200 \
+    --splitp 100 \
     --statp 2 \
     --fillanchor \
     --parallel 24
@@ -411,6 +415,7 @@ WORKING_DIR=${HOME}/data/dna-seq/xjy
 BASE_NAME=m08
 
 cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ 2_illumina/trim 2_illumina/mergereads statReads.md 
 
 bash 0_bsub.sh
 #bash 0_master.sh
@@ -493,6 +498,7 @@ Table: statMergeReads
 | U2            | 170 | 144.76M |   885228 |
 | Us            |   0 |       0 |        0 |
 | pe.cor        | 269 |  990.1M |  6647154 |
+| clumped       | 150 |   1.22G | 8241850 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
