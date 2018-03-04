@@ -4,11 +4,8 @@
 - [Plants 2+3](#plants-23)
 - [F63, Closterium sp., 新月藻](#f63-closterium-sp-新月藻)
     - [F63: download](#f63-download)
-    - [F63: combinations of different quality values and read lengths](#f63-combinations-of-different-quality-values-and-read-lengths)
-    - [F63: quorum](#f63-quorum)
-    - [F63: down sampling](#f63-down-sampling)
-    - [F63: k-unitigs and anchors (sampled)](#f63-k-unitigs-and-anchors-sampled)
-    - [F63: merge anchors](#f63-merge-anchors)
+    - [F63: template](#f63-template)
+    - [F63: run](#f63-run)
 - [F295, Cosmarium botrytis, 葡萄鼓藻](#f295-cosmariumbotrytis-葡萄鼓藻)
     - [F295: download](#f295-download)
     - [F295: combinations of different quality values and read lengths](#f295-combinations-of-different-quality-values-and-read-lengths)
@@ -19,12 +16,8 @@
     - [F295: merge anchors](#f295-merge-anchors)
 - [F340, Zygnema extenue, 亚小双星藻](#f340-zygnema-extenue-亚小双星藻)
     - [F340: download](#f340-download)
-    - [F340: combinations of different quality values and read lengths](#f340-combinations-of-different-quality-values-and-read-lengths)
-    - [F340: down sampling](#f340-down-sampling)
-    - [F340: generate super-reads](#f340-generate-super-reads)
-    - [F340: create anchors](#f340-create-anchors)
-    - [F340: results](#f340-results)
-    - [F340: merge anchors](#f340-merge-anchors)
+    - [F340: template](#f340-template)
+    - [F340: run](#f340-run)
 - [F354, Spirogyra gracilis, 纤细水绵](#f354-spirogyragracilis-纤细水绵)
     - [F354: download](#f354-download)
     - [F354: template](#f354-template)
@@ -66,421 +59,289 @@ rsync -avP \
 mkdir -p ~/data/dna-seq/chara/F63/2_illumina
 cd ~/data/dna-seq/chara/F63/2_illumina
 
-ln -s ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz R1.fq.gz
-ln -s ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz R2.fq.gz
+ln -fs ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_1.clean.fq.gz R1.fq.gz
+ln -fs ~/data/dna-seq/chara/clean_data/F63_HF5WLALXX_L5_2.clean.fq.gz R2.fq.gz
+
 ```
 
-* FastQC
+
+## F63: template
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
 BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
+cd ${WORKING_DIR}/${BASE_NAME}
 
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
+rm -f *.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --queue mpi \
+    --genome 100000000 \
+    --fastqc \
+    --kmergenie \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
+    --trim2 "--dedupe --tile" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 80" \
+    --tadpole \
+    --splitp 100 \
+    --statp 10 \
+    --fillanchor \
+    --parallel 24
 
 ```
 
-## F63: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 60
+## F63: run
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
 BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
+cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
 
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+bash 0_bsub.sh
+#bash 0_master.sh
 
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 60
-
-
-# Stats
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 ::: 60 \
-    >> stat.md
-
-cat stat.md
-```
-
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 17261747100 | 115078314 |
-| uniq     | 150 | 16706582100 | 111377214 |
-| Q20L60   | 150 | 14900674294 | 103216264 |
-| Q25L60   | 150 | 13281199659 |  94058608 |
-| Q30L60   | 150 | 12753703579 |  93666221 |
-
-## F63: quorum
-
-```bash
-BASE_NAME=F63
-REAL_G=100000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
+#bash 0_cleanup.sh
 
 ```
 
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
-| Q20L60 |  14.9G | 149.0 | 11.31G |  113.1 |  24.064% |     149 | "49" |  100M | 270.52M |     2.71 | 0:42'28'' |
-| Q25L60 | 13.28G | 132.8 | 10.97G |  109.7 |  17.396% |     149 | "49" |  100M | 259.72M |     2.60 | 0:39'43'' |
-| Q30L60 | 12.76G | 127.6 | 11.14G |  111.4 |  12.715% |     149 | "49" |  100M | 255.87M |     2.56 | 0:37'26'' |
+Table: statInsertSize
 
-* Clear intermediate files.
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| tadpole.bbtools | 305.6 |    303 |  60.4 |                         43.93% |
+| tadpole.picard  | 305.1 |    303 |  59.0 |                             FR |
 
-```bash
-BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+Table: statSgaStats
+
+| Item           |  Value |
+|:---------------|-------:|
+| incorrectBases |  0.25% |
+| perfectReads   | 83.06% |
+| overlapDepth   | 409.84 |
+
+
+Table: statReads
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 17.26G | 115078314 |
+| trim     | 150 | 14.64G | 102351582 |
+| Q25L60   | 150 | 13.37G |  94261470 |
+
+
+Table: statTrimReads
+
+| Name           | N50 |    Sum |         # |
+|:---------------|----:|-------:|----------:|
+| clumpify       | 150 |  16.7G | 111365328 |
+| filteredbytile | 150 | 15.61G | 104048916 |
+| trim           | 150 | 14.64G | 102352756 |
+| filter         | 150 | 14.64G | 102351582 |
+| R1             | 150 |   7.6G |  51175791 |
+| R2             | 149 |  7.04G |  51175791 |
+| Rs             |   0 |      0 |         0 |
+
+
+```text
+#trim
+#Matched	133668	0.12847%
+#Name	Reads	ReadsPct
+TruSeq_Universal_Adapter	16333	0.01570%
+I5_Nextera_Transposase_1	15417	0.01482%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	14913	0.01433%
+pcr_dimer	9155	0.00880%
+I5_Adapter_Nextera	8711	0.00837%
+I5_Nextera_Transposase_2	6733	0.00647%
+RNA_Adapter_(RA5)_part_#_15013205	6675	0.00642%
+Reverse_adapter	6512	0.00626%
+I7_Nextera_Transposase_2	6282	0.00604%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	6084	0.00585%
+I7_Adapter_Nextera_No_Barcode	5365	0.00516%
+I7_Nextera_Transposase_1	2746	0.00264%
+PhiX_read1_adapter	2617	0.00252%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	2277	0.00219%
+PCR_Primers	2213	0.00213%
+PhiX_read2_adapter	1826	0.00175%
+TruSeq_Adapter_Index_1_6	1628	0.00156%
+Nextera_LMP_Read2_External_Adapter	1561	0.00150%
+RNA_PCR_Primer_(RP1)_part_#_15013198	1326	0.00127%
+Bisulfite_R2	1202	0.00116%
+Bisulfite_R1	1121	0.00108%
+I5_Primer_Nextera_XT_Index_Kit_v2_S510	1119	0.00108%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]502	1090	0.00105%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]517	1052	0.00101%
+Nextera_LMP_Read1_External_Adapter	1007	0.00097%
 ```
 
-* kmergenie
-
-```bash
-BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
-
+```text
+#filter
+#Matched	587	0.00057%
+#Name	Reads	ReadsPct
+TruSeq_Universal_Adapter	356	0.00035%
 ```
 
-## F63: down sampling
-
-```bash
-BASE_NAME=F63
-REAL_G=100000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80 100; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
+```text
+#peaks.raw
+#k	31
+#unique_kmers	1682286217
+#main_peak	22
+#genome_size	333960056
+#haploid_genome_size	83490014
+#fold_coverage	22
+#haploid_fold_coverage	109
+#ploidy	4
+#het_rate	0.01968
+#percent_repeat	62.195
+#start	center	stop	max	volume
+19	22	55	2719559	50929114	
+96	109	184	271628	15064965	
+184	230	326	150406	8575792	
+326	330	412	1234	81147	
+412	457	460	859	37173	
+460	605	841	32190	3822124	
+841	982	1548	1117	181146	
+1548	2090	2099	104	21491	
+2099	2105	2120	87	1836	
+2120	2137	2146	88	2166	
+2146	2150	2152	96	498	
+2152	2158	3774	83	23495	
 ```
 
-## F63: k-unitigs and anchors (sampled)
 
-```bash
-BASE_NAME=F63
-REAL_G=100000000
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+Table: statMergeReads
 
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+| Name          | N50 |     Sum |         # |
+|:--------------|----:|--------:|----------:|
+| clumped       | 150 |  14.64G | 102313268 |
+| ecco          | 150 |  14.64G | 102313268 |
+| eccc          | 150 |  14.64G | 102313268 |
+| ecct          | 150 |  13.43G |  93513468 |
+| extended      | 190 |  17.08G |  93513468 |
+| merged        | 355 |  15.45G |  44366984 |
+| unmerged.raw  | 182 | 743.02M |   4779500 |
+| unmerged.trim | 182 |    743M |   4779324 |
+| U1            | 190 | 432.78M |   2389662 |
+| U2            | 148 | 310.22M |   2389662 |
+| Us            |   0 |       0 |         0 |
+| pe.cor        | 352 |  16.23G |  93513292 |
 
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 246.0 |    252 |  29.0 |         25.72% |
+| ihist.merge.txt  | 348.1 |    347 |  55.9 |         94.89% |
 
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
 
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
+Table: statQuorum
 
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q0L0   | 146.4 |  115.9 |   20.81% |     144 | "73" |  100M | 268.51M |     2.69 | 0:24'46'' |
+| Q25L60 | 133.8 |  114.6 |   14.30% |     143 | "73" |  100M | 260.91M |     2.61 | 0:24'06'' |
 
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006
 
-# anchors (sampled)
-parallel --no-run-if-empty -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+Table: statKunitigsAnchors.md
 
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
+| Name          | CovCor | Mapped% | N50Anchor |     Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|--------:|----------:|--------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| Q0L0X40P000   |   40.0 |  69.70% |      8679 |  67.07M | 15278 |      6568 | 49.58M | 35200 |   13.0 |  8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:32'46'' | 0:12'11'' |
+| Q0L0X40P001   |   40.0 |  69.91% |      8800 |  67.09M | 15255 |      6574 | 49.62M | 35307 |   13.0 |  8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:32'54'' | 0:11'49'' |
+| Q0L0X80P000   |   80.0 |  63.65% |      6263 | 101.55M | 28134 |      7275 | 68.89M | 60269 |   15.0 | 10.0 |   3.0 |  30.0 | "31,41,51,61,71,81" | 0:58'41'' | 0:19'08'' |
+| Q25L60X40P000 |   40.0 |  81.71% |      9139 |  70.35M | 15477 |      8226 | 49.05M | 33795 |   14.0 |  9.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:34'11'' | 0:13'01'' |
+| Q25L60X40P001 |   40.0 |  81.45% |      8964 |  70.47M | 15680 |      8726 | 48.94M | 33955 |   14.0 |  9.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:34'08'' | 0:12'50'' |
+| Q25L60X80P000 |   80.0 |  75.04% |      7634 | 103.36M | 27125 |     13377 | 69.79M | 55300 |   16.0 | 11.0 |   3.0 |  32.0 | "31,41,51,61,71,81" | 1:00'17'' | 0:20'23'' |
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
 
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006
+Table: statTadpoleAnchors.md
 
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
+| Name          | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| Q0L0X40P000   |   40.0 |  89.70% |      7258 | 73.33M | 16636 |     43910 |  36.7M | 24413 |   18.0 | 10.0 |   3.0 |  36.0 | "31,41,51,61,71,81" | 0:22'09'' | 0:14'21'' |
+| Q0L0X40P001   |   40.0 |  89.92% |      7417 | 73.33M | 16567 |     46871 | 37.74M | 24489 |   18.0 | 10.0 |   3.0 |  36.0 | "31,41,51,61,71,81" | 0:22'09'' | 0:14'34'' |
+| Q0L0X80P000   |   80.0 |  92.89% |      9499 |  89.6M | 23256 |     30096 |  68.9M | 36811 |   20.0 | 14.0 |   3.0 |  40.0 | "31,41,51,61,71,81" | 0:34'00'' | 0:18'29'' |
+| Q25L60X40P000 |   40.0 |  89.92% |      7085 | 73.17M | 16882 |     50628 | 35.88M | 23219 |   18.0 | 10.0 |   3.0 |  36.0 | "31,41,51,61,71,81" | 0:21'58'' | 0:14'36'' |
+| Q25L60X40P001 |   40.0 |  89.98% |      7253 | 73.23M | 16850 |     51568 | 35.72M | 23435 |   18.0 | 10.0 |   3.0 |  36.0 | "31,41,51,61,71,81" | 0:22'03'' | 0:14'26'' |
+| Q25L60X80P000 |   80.0 |  93.39% |     10749 | 90.66M | 23004 |     36530 | 66.55M | 34326 |   21.0 | 15.0 |   3.0 |  42.0 | "31,41,51,61,71,81" | 0:35'09'' | 0:18'43'' |
 
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
 
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006 \
-     >> stat2.md
+Table: statMRKunitigsAnchors.md
 
-cat stat2.md
-```
+| Name      | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000 |   40.0 |  36.04% |      1276 | 15.68M | 11861 |      1147 | 49.14M | 60875 |   11.0 |  6.0 |   3.0 |  22.0 | "31,41,51,61,71,81" | 0:24'45'' | 0:05'04'' |
+| MRX40P001 |   40.0 |  35.59% |      1273 | 15.49M | 11768 |      1148 | 48.83M | 60281 |   11.0 |  6.0 |   3.0 |  22.0 | "31,41,51,61,71,81" | 0:24'50'' | 0:05'00'' |
+| MRX40P002 |   40.0 |  36.07% |      1271 | 15.64M | 11871 |      1149 | 49.44M | 61050 |   11.0 |  6.0 |   3.0 |  22.0 | "31,41,51,61,71,81" | 0:24'49'' | 0:05'09'' |
+| MRX40P003 |   40.0 |  36.43% |      1268 | 15.91M | 12098 |      1149 | 49.94M | 61822 |   11.0 |  6.0 |   3.0 |  22.0 | "31,41,51,61,71,81" | 0:24'45'' | 0:05'00'' |
+| MRX80P000 |   80.0 |   0.01% |      1078 |  3.37K |     3 |      1066 |  3.29K |     5 |   34.0 | 11.5 |   3.0 |  68.0 | "31,41,51,61,71,81" | 0:42'47'' | 0:01'23'' |
 
-| Name           | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
-| Q20L60X40P000  |     4G |   40.0 |  7479 | 139.88M | 60972 |     12174 | 111.85M | 20935 |       700 | 28.03M | 40037 | "31,41,51,61,71,81" | 1:28'42'' | 0:14'24'' |
-| Q20L60X40P001  |     4G |   40.0 |  6610 | 137.78M | 62485 |     10906 | 109.55M | 21870 |       698 | 28.23M | 40615 | "31,41,51,61,71,81" | 1:25'53'' | 0:13'01'' |
-| Q20L60X80P000  |     8G |   80.0 |  4590 |  198.1M | 87730 |      8423 | 162.94M | 39393 |       740 | 35.16M | 48337 | "31,41,51,61,71,81" | 2:24'09'' | 0:21'16'' |
-| Q20L60X100P000 |    10G |  100.0 |  5215 | 213.12M | 85378 |      8014 | 180.82M | 41234 |       740 |  32.3M | 44144 | "31,41,51,61,71,81" | 2:39'18'' | 0:24'35'' |
-| Q25L60X40P000  |     4G |   40.0 | 10314 | 140.94M | 56147 |     16375 | 114.65M | 18621 |       701 | 26.29M | 37526 | "31,41,51,61,71,81" | 1:04'04'' | 0:12'31'' |
-| Q25L60X40P001  |     4G |   40.0 |  8800 |  139.8M | 57714 |     14190 | 113.22M | 19645 |       699 | 26.57M | 38069 | "31,41,51,61,71,81" | 1:10'58'' | 0:11'55'' |
-| Q25L60X80P000  |     8G |   80.0 |  6809 |  200.4M | 80736 |     12615 | 167.57M | 36005 |       743 | 32.83M | 44731 | "31,41,51,61,71,81" | 2:49'28'' | 0:23'11'' |
-| Q25L60X100P000 |    10G |  100.0 |  7239 | 215.01M | 77341 |     11779 | 186.17M | 37905 |       739 | 28.83M | 39436 | "31,41,51,61,71,81" | 3:07'40'' | 0:28'14'' |
-| Q30L60X40P000  |     4G |   40.0 | 12974 | 140.23M | 52040 |     20960 | 115.42M | 16637 |       699 | 24.81M | 35403 | "31,41,51,61,71,81" | 2:14'27'' | 0:14'04'' |
-| Q30L60X40P001  |     4G |   40.0 | 11765 | 138.81M | 52119 |     19214 | 114.46M | 17216 |       697 | 24.35M | 34903 | "31,41,51,61,71,81" | 1:33'04'' | 0:14'51'' |
-| Q30L60X80P000  |     8G |   80.0 | 10259 | 200.04M | 74096 |     19916 | 169.76M | 32909 |       744 | 30.28M | 41187 | "31,41,51,61,71,81" | 2:36'42'' | 0:24'45'' |
-| Q30L60X100P000 |    10G |  100.0 | 10386 | 214.72M | 70890 |     17497 | 188.42M | 35024 |       743 |  26.3M | 35866 | "31,41,51,61,71,81" | 3:25'34'' | 0:29'04'' |
 
-## F63: merge anchors
+Table: statMRTadpoleAnchors.md
 
-```bash
-BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+| Name      | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000 |   40.0 |  90.16% |     14882 | 71.08M | 14239 |     31208 | 56.94M | 33254 |   13.0 |  9.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:31'45'' | 0:12'29'' |
+| MRX40P001 |   40.0 |  90.00% |     14786 | 70.99M | 14179 |     29288 | 56.67M | 33151 |   13.0 |  9.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:32'01'' | 0:12'10'' |
+| MRX40P002 |   40.0 |  90.02% |     14097 | 70.92M | 14262 |     30722 | 57.34M | 33672 |   13.0 |  9.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:31'40'' | 0:12'38'' |
+| MRX40P003 |   40.0 |  90.03% |     15006 | 70.88M | 14061 |     29723 | 56.76M | 32958 |   13.0 |  9.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:31'41'' | 0:12'08'' |
+| MRX80P000 |   80.0 |  92.03% |     16685 | 94.45M | 20720 |     59892 | 65.18M | 36492 |   19.0 | 14.0 |   3.0 |  38.0 | "31,41,51,61,71,81" | 0:48'00'' | 0:17'02'' |
+| MRX80P001 |   80.0 |  92.06% |     16572 | 94.18M | 20698 |     58505 | 65.51M | 36372 |   19.0 | 14.0 |   3.0 |  38.0 | "31,41,51,61,71,81" | 0:48'02'' | 0:16'24'' |
 
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 100 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+Table: statMergeAnchors.md
 
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "merge,others" \
-    -o 9_qa
+| Name                     | Mapped% | N50Anchor |     Sum |     # | N50Others |     Sum |      # | median | MAD | lower | upper | RunTimeAN |
+|:-------------------------|--------:|----------:|--------:|------:|----------:|--------:|-------:|-------:|----:|------:|------:|----------:|
+| 7_mergeAnchors           |   0.00% |     26027 | 156.83M | 32530 |     38422 |  72.99M |  24065 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeKunitigsAnchors   |   0.00% |     11021 | 142.34M | 35509 |     16393 |  92.13M |  24465 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeMRKunitigsAnchors |   0.00% |      1299 |   50.1M | 36990 |      1174 | 153.31M | 124860 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeMRTadpoleAnchors  |   0.00% |     15645 | 122.83M | 28109 |     68957 |  73.03M |  14905 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeTadpoleAnchors    |   0.00% |     30805 |  127.7M | 27303 |     81039 |  53.79M |   7722 |    0.0 | 0.0 |   0.0 |   0.0 |           |
 
-```
 
-* Stats
+Table: statOtherAnchors.md
 
-```bash
-BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+| Name         | Mapped% | N50Anchor |    Sum |     # | N50Others |     Sum |     # | median |  MAD | lower | upper | RunTimeAN |
+|:-------------|--------:|----------:|-------:|------:|----------:|--------:|------:|-------:|-----:|------:|------:|----------:|
+| 8_spades     |  74.79% |      1886 |  42.4M | 22467 |     11117 | 217.27M | 54541 |    7.0 |  4.0 |   3.0 |  14.0 | 0:19'33'' |
+| 8_spades_MR  |  72.79% |      6641 |  81.5M | 21539 |     65345 | 102.27M | 47693 |   13.0 |  9.0 |   3.0 |  26.0 | 0:16'46'' |
+| 8_megahit    |  73.75% |      1978 | 49.84M | 25361 |      9029 |  182.6M | 52521 |    8.0 |  5.0 |   3.0 |  16.0 | 0:17'49'' |
+| 8_megahit_MR |  72.60% |      6875 | 80.32M | 21031 |     57174 |  99.38M | 47070 |   13.0 |  9.0 |   3.0 |  26.0 | 0:16'30'' |
+| 8_platanus   |  44.52% |    154796 | 16.73M |   789 |    535707 |   4.03M |    80 |  115.0 | 52.0 |   3.0 | 230.0 | 0:05'03'' |
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+Table: statFinal
 
-cat stat3.md
-```
+| Name                     |    N50 |       Sum |      # |
+|:-------------------------|-------:|----------:|-------:|
+| 7_mergeAnchors.anchors   |  26027 | 156825064 |  32530 |
+| 7_mergeAnchors.others    |  38422 |  72988728 |  24065 |
+| anchorLong               | 130139 |  48279079 |   3233 |
+| anchorFill               | 150320 |  48461143 |   2773 |
+| spades.contig            |  16125 | 356242438 | 293526 |
+| spades.scaffold          |  16699 | 356255905 | 292382 |
+| spades.non-contained     |  57861 | 259672723 |  32214 |
+| spades_MR.contig         |  64503 | 198103894 |  54489 |
+| spades_MR.scaffold       |  73975 | 198345663 |  52458 |
+| spades_MR.non-contained  |  95972 | 183771447 |  28676 |
+| megahit.contig           |  20049 | 282922854 | 135711 |
+| megahit.non-contained    |  38403 | 232472758 |  27528 |
+| megahit_MR.contig        |  30512 | 212954993 |  90467 |
+| megahit_MR.non-contained |  74249 | 179699538 |  29081 |
+| platanus.contig          |  54466 |  22209595 |   6923 |
+| platanus.scaffold        | 157067 |  21246913 |   2299 |
+| platanus.non-contained   | 163314 |  20764529 |    835 |
 
-| Name         |   N50 |       Sum |     # |
-|:-------------|------:|----------:|------:|
-| anchor.merge | 31691 | 205191119 | 32022 |
-| others.merge |  1055 |  19869683 | 16442 |
-
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=F63
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,60,90,120}X*
-```
 
 # F295, Cosmarium botrytis, 葡萄鼓藻
 
@@ -933,440 +794,254 @@ cat stat3.md
 mkdir -p ~/data/dna-seq/chara/F340/2_illumina
 cd ~/data/dna-seq/chara/F340/2_illumina
 
-ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz R1.fq.gz
-ln -s ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz R2.fq.gz
+ln -fs ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_1.clean.fq.gz R1.fq.gz
+ln -fs ~/data/dna-seq/chara/clean_data/F340-hun_HF3JLALXX_L6_2.clean.fq.gz R2.fq.gz
+
 ```
 
-* FastQC
+
+## F340: template
 
 ```bash
+WORKING_DIR=${HOME}/data/dna-seq/chara
 BASE_NAME=F340
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
+cd ${WORKING_DIR}/${BASE_NAME}
 
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
+rm -f *.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --queue mpi \
+    --genome 100000000 \
+    --fastqc \
+    --kmergenie \
+    --insertsize \
+    --sgapreqc \
+    --sgastats \
+    --trim2 "--dedupe --tile" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 80" \
+    --tadpole \
+    --splitp 100 \
+    --statp 10 \
+    --fillanchor \
+    --parallel 24
 
 ```
 
-## F340: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 100, 120, and 140
+## F340: run
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
+WORKING_DIR=${HOME}/data/dna-seq/chara
+BASE_NAME=F340
 
-cd ${BASE_DIR}
-tally \
-    --pair-by-offset --with-quality --nozip \
-    -i 2_illumina/R1.fq.gz \
-    -j 2_illumina/R2.fq.gz \
-    -o 2_illumina/R1.uniq.fq \
-    -p 2_illumina/R2.uniq.fq
+cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
 
-parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-    " ::: R1 R2
+bash 0_bsub.sh
+#bash 0_master.sh
 
-cd ${BASE_DIR}
-parallel --no-run-if-empty -j 2 "
-    scythe \
-        2_illumina/{}.uniq.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina/{}.scythe.fq.gz
-    " ::: R1 R2
-
-cd ${BASE_DIR}
-parallel --no-run-if-empty -j 4 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 100 120 140
+#bash 0_cleanup.sh
 
 ```
 
-* Stats
+Table: statInsertSize
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| tadpole.bbtools | 299.9 |    299 |  58.6 |                         33.65% |
+| tadpole.picard  | 298.3 |    298 |  59.4 |                             FR |
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+Table: statSgaStats
 
-for qual in 20 25 30; do
-    for len in 100 120 140; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+| Item           |   Value |
+|:---------------|--------:|
+| incorrectBases |   0.21% |
+| perfectReads   |  84.18% |
+| overlapDepth   | 1176.57 |
 
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
 
-cat stat.md
+Table: statReads
+
+| Name     | N50 |    Sum |         # |
+|:---------|----:|-------:|----------:|
+| Illumina | 150 | 18.31G | 122062736 |
+| trim     | 150 | 15.79G | 110095248 |
+| Q25L60   | 150 | 14.32G | 101737083 |
+
+
+Table: statTrimReads
+
+| Name           | N50 |    Sum |         # |
+|:---------------|----:|-------:|----------:|
+| clumpify       | 150 | 17.86G | 119087286 |
+| filteredbytile | 150 | 16.75G | 111698902 |
+| trim           | 150 | 15.79G | 110095992 |
+| filter         | 150 | 15.79G | 110095248 |
+| R1             | 150 |  8.17G |  55047624 |
+| R2             | 148 |  7.62G |  55047624 |
+| Rs             |   0 |      0 |         0 |
+
+
+```text
+#trim
+#Matched	111731	0.10003%
+#Name	Reads	ReadsPct
+I5_Nextera_Transposase_1	20830	0.01865%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]501	20261	0.01814%
+I5_Adapter_Nextera	9085	0.00813%
+I5_Nextera_Transposase_2	7528	0.00674%
+RNA_Adapter_(RA5)_part_#_15013205	6994	0.00626%
+I7_Nextera_Transposase_2	6443	0.00577%
+I7_Adapter_Nextera_No_Barcode	4834	0.00433%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	4647	0.00416%
+TruSeq_Universal_Adapter	4180	0.00374%
+Reverse_adapter	4057	0.00363%
+PhiX_read2_adapter	4019	0.00360%
+PhiX_read1_adapter	3074	0.00275%
+I7_Nextera_Transposase_1	2007	0.00180%
+RNA_PCR_Primer_Index_1_(RPI1)_2,9	1911	0.00171%
+Nextera_LMP_Read2_External_Adapter	1671	0.00150%
+TruSeq_Adapter_Index_1_6	1287	0.00115%
+Bisulfite_R2	1019	0.00091%
 ```
 
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 18309410400 | 122062736 |
-| uniq     | 150 | 17866149600 | 119107664 |
-| scythe   | 150 | 17851191742 | 119107664 |
-| Q20L100  | 150 | 15513406507 | 105986394 |
-| Q20L120  | 150 | 14134581471 |  95323932 |
-| Q20L140  | 150 | 12224648204 |  81563320 |
-| Q25L100  | 150 | 13163602983 |  91278248 |
-| Q25L120  | 150 | 11253296912 |  76464550 |
-| Q25L140  | 150 |  8646235281 |  57684080 |
-| Q30L100  | 150 | 10234799514 |  72478776 |
-| Q30L120  | 150 |  7829284286 |  53788182 |
-| Q30L140  | 150 |  4971865380 |  33183492 |
-
-## F340: down sampling
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
-
-# works on bash 3
-ARRAY=(
-    "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L140:Q20L140"
-    "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L140:Q25L140"
-    "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L140:Q30L140"
-)
-
-for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-
-done
+```text
+#filter
+#Matched	376	0.00034%
+#Name	Reads	ReadsPct
+TruSeq_Universal_Adapter	102	0.00009%
+contam_256	108	0.00010%
 ```
 
-## F340: generate super-reads
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
+Table: statMergeReads
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-        
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
+| Name          | N50 |     Sum |         # |
+|:--------------|----:|--------:|----------:|
+| clumped       | 150 |  15.78G | 110050810 |
+| ecco          | 150 |  15.78G | 110050810 |
+| eccc          | 150 |  15.78G | 110050810 |
+| ecct          | 150 |  13.17G |  91603720 |
+| extended      | 190 |  16.67G |  91603720 |
+| merged        | 351 |  14.87G |  43235483 |
+| unmerged.raw  | 172 | 814.84M |   5132754 |
+| unmerged.trim | 172 | 814.83M |   5132596 |
+| U1            | 185 | 450.72M |   2566298 |
+| U2            | 156 | 364.11M |   2566298 |
+| Us            |   0 |       0 |         0 |
+| pe.cor        | 347 |  15.73G |  91603562 |
 
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
-            exit;
-        fi
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 246.2 |    251 |  27.9 |         25.54% |
+| ihist.merge.txt  | 344.0 |    343 |  54.5 |         94.40% |
 
-        cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 8 \
-            -o superreads.sh
-        bash superreads.sh
-    "
 
-```
+Table: statQuorum
 
-Clear intermediate files.
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
+| Q0L0   | 157.9 |  121.8 |   22.86% |     142 | "73" |  100M | 386.22M |     3.86 | 0:26'54'' |
+| Q25L60 | 143.3 |  118.0 |   17.65% |     139 | "73" |  100M | 356.37M |     3.56 | 0:26'14'' |
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
 
-find . -type f -name "quorum_mer_db.jf"          | xargs rm
-find . -type f -name "k_u_hash_0"                | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp"                     | xargs rm
-find . -type f -name "pe.renamed.fastq"          | xargs rm
-find . -type f -name "pe.cor.sub.fa"             | xargs rm
-```
+Table: statKunitigsAnchors.md
 
-## F340: create anchors
+| Name          | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q0L0X40P000   |   40.0 |  27.03% |      3852 | 24.89M |  8419 |      8949 | 26.87M | 18904 |   13.0 | 8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:25'15'' | 0:04'57'' |
+| Q0L0X40P001   |   40.0 |  26.97% |      3767 | 25.02M |  8489 |      8660 | 26.77M | 18849 |   13.0 | 8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:25'16'' | 0:05'03'' |
+| Q0L0X40P002   |   40.0 |  26.95% |      3865 | 25.01M |  8475 |      8935 | 26.88M | 18963 |   13.0 | 8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:25'17'' | 0:05'00'' |
+| Q0L0X80P000   |   80.0 |  28.53% |      3046 | 45.26M | 17005 |      3346 | 39.49M | 40931 |   12.0 | 7.0 |   3.0 |  24.0 | "31,41,51,61,71,81" | 0:47'41'' | 0:09'14'' |
+| Q25L60X40P000 |   40.0 |  29.61% |      3789 | 25.79M |  8718 |     15864 | 27.95M | 17384 |   14.0 | 8.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:24'57'' | 0:05'03'' |
+| Q25L60X40P001 |   40.0 |  29.92% |      3797 | 25.87M |  8729 |     15367 | 28.21M | 17621 |   14.0 | 8.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:24'59'' | 0:05'17'' |
+| Q25L60X80P000 |   80.0 |  31.18% |      3146 | 47.11M | 17305 |      6238 | 38.64M | 36991 |   13.0 | 8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:46'30'' | 0:09'04'' |
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
+Table: statTadpoleAnchors.md
 
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
+| Name          | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| Q0L0X40P000   |   40.0 |  79.34% |      5294 | 37.36M | 10477 |      6520 | 13.37M | 14938 |   27.0 | 19.0 |   3.0 |  54.0 | "31,41,51,61,71,81" | 0:11'07'' | 0:06'19'' |
+| Q0L0X40P001   |   40.0 |  78.42% |      5301 |  37.3M | 10464 |      6396 | 12.86M | 14704 |   27.0 | 19.0 |   3.0 |  54.0 | "31,41,51,61,71,81" | 0:11'10'' | 0:06'08'' |
+| Q0L0X40P002   |   40.0 |  78.86% |      5356 |  37.4M | 10414 |      6739 | 13.09M | 14629 |   27.0 | 19.0 |   3.0 |  54.0 | "31,41,51,61,71,81" | 0:10'46'' | 0:06'03'' |
+| Q0L0X80P000   |   80.0 |  79.45% |      3480 |  39.4M | 13479 |     19690 | 36.82M | 22100 |   19.0 | 12.0 |   3.0 |  38.0 | "31,41,51,61,71,81" | 0:19'44'' | 0:09'04'' |
+| Q25L60X40P000 |   40.0 |  80.94% |      5508 | 37.93M | 10530 |      7862 | 12.69M | 13890 |   28.0 | 20.0 |   3.0 |  56.0 | "31,41,51,61,71,81" | 0:11'08'' | 0:06'11'' |
+| Q25L60X40P001 |   40.0 |  81.21% |      7277 | 39.01M |  9825 |     10277 | 11.38M | 12875 |   29.0 | 21.0 |   3.0 |  58.0 | "31,41,51,61,71,81" | 0:11'05'' | 0:06'22'' |
+| Q25L60X80P000 |   80.0 |  81.46% |      3690 | 40.47M | 13637 |     25800 | 36.86M | 20623 |   20.0 | 12.0 |   3.0 |  40.0 | "31,41,51,61,71,81" | 0:20'14'' | 0:08'53'' |
 
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
-    "
 
-```
+Table: statMRKunitigsAnchors.md
 
-## F340: results
+| Name      | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|-------:|-----:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000 |   40.0 |  88.38% |      6039 | 32.42M | 8640 |      7698 | 62.35M | 39138 |   14.0 | 10.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:28'01'' | 0:09'03'' |
+| MRX40P001 |   40.0 |  88.55% |      6122 | 32.39M | 8568 |      7696 |  63.4M | 39209 |   14.0 | 10.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:28'08'' | 0:08'48'' |
+| MRX40P002 |   40.0 |  88.45% |      5954 | 32.42M | 8640 |      7610 | 63.26M | 39204 |   14.0 | 10.0 |   3.0 |  28.0 | "31,41,51,61,71,81" | 0:28'07'' | 0:08'44'' |
+| MRX80P000 |   80.0 |   5.34% |      1205 |  1.63M | 1309 |      1101 |  5.09M |  6354 |   16.0 | 11.0 |   3.0 |  32.0 | "31,41,51,61,71,81" | 0:47'05'' | 0:01'51'' |
 
-* Stats of super-reads
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
+Table: statMRTadpoleAnchors.md
 
-REAL_G=100000000
+| Name      | CovCor | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000 |   40.0 |  84.52% |      5727 | 31.24M |  8463 |     38392 |  38.2M | 22091 |   13.0 |  8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:13'09'' | 0:06'11'' |
+| MRX40P001 |   40.0 |  84.30% |      5732 | 31.28M |  8498 |     36502 | 37.88M | 22289 |   13.0 |  8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:13'19'' | 0:05'56'' |
+| MRX40P002 |   40.0 |  84.22% |      5700 | 31.22M |  8499 |     37394 | 37.35M | 21908 |   13.0 |  8.0 |   3.0 |  26.0 | "31,41,51,61,71,81" | 0:12'51'' | 0:05'57'' |
+| MRX80P000 |   80.0 |  85.28% |      5383 | 46.22M | 12968 |     31440 | 39.95M | 25477 |   17.0 | 11.0 |   3.0 |  34.0 | "31,41,51,61,71,81" | 0:21'46'' | 0:08'19'' |
 
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 4 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            exit;
-        fi
+Table: statMergeAnchors.md
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
+| Name                     | Mapped% | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper | RunTimeAN |
+|:-------------------------|--------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|----------:|
+| 7_mergeAnchors           |   0.00% |      8357 | 88.16M | 22152 |      3317 | 47.19M | 21048 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeKunitigsAnchors   |   0.00% |      4248 | 63.51M | 20737 |     14204 | 56.79M | 16818 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeMRKunitigsAnchors |   0.00% |      7390 | 41.17M | 11160 |     10722 | 88.77M | 24739 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeMRTadpoleAnchors  |   0.00% |      6012 | 52.56M | 14033 |     33417 | 42.65M | 10076 |    0.0 | 0.0 |   0.0 |   0.0 |           |
+| 7_mergeTadpoleAnchors    |   0.00% |      8968 | 69.76M | 17758 |     17789 | 25.75M |  5779 |    0.0 | 0.0 |   0.0 |   0.0 |           |
 
-cat stat1.md
-```
 
-* Stats of anchors
+Table: statOtherAnchors.md
 
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
+| Name         | Mapped% | N50Anchor |    Sum |     # | N50Others |     Sum |      # | median |   MAD | lower |  upper | RunTimeAN |
+|:-------------|--------:|----------:|-------:|------:|----------:|--------:|-------:|-------:|------:|------:|-------:|----------:|
+| 8_spades     |  65.71% |      1113 |  2.21K |     2 |      3011 | 364.26M | 133717 |    3.0 |   0.0 |   3.0 |    4.5 | 0:24'41'' |
+| 8_spades_MR  |  60.21% |      2828 | 37.37M | 15049 |      7955 |  71.72M |  37270 |    9.0 |   5.0 |   3.0 |   18.0 | 0:11'11'' |
+| 8_megahit    |  62.36% |      1314 |  7.15M |  5270 |      2247 | 241.24M | 108518 |    4.0 |   1.0 |   3.0 |    8.0 | 0:18'25'' |
+| 8_megahit_MR |  59.74% |      3842 |  38.4M | 12899 |      6617 |     63M |  33963 |   10.0 |   6.0 |   3.0 |   20.0 | 0:10'22'' |
+| 8_platanus   |  45.63% |     42892 |  9.14M |   538 |      2701 | 163.53K |     98 |  507.0 | 433.0 |   3.0 | 1014.0 | 0:04'27'' |
 
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
 
-perl -e '
-    for my $n (
-        qw{
-        Q20L100 Q20L120 Q20L140
-        Q25L100 Q25L120 Q25L140
-        Q30L100 Q30L120 Q30L140
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 8 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
+Table: statFinal
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
+| Name                     |   N50 |       Sum |      # |
+|:-------------------------|------:|----------:|-------:|
+| 7_mergeAnchors.anchors   |  8357 |  88162631 |  22152 |
+| 7_mergeAnchors.others    |  3317 |  47186480 |  21048 |
+| anchorLong               | 12999 |  85770884 |  17955 |
+| anchorFill               | 25937 |  33392940 |   7595 |
+| spades.contig            |  1936 | 511152323 | 464134 |
+| spades.scaffold          |  1951 | 511180808 | 461767 |
+| spades.non-contained     |  3011 | 364262569 | 133715 |
+| spades_MR.contig         |  6568 | 134667321 |  60072 |
+| spades_MR.scaffold       |  6911 | 134714323 |  59559 |
+| spades_MR.non-contained  | 18147 | 109095955 |  23687 |
+| megahit.contig           |  1201 | 434079174 | 468411 |
+| megahit.non-contained    |  2414 | 248395388 | 103306 |
+| megahit_MR.contig        |  1101 | 195904454 | 218222 |
+| megahit_MR.non-contained | 12552 | 101401567 |  23033 |
+| platanus.contig          | 25034 |  10672391 |   8778 |
+| platanus.scaffold        | 41472 |   9629911 |   2383 |
+| platanus.non-contained   | 43344 |   9305935 |    525 |
 
-cat stat2.md
-```
-
-| Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% | RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
-|:--------|-------:|------:|--------:|-----:|-------:|---------:|------:|--------:|---------:|--------:|------:|----------:|
-| Q20L100 | 15.51G | 155.1 |     149 |   75 | 11.75G |  24.284% |  100M | 380.21M |     3.80 | 710.77M |     0 | 4:08'59'' |
-| Q20L120 | 14.13G | 141.3 |     149 |   75 | 10.76G |  23.868% |  100M | 354.15M |     3.54 | 629.64M |     0 | 5:04'42'' |
-| Q20L140 | 12.22G | 122.2 |     149 |   75 |  9.33G |  23.643% |  100M | 320.25M |     3.20 | 533.58M |     0 | 3:12'09'' |
-| Q25L100 | 13.16G | 131.6 |     149 |   75 | 10.55G |  19.820% |  100M | 330.43M |     3.30 |  531.4M |     0 | 5:47'41'' |
-| Q25L120 | 11.25G | 112.5 |     149 |   75 |  8.98G |  20.195% |  100M | 296.13M |     2.96 | 458.97M |     0 | 4:54'59'' |
-| Q25L140 |  8.65G |  86.5 |     149 |   75 |   6.8G |  21.350% |  100M | 248.77M |     2.49 | 371.81M |     0 | 2:36'46'' |
-| Q30L100 | 10.23G | 102.3 |     149 |   75 |  8.49G |  17.044% |  100M | 272.05M |     2.72 | 405.73M |     0 | 2:28'14'' |
-| Q30L120 |  7.83G |  78.3 |     149 |   75 |  6.36G |  18.774% |  100M | 226.59M |     2.27 |  330.8M |     0 | 1:06'46'' |
-| Q30L140 |  4.97G |  49.7 |     149 |   75 |  3.85G |  22.494% |  100M | 166.18M |     1.66 | 235.64M |     0 | 0:41'46'' |
-
-| Name    | N50SRclean |     Sum |       # | N50Anchor |    Sum |     # | N50Anchor2 |   Sum |    # | N50Others |     Sum |       # |   RunTime |
-|:--------|-----------:|--------:|--------:|----------:|-------:|------:|-----------:|------:|-----:|----------:|--------:|--------:|----------:|
-| Q20L100 |        156 | 710.77M | 4589043 |      3281 | 73.64M | 26257 |       1244 | 2.62M | 2047 |       149 | 634.52M | 4560739 | 3:36'22'' |
-| Q20L120 |        172 | 629.64M | 3868127 |      3626 | 72.88M | 24604 |       1248 | 2.53M | 1975 |       150 | 554.23M | 3841548 | 3:00'00'' |
-| Q20L140 |        191 | 533.58M | 3063369 |      4510 | 69.31M | 21127 |       1250 | 2.52M | 1950 |       158 | 461.75M | 3040292 | 2:27'20'' |
-| Q25L100 |        203 |  531.4M | 2912056 |      4936 | 73.06M | 21473 |       1231 | 2.07M | 1623 |       168 | 456.28M | 2888960 | 1:46'29'' |
-| Q25L120 |        213 | 458.97M | 2409411 |      6149 |  67.5M | 18216 |       1239 | 1.97M | 1536 |       175 |  389.5M | 2389659 | 1:29'21'' |
-| Q25L140 |        221 | 371.81M | 1884475 |      7485 | 57.85M | 14750 |       1251 | 1.95M | 1516 |       182 | 312.01M | 1868209 | 1:13'58'' |
-| Q30L100 |        218 | 405.73M | 2071543 |      8117 | 63.46M | 16133 |       1231 | 1.39M | 1099 |       179 | 340.87M | 2054311 | 1:24'17'' |
-| Q30L120 |        221 |  330.8M | 1653211 |      7563 | 56.79M | 14934 |       1242 | 1.47M | 1143 |       179 | 272.54M | 1637134 | 1:03'43'' |
-| Q30L140 |        221 | 235.64M | 1157546 |     12470 | 43.73M |  9191 |       1254 | 1.28M |  998 |       176 | 190.63M | 1147357 | 0:26'33'' |
-
-## F340: merge anchors
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    Q20L100/anchor/pe.anchor.fa \
-    Q20L120/anchor/pe.anchor.fa \
-    Q20L140/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q25L120/anchor/pe.anchor.fa \
-    Q25L140/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    Q30L120/anchor/pe.anchor.fa \
-    Q30L140/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-faops n50 -S -C merge/anchor.merge.fasta
-
-# merge anchor2 and others
-anchr contained \
-    Q20L100/anchor/pe.anchor2.fa \
-    Q20L120/anchor/pe.anchor2.fa \
-    Q20L140/anchor/pe.anchor2.fa \
-    Q25L100/anchor/pe.anchor2.fa \
-    Q25L120/anchor/pe.anchor2.fa \
-    Q25L140/anchor/pe.anchor2.fa \
-    Q30L100/anchor/pe.anchor2.fa \
-    Q30L120/anchor/pe.anchor2.fa \
-    Q30L140/anchor/pe.anchor2.fa \
-    Q20L100/anchor/pe.others.fa \
-    Q20L120/anchor/pe.others.fa \
-    Q20L140/anchor/pe.others.fa \
-    Q25L100/anchor/pe.others.fa \
-    Q25L120/anchor/pe.others.fa \
-    Q25L140/anchor/pe.others.fa \
-    Q30L100/anchor/pe.others.fa \
-    Q30L120/anchor/pe.others.fa \
-    Q30L140/anchor/pe.others.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "Q20L100,Q25L100,Q30L100,merge,others" \
-    -o 9_qa
-
-```
-
-* Clear QxxLxxx.
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
-
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
-```
-
-* Stats
-
-```bash
-BASE_DIR=$HOME/data/dna-seq/chara/F340
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
-| Name         |  N50 |      Sum |     # |
-|:-------------|-----:|---------:|------:|
-| anchor.merge | 6513 | 88082921 | 23640 |
-| others.merge | 1148 | 15051593 | 12632 |
 
 # F354, Spirogyra gracilis, 纤细水绵
 
@@ -1632,429 +1307,6 @@ Table: statFinal
 | platanus.scaffold        | 998620 |  40425985 |   634 |
 | platanus.non-contained   | 998620 |  40340652 |   166 |
 
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
-## F354: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 60
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 60
-
-```
-
-* Stats
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 ::: 60 \
-    >> stat.md
-
-cat stat.md
-```
-
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 18458643300 | 123057622 |
-| uniq     | 150 | 17588350800 | 117255672 |
-| Q20L60   | 150 | 16508279648 | 113781146 |
-| Q25L60   | 150 | 15292880812 | 107713284 |
-| Q30L60   | 150 | 14407270028 | 105170796 |
-
-## F354: quorum
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60
-
-```
-
-Clear intermediate files.
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* Stats of processed reads
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-REAL_G=100000000
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-```
-
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
-| Q20L60 | 16.51G | 165.1 | 13.45G |  134.5 |  18.523% |     146 | "49" |  100M |  113.2M |     1.13 | 0:44'42'' |
-| Q25L60 | 15.29G | 152.9 | 13.35G |  133.5 |  12.724% |     144 | "49" |  100M | 109.46M |     1.09 | 0:40'45'' |
-| Q30L60 | 14.41G | 144.1 | 13.16G |  131.6 |   8.669% |     141 | "49" |  100M | 107.09M |     1.07 | 0:37'42'' |
-
-* kmergenie
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 121 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
-
-```
-
-## F354: down sampling
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-REAL_G=100000000
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80 120; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
-## F354: k-unitigs and anchors (sampled)
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-
-# Stats of anchors
-REAL_G=100000000
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006 \
-     >> stat2.md
-
-cat stat2.md
-```
-
-| Name           | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
-| Q20L60X40P000  |     4G |   40.0 | 10423 | 63.51M | 19761 |     12919 | 56.61M |  9839 |       692 |   6.9M |  9922 | "31,41,51,61,71,81" | 0:51'46'' | 0:10'16'' |
-| Q20L60X40P001  |     4G |   40.0 |  7772 | 63.04M | 22023 |      9944 | 55.59M | 11239 |       696 |  7.45M | 10784 | "31,41,51,61,71,81" | 0:49'57'' | 0:11'17'' |
-| Q20L60X40P002  |     4G |   40.0 |  6187 |  62.6M | 24363 |      8172 | 54.22M | 12234 |       698 |  8.38M | 12129 | "31,41,51,61,71,81" | 0:48'57'' | 0:09'33'' |
-| Q20L60X80P000  |     8G |   80.0 |  3006 | 80.73M | 46312 |      5782 | 60.12M | 17165 |       718 | 20.61M | 29147 | "31,41,51,61,71,81" | 1:18'09'' | 0:17'07'' |
-| Q20L60X120P000 |    12G |  120.0 |  2188 | 92.49M | 56307 |      3294 | 69.65M | 24587 |       737 | 22.83M | 31720 | "31,41,51,61,71,81" | 1:24'30'' | 0:21'31'' |
-| Q25L60X40P000  |     4G |   40.0 | 23694 | 63.54M | 14420 |     27919 | 58.09M |  6374 |       670 |  5.44M |  8046 | "31,41,51,61,71,81" | 0:37'14'' | 0:11'00'' |
-| Q25L60X40P001  |     4G |   40.0 | 17835 | 63.38M | 15659 |     21386 | 57.82M |  7487 |       676 |  5.55M |  8172 | "31,41,51,61,71,81" | 0:36'44'' | 0:10'54'' |
-| Q25L60X40P002  |     4G |   40.0 | 14118 | 63.34M | 17010 |     17384 | 57.46M |  8338 |       675 |  5.88M |  8672 | "31,41,51,61,71,81" | 0:36'11'' | 0:10'31'' |
-| Q25L60X80P000  |     8G |   80.0 |  6370 | 82.59M | 37350 |     10863 | 66.02M | 13906 |       718 | 16.57M | 23444 | "31,41,51,61,71,81" | 1:00'50'' | 0:18'56'' |
-| Q25L60X120P000 |    12G |  120.0 |  3273 |  96.3M | 47042 |      5259 | 78.49M | 22447 |       745 | 17.81M | 24595 | "31,41,51,61,71,81" | 1:27'09'' | 0:26'43'' |
-| Q30L60X40P000  |     4G |   40.0 | 53402 | 63.25M | 11350 |     61600 | 58.24M |  3939 |       667 |  5.01M |  7411 | "31,41,51,61,71,81" | 0:39'30'' | 0:10'39'' |
-| Q30L60X40P001  |     4G |   40.0 | 45319 | 63.08M | 11631 |     52302 | 58.18M |  4364 |       664 |   4.9M |  7267 | "31,41,51,61,71,81" | 0:38'47'' | 0:11'13'' |
-| Q30L60X40P002  |     4G |   40.0 | 35830 | 63.04M | 12204 |     42326 | 58.03M |  4750 |       662 |  5.01M |  7454 | "31,41,51,61,71,81" | 0:38'02'' | 0:11'04'' |
-| Q30L60X80P000  |     8G |   80.0 | 17227 | 81.93M | 29545 |     25548 | 67.69M |  9187 |       710 | 14.25M | 20358 | "31,41,51,61,71,81" | 1:03'06'' | 0:20'01'' |
-| Q30L60X120P000 |    12G |  120.0 |  8048 | 95.56M | 36821 |     13460 | 81.26M | 16916 |       738 |  14.3M | 19905 | "31,41,51,61,71,81" | 1:29'01'' | 0:29'59'' |
-
-## F354: merge anchors
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "merge,others" \
-    -o 9_qa
-
-```
-
-* Stats
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
-| Name         |   N50 |      Sum |     # |
-|:-------------|------:|---------:|------:|
-| anchor.merge | 87164 | 87521663 | 14322 |
-| others.merge |  1052 |  6809332 |  6041 |
-
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=F354
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,60,90,120}X*
-```
 
 # F357, Botryococcus braunii, 布朗葡萄藻
 
@@ -2526,447 +1778,6 @@ cd ~/data/dna-seq/chara/F1084/2_illumina
 
 ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz R1.fq.gz
 ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
-```
-
-* FastQC
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
-## F1084: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 60
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 60
-
-```
-
-* Stats
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 ::: 60 \
-    >> stat.md
-
-cat stat.md
-```
-
-| Name     | N50 |         Sum |         # |
-|:---------|----:|------------:|----------:|
-| Illumina | 150 | 17281584900 | 115210566 |
-| uniq     | 150 | 16422145800 | 109480972 |
-| Q20L60   | 150 | 15131350696 | 104864930 |
-| Q25L60   | 150 | 13877549755 |  98292284 |
-| Q30L60   | 150 | 13108598640 |  96322136 |
-
-## F1084: quorum
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60
-
-```
-
-Clear intermediate files.
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* Stats of processed reads
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-REAL_G=100000000
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-```
-
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|------:|--------:|---------:|----------:|
-| Q20L60 | 15.13G | 151.3 | 12.06G |  120.6 |  20.275% |     149 | "49" |  100M | 168.69M |     1.69 | 0:44'09'' |
-| Q25L60 | 13.88G | 138.8 | 11.93G |  119.3 |  14.024% |     149 | "49" |  100M |  164.6M |     1.65 | 0:38'39'' |
-| Q30L60 | 13.12G | 131.2 | 11.85G |  118.5 |   9.667% |     149 | "49" |  100M | 162.77M |     1.63 | 0:35'43'' |
-
-* kmergenie
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
-
-```
-
-## F1084: down sampling
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-REAL_G=100000000
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80 120; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
-## F1084: k-unitigs and anchors (sampled)
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-
-# Stats of anchors
-REAL_G=100000000
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006 \
-     >> stat2.md
-
-cat stat2.md
-```
-
-| Name           | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
-| Q20L60X40P000  |     4G |   40.0 |  3449 | 136.28M | 66423 |      4704 | 108.79M | 31614 |       768 |  27.5M | 34809 | "31,41,51,61,71,81" | 1:16'51'' | 0:09'43'' |
-| Q20L60X40P001  |     4G |   40.0 |  3322 | 134.93M | 67134 |      4613 | 107.25M | 31622 |       763 | 27.68M | 35512 | "31,41,51,61,71,81" | 1:11'58'' | 0:08'09'' |
-| Q20L60X40P002  |     4G |   40.0 |  3237 | 133.66M | 67878 |      4574 | 105.48M | 31510 |       760 | 28.18M | 36368 | "31,41,51,61,71,81" | 1:10'41'' | 0:08'56'' |
-| Q20L60X80P000  |     8G |   80.0 |  4409 | 137.89M | 61234 |      6233 | 112.73M | 28737 |       755 | 25.16M | 32497 | "31,41,51,61,71,81" | 1:46'32'' | 0:14'09'' |
-| Q20L60X120P000 |    12G |  120.0 |  4167 | 137.91M | 61616 |      5680 | 113.07M | 29392 |       752 | 24.84M | 32224 | "31,41,51,61,71,81" | 2:20'13'' | 0:19'10'' |
-| Q25L60X40P000  |     4G |   40.0 |  3721 | 137.31M | 63891 |      5035 | 111.12M | 31043 |       774 |  26.2M | 32848 | "31,41,51,61,71,81" | 0:57'52'' | 0:09'16'' |
-| Q25L60X40P001  |     4G |   40.0 |  3550 | 136.72M | 65262 |      4833 | 109.99M | 31499 |       771 | 26.73M | 33763 | "31,41,51,61,71,81" | 0:57'21'' | 0:09'11'' |
-| Q25L60X80P000  |     8G |   80.0 |  4674 | 140.93M | 60019 |      6505 |  116.6M | 28915 |       760 | 24.33M | 31104 | "31,41,51,61,71,81" | 1:16'23'' | 0:15'32'' |
-| Q30L60X40P000  |     4G |   40.0 |  4022 | 137.29M | 61800 |      5526 | 111.52M | 29521 |       774 | 25.77M | 32279 | "31,41,51,61,71,81" | 0:59'41'' | 0:09'28'' |
-| Q30L60X40P001  |     4G |   40.0 |  3837 | 136.87M | 63099 |      5193 | 110.96M | 30372 |       773 | 25.91M | 32727 | "31,41,51,61,71,81" | 1:00'10'' | 0:09'53'' |
-| Q30L60X80P000  |     8G |   80.0 |  5277 | 142.14M | 56398 |      7200 | 119.62M | 27933 |       765 | 22.52M | 28465 | "31,41,51,61,71,81" | 1:21'17'' | 0:18'17'' |
-
-## F1084: merge anchors
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 120 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    --label "merge,others" \
-    -o 9_qa
-
-```
-
-* Stats
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
-| Name         |  N50 |       Sum |     # |
-|:-------------|-----:|----------:|------:|
-| anchor.merge | 9476 | 127995728 | 26304 |
-| others.merge | 1868 |  15897762 |  8538 |
-
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=F1084
-cd ${HOME}/data/dna-seq/chara/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,60,90,120}X*
-```
-
-# F1084, Staurastrum sp., 角星鼓藻
-
-## F1084: download
-
-```bash
-mkdir -p ~/data/dna-seq/chara/F1084/2_illumina
-cd ~/data/dna-seq/chara/F1084/2_illumina
-
-ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_1.clean.fq.gz R1.fq.gz
-ln -s ~/data/dna-seq/chara/clean_data/F1084_HF5KMALXX_L7_2.clean.fq.gz R2.fq.gz
 
 ```
 
@@ -2989,7 +1800,6 @@ anchr template \
     --kmergenie \
     --insertsize \
     --sgapreqc \
-    --sgastats \
     --trim2 "--dedupe --tile" \
     --qual2 "25" \
     --len2 "60" \
@@ -3406,8 +2216,7 @@ Thoughts:
 * kmer 与污染的关系还不好说
 * kmer 估计基因组比真实的大得越多, 污染就越多
 * 有多个因素会影响 SR/Est.G. 细菌与单倍体会趋向于 2, paralog 与杂合会趋向于 4.
-* 50 倍的二代数据并不充分, 与 100 倍之间还是有明显的差异的. 覆盖数不够也会导致
-  SR/Est.G 低于真实值.
+* 50 倍的二代数据并不充分, 与 100 倍之间还是有明显的差异的. 覆盖数不够也会导致 SR/Est.G 低于真实值.
 
 # Anchors
 
