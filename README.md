@@ -503,12 +503,13 @@ mkdir -p ~/data/dna-seq/other_euk/sra
 cd ~/data/dna-seq/other_euk/sra
 
 cat << EOF > source.csv
-ERX1725441,s288c-pacbio,
-ERX1725435,s288c-pacbio,
-ERX1725434,s288c-pacbio,
-ERX1999216,s288c-MiSeq,
+#ERX1725441,s288c-pacbio,
+#ERX1725435,s288c-pacbio,
+#ERX1725434,s288c-pacbio,
+#ERX1999216,s288c-MiSeq,
 #SRX179262,nip-MiSeq,
-#SRX734432,nip-180bp,
+SRX734432,nip-180bp,
+SRX179254,nip-300bp,
 #SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
