@@ -3594,11 +3594,10 @@ for BASE_NAME in m07 m08 m15 m17 m19 m20 m22 mt203 mt301 mt302; do
             ../${BASE_NAME}.tar.gz \
             2_illumina/fastqc/*.html \
             2_illumina/insertSize/*.pdf \
-            8_spades/spades.non-contained.fasta \
-            8_megahit/megahit.non-contained.fasta \
-            8_platanus/platanus.non-contained.fasta \
+            2_illumina/sgaPreQC/*.pdf \
             7_mergeAnchors/anchor.merge.fasta \
             7_mergeAnchors/others.non-contained.fasta \
+            7_anchorLong/contig.fasta \
             7_anchorFill/contig.fasta
     fi
 
