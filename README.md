@@ -510,6 +510,7 @@ cat << EOF > source.csv
 #SRX179262,nip-MiSeq,
 SRX734432,nip-180bp,
 SRX179254,nip-300bp,
+SRX179262,nip-450bp,
 #SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
