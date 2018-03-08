@@ -503,14 +503,21 @@ mkdir -p ~/data/dna-seq/other_euk/sra
 cd ~/data/dna-seq/other_euk/sra
 
 cat << EOF > source.csv
+SRX697551,n2_pe100,
+SRX697546,n2_pe100,
+SRX1321528,n2_HiSeq_2500
+#SRX770040,n2_GEO,
+#ERX1118232,n2_2,
+#DRX007633,n2_GAII,
+#SRX026594,n2_GAII_2,
 #ERX1725441,s288c-pacbio,
 #ERX1725435,s288c-pacbio,
 #ERX1725434,s288c-pacbio,
 #ERX1999216,s288c-MiSeq,
 #SRX179262,nip-MiSeq,
-SRX734432,nip-180bp,
-SRX179254,nip-300bp,
-SRX179262,nip-450bp,
+#SRX734432,nip-180bp,
+#SRX179254,nip-300bp,
+#SRX179262,nip-450bp,
 #SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
@@ -549,49 +556,6 @@ perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
 
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
-```
-
-## Caenorhabditis elegans
-
-Grab information and download.
-
-```bash
-mkdir -p ~/data/dna-seq/cele_n2/sra
-cd ~/data/dna-seq/cele_n2/sra
-
-cat << EOF > source.csv
-DRX007633,cele_n2,
-ERX1118232,cele_n2_2,
-SRX770040,cele_n2_3,
-SRX026594,cele_n2_4,
-SRX697551,cele_n2_5,
-SRX697546,cele_n2_5,
-EOF
-
-perl ~/Scripts/sra/sra_info.pl source.csv -v \
-    > sra_info.yml
-
-# check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
-
-aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
-
-md5sum --check sra_info.md5.txt
-```
-
-Generate bash files and run.
-
-```bash
-perl ~/Scripts/sra/dn_dna.pl -b ~/data/dna-seq/cele_n2 -c ~/data/dna-seq/cele_n2/sra/sra_info.csv
-
-cd ~/data/dna-seq/cele_n2
-bash bash/sra.cele_n2.sh
-bash bash/sra.cele_n2_2.sh
-bash bash/sra.cele_n2_4.sh
-
-find . -type d -name "*fastqc" | sort | xargs rm -fr
-find . -type f -name "*_fastqc.zip" | sort | xargs rm
-find . -type f -name "*matches.txt" | sort | xargs rm
 ```
 
 ## Dmel iso-1
