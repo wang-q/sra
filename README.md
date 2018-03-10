@@ -13,11 +13,8 @@
     - [Sophora japonica 槐树](#sophora-japonica-槐树)
 - [*De novo* dna-seq projects (dn_dna.pl)](#de-novo-dna-seq-projects-dn-dnapl)
     - [Scer S288c](#scer-s288c)
-    - [GAGE-B](#gage-b)
     - [Other bacteria (2+3)](#other-bacteria-23)
     - [Other eukaryotes](#other-eukaryotes)
-    - [Caenorhabditis elegans](#caenorhabditis-elegans)
-    - [Dmel iso-1](#dmel-iso-1)
     - [Setaria italica](#setaria-italica)
     - [Glycine max cultivar Williams 82](#glycine-max-cultivar-williams-82)
     - [Oropetium thomaeum](#oropetium-thomaeum)
@@ -426,28 +423,6 @@ aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 md5sum --check sra_info.md5.txt
 ```
 
-## GAGE-B
-
-Grab information and download.
-
-```bash
-mkdir -p ~/data/dna-seq/gage_b/sra
-cd ~/data/dna-seq/gage_b/sra
-
-cat << EOF > source.csv
-SRX160386,Rsph,Rhodobacter sphaeroides 2.4.1 SRR522246
-SRX246890,Mabs,Mycobacterium abscessus 6G-0125-R SRR768269
-SRX247310,Vcho,Vibrio cholerae CP1032(5) SRR769320
-EOF
-
-perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
-    > sra_info.yml
-
-# check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml
-
-```
-
 ## Other bacteria (2+3)
 
 Grab information and download.
@@ -457,6 +432,9 @@ mkdir -p ~/data/dna-seq/other_bac/sra
 cd ~/data/dna-seq/other_bac/sra
 
 cat << EOF > source.csv
+SRX160386,Rsph,Rhodobacter sphaeroides 2.4.1 SRR522246
+SRX246890,Mabs,Mycobacterium abscessus 6G-0125-R SRR768269
+SRX247310,Vcho,Vibrio cholerae CP1032(5) SRR769320
 #ERX518562,Sfle,Shigella_flexneri_NCTC0001 ERR559526
 #SRX2165170,Vpar,Vibrio parahaemolyticus ATCC BAA-239
 #SRX2179279,Lpne,Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
@@ -476,7 +454,7 @@ cat << EOF > source.csv
 #SRX2107164,Cdif-pacbio,
 #SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
 #SRX2107011,Cjej-pacbio,
-SRX2365802,lambda,Escherichia virus Lambda (viruses)
+#SRX2365802,lambda,Escherichia virus Lambda (viruses)
 #SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
 #SRX2107163,Cdif,Clostridioides difficile 630
 #SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
@@ -503,9 +481,22 @@ mkdir -p ~/data/dna-seq/other_euk/sra
 cd ~/data/dna-seq/other_euk/sra
 
 cat << EOF > source.csv
-SRX697551,n2_pe100,
-SRX697546,n2_pe100,
-SRX1321528,n2_HiSeq_2500
+SRX342650,a17_pe200,
+SRX342651,a17_pe200,
+SRX673852,a17_pe360,
+#ERX645969,iso_1_HiSeq_2000,
+#ERX645975,iso_1_HiSeq_2500,
+#SRX081846,ycnbwsp_3-HE,
+#SRX063977,ycnbwsp_4,
+#SRX063980,ycnbwsp_9-HE,
+#SRX063981,ycnbwsp_10-HE,
+#SRX063982,ycnbwsp_11-HE,
+#SRX063983,ycnbwsp_12-HE,
+#SRX063984,ycnbwsp_13-HE,
+#SRX063985,ycnbwsp_14-HE,
+#SRX697551,n2_pe100,
+#SRX697546,n2_pe100,
+#SRX1321528,n2_HiSeq_2500
 #SRX770040,n2_GEO,
 #ERX1118232,n2_2,
 #DRX007633,n2_GAII,
@@ -520,9 +511,9 @@ SRX1321528,n2_HiSeq_2500
 #SRX179262,nip-450bp,
 #SRX1897300,nip-pacbio,
 #SRX2527206,Col-0-MiSeq,WGS of Arabidopsis thaliana: Col-0 ecotype
+#SRX202246,Col-0,Col_G
 #SRX1567556,Ler-0-1,Ler sequencing and assembly
 #SRX202247,Ler-0-2,Ler_XL_4
-#SRX202246,Col-0,Col_G
 #SRS1404680,Col-0-P4C2
 #SRX1639981,ZS97,Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
 #SRX1639978,MH63,Minghui 63 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
@@ -556,54 +547,6 @@ perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
 
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
-```
-
-## Dmel iso-1
-
-Grab information and download.
-
-https://www.ncbi.nlm.nih.gov/Traces/study/?WebEnv=NCID_1_30627556_130.14.22.76_5555_1485202367_2381182026_0MetA0_S_HStore&query_key=73
-
-```bash
-mkdir -p ~/data/dna-seq/dmel_iso_1/sra
-cd ~/data/dna-seq/dmel_iso_1/sra
-
-cat << EOF > source.csv
-SRX081846,ycnbwsp_3-HE,
-SRX063977,ycnbwsp_4,
-SRX063980,ycnbwsp_9-HE,
-SRX063981,ycnbwsp_10-HE,
-SRX063982,ycnbwsp_11-HE,
-SRX063983,ycnbwsp_12-HE,
-SRX063984,ycnbwsp_13-HE,
-SRX063985,ycnbwsp_14-HE,
-ERX645969,ISO1,
-EOF
-
-perl ~/Scripts/sra/sra_info.pl source.csv -v \
-    > sra_info.yml
-
-# check before running these
-perl ~/Scripts/sra/sra_prep.pl sra_info.yml --md5
-
-aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
-
-md5sum --check sra_info.md5.txt
-```
-
-Generate bash files and run.
-
-```bash
-perl ~/Scripts/sra/dn_dna.pl \
-    -b ~/data/dna-seq/dmel_iso_1 \
-    -c ~/data/dna-seq/dmel_iso_1/sra/sra_info.csv
-
-cd ~/data/dna-seq/dmel_iso_1
-
-
-find . -type d -name "*fastqc" | sort | xargs rm -fr
-find . -type f -name "*_fastqc.zip" | sort | xargs rm
-find . -type f -name "*matches.txt" | sort | xargs rm
 ```
 
 ## Setaria italica
