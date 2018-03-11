@@ -961,7 +961,7 @@ SRX218968,MY6,
 SRX219154,PX174,
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv \
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
     > cele_mmp.yml
 ```
 
@@ -969,7 +969,7 @@ Download.
 
 ```bash
 cd ~/data/dna-seq/cele_mmp/sra
-perl ~/Scripts/sra/sra_prep.pl -i cele_mmp.yml --md5
+perl ~/Scripts/sra/sra_prep.pl cele_mmp.yml
 
 aria2c -x 9 -s 3 -c -i cele_mmp.ftp.txt
 
