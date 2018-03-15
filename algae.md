@@ -2322,3 +2322,32 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
 | F354  | 2553 | 23543840 |   11667 |     |     |          |     |     |         |
 | F357  | 1541 | 53821193 |   40017 |     |     |          |     |     |         |
 | F1084 | 1721 |  4412080 |    3059 |     |     |          |     |     |         |
+
+# Create tarballs
+
+```bash
+cd ${HOME}/data/dna-seq/chara
+
+for BASE_NAME in F354; do
+    echo >&2 "==> ${BASE_NAME}"
+    pushd ${HOME}/data/dna-seq/chara/${BASE_NAME}
+
+    if [ -e ../${BASE_NAME}.tar.gz ]; then
+        echo >&2 "    ${BASE_NAME}.tar.gz exists"
+    else
+        tar -czvf \
+            ../${BASE_NAME}.tar.gz \
+            2_illumina/fastqc/*.html \
+            2_illumina/insertSize/*.pdf \
+            2_illumina/sgaPreQC/*.pdf \
+            7_mergeAnchors/anchor.merge.fasta \
+            7_mergeAnchors/others.non-contained.fasta \
+            7_anchorLong/contig.fasta \
+            7_anchorFill/contig.fasta
+    fi
+
+    popd > /dev/null
+done
+
+```
+
