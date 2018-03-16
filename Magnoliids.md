@@ -188,10 +188,10 @@ PhiX_read2_adapter	131	0.00012%
 | platanus.scaffold              |  387 | 344965047 |  1175883 |
 | platanus.non-contained         | 2363 | 126282645 |    57856 |
 
-# FCM05
+# FCM05, 三白草
 
 * *Saururus chinensis*
-* 三白草
+* 
 * Taxonomy ID: [54806](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=54806)
 
 ## FCM05: download
