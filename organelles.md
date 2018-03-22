@@ -3929,6 +3929,13 @@ Table: statInsertSize
 | R.tadpole.picard  | 372.1 |    371 |  89.5 |                             FR |
 
 
+Table: statSgaStats
+
+| Library | incorrectBases | perfectReads | overlapDepth |
+|:--------|---------------:|-------------:|-------------:|
+| R       |          0.18% |       86.16% |       925.02 |
+
+
 Table: statReads
 
 | Name       | N50 |    Sum |        # |
