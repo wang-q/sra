@@ -2,11 +2,11 @@
 
 [TOC levels=1-3]: # " "
 - [Magnoliids: anchr + spades + platanus](#magnoliids-anchr--spades--platanus)
-- [FCM03](#fcm03)
+- [FCM03, 荜菝](#fcm03-荜菝)
     - [FCM03: download](#fcm03-download)
     - [FCM03: template](#fcm03-template)
     - [FCM03: run](#fcm03-run)
-- [FCM05](#fcm05)
+- [FCM05, 三白草](#fcm05-三白草)
     - [FCM05: download](#fcm05-download)
     - [FCM05: template](#fcm05-template)
     - [FCM05: run](#fcm05-run)
@@ -34,11 +34,11 @@
     - [FCM05E: download](#fcm05e-download)
     - [FCM05E: template](#fcm05e-template)
     - [FCM05E: run](#fcm05e-run)
-- [FCM07](#fcm07)
+- [FCM07, 蜡梅](#fcm07-蜡梅)
     - [FCM07: download](#fcm07-download)
     - [FCM07: template](#fcm07-template)
     - [FCM07: run](#fcm07-run)
-- [FCM13](#fcm13)
+- [FCM13, 红楠](#fcm13-红楠)
     - [FCM13: download](#fcm13-download)
     - [FCM13: template](#fcm13-template)
     - [FCM13: run](#fcm13-run)
@@ -53,10 +53,9 @@
 - [Create tarballs](#create-tarballs)
 
 
-# FCM03
+# FCM03, 荜菝
 
 * *Piper longum L.*
-* 荜菝
 * Taxonomy ID: [49511](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=49511)
 
 ## FCM03: download
@@ -955,10 +954,9 @@ bash 2_mergereads.sh
 #Name	Reads	ReadsPct
 ```
 
-# FCM07
+# FCM07, 蜡梅
 
 * *Chimonanthus praecox*
-* 蜡梅
 * Taxonomy ID: [13419](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=13419)
 
 ## FCM07: download
@@ -1056,10 +1054,9 @@ Reverse_adapter	36779	0.03692%
 | platanus.scaffold      |  1551 | 394047530 |   975210 |
 | platanus.non-contained |  3757 | 227288114 |    76986 |
 
-# FCM13
+# FCM13, 红楠
 
 * *Machilus thunbergii*
-* 红楠
 * Taxonomy ID:
   [128685](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=128685)
 
