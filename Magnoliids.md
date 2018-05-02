@@ -1155,6 +1155,43 @@ Reverse_adapter	150123	0.13482%
 | platanus.scaffold      | 1298 |    703697 |   1960 |
 | platanus.non-contained | 5575 |    384225 |    104 |
 
+
+# FCM15, 金钱蒲
+
+* *Acorus gramineus*
+* Taxonomy ID:
+  [55184](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=55184)
+
+## FCM15: download
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/FCM15/2_illumina
+cd ~/data/dna-seq/xjy2/FCM15/2_illumina
+
+ln -s ../../data/FCM15_PE400_R1.fastq.gz R1.fq.gz
+ln -s ../../data/FCM15_PE400_R2.fastq.gz R2.fq.gz
+
+```
+
+
+# FCM16, 金鱼藻
+
+* *Ceratophyllum demersum*
+* Taxonomy ID:
+  [4428](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=4428)
+
+## FCM16: download
+
+```bash
+mkdir -p ~/data/dna-seq/xjy2/FCM16/2_illumina
+cd ~/data/dna-seq/xjy2/FCM16/2_illumina
+
+ln -s ../../data/FCM16_PE400_R1.fastq.gz R1.fq.gz
+ln -s ../../data/FCM16_PE400_R2.fastq.gz R2.fq.gz
+
+```
+
+
 # Blasia
 
 ## Blasia: download
