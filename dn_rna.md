@@ -11,6 +11,8 @@
 
 Naja kaouthia 孟加拉眼镜蛇 https://www.ncbi.nlm.nih.gov/bioproject/PRJNA302200
 
+Trinity 2.6.6 要求 fq 文件头有特定的标记, 因此下载 sra 而不是 fq.
+
 ```bash
 mkdir -p ~/data/rna-seq/other_euk/sra
 cd ~/data/rna-seq/other_euk/sra
@@ -20,7 +22,7 @@ SRX1432812,Malaysia,
 SRX1432814,Thailand,
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
+perl ~/Scripts/sra/sra_info.pl source.csv -v \
     > sra_info.yml
 
 perl ~/Scripts/sra/sra_prep.pl sra_info.yml
@@ -28,6 +30,25 @@ perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 aria2c -x 9 -s 3 -c -i sra_info.ftp.txt
 
 md5sum --check sra_info.md5.txt
+
+cat sra_info.md5.txt |
+    cut -d ' ' -f 2 |
+    parallel --no-run-if-empty --linebuffer -k -j 3 "
+        fastq-dump --defline-seq '@\$sn[_\$rn]/\$ri' --split-files ./{}
+    "
+
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+```
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/rna-seq/other_euk/ \
+    wangq@202.119.37.251:data/rna-seq/other_euk
+
+#rsync -avP wangq@202.119.37.251:data/rna-seq/other_euk/ ~/rna-seq/other_euk
 
 ```
 
