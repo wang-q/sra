@@ -3,6 +3,10 @@
 [TOC levels=1-3]: # " "
 - [cpDNA](#cpdna)
 - [*Medicago truncatula*](#medicago-truncatula)
+- [A17](#a17)
+    - [A17: download](#a17-download)
+    - [A17: template](#a17-template)
+    - [A17: run](#a17-run)
 - [HM050](#hm050)
     - [HM050: download](#hm050-download)
     - [HM050: template](#hm050-template)
@@ -44,7 +48,7 @@ for ACCESSION in "NC_003119" "NC_029641"; do
     curl $URL -o ${ACCESSION}.fa
 done
 
-#aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/219/495/GCF_000219495.3_MedtrA17_4.0/GCF_000219495.3_MedtrA17_4.0_genomic.fna.gz
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/219/495/GCF_000219495.3_MedtrA17_4.0/GCF_000219495.3_MedtrA17_4.0_genomic.fna.gz
 
 TAB=$'\t'
 cat <<EOF > replace.tsv
@@ -70,6 +74,16 @@ cat NC_003119.fa NC_029641.fa |
 ```
 
 * Illumina
+    * A17
+
+        * [SRX342650](https://www.ncbi.nlm.nih.gov/sra/SRX342650)
+        * [SRX342651](https://www.ncbi.nlm.nih.gov/sra/SRX342651)
+
+            HiSeq 2000, pe200
+
+        * [SRX673852](https://www.ncbi.nlm.nih.gov/sra/SRX673852)
+
+            HiSeq 2000, pe360 SRR1542422 SRR1542423
 
 ```bash
 cd ~/data/dna-seq/cpDNA/Medicago
@@ -85,6 +99,14 @@ ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR216/006/SRR2163426/SRR2163426_1.fastq.gz
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR216/006/SRR2163426/SRR2163426_2.fastq.gz
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR166/008/SRR1664358/SRR1664358_1.fastq.gz
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR166/008/SRR1664358/SRR1664358_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR965/SRR965418/SRR965418_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR965/SRR965418/SRR965418_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR965/SRR965430/SRR965430_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR965/SRR965430/SRR965430_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR154/002/SRR1542422/SRR1542422_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR154/002/SRR1542422/SRR1542422_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR154/003/SRR1542423/SRR1542423_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR154/003/SRR1542423/SRR1542423_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
@@ -100,11 +122,20 @@ ff624191ea6080c87663ad78e844ac80  SRR1524305_2.fastq.gz
 8756862c6043ffa96a8b1a5413865cd2  SRR2163426_2.fastq.gz
 a86d4a063e107f2ce77ef1ca0051df86  SRR1664358_1.fastq.gz
 5b6ec25a47d48194b7afea6bbaa6a6a3  SRR1664358_2.fastq.gz
+42e600958fd174f20cadb17f979741ee  SRR965418_1.fastq.gz
+c7b5fa05748f823d884c122a5e717b1c  SRR965418_2.fastq.gz
+82c01a4ba954960df73fad454ae46c04  SRR965430_1.fastq.gz
+dd5501703da879c4f3c9f0dd8886ebf7  SRR965430_2.fastq.gz
+f5dce8d92a3d537058b1324f26f488e7  SRR1542422_1.fastq.gz
+ee1d1172157acfc6d84ac308e9e9424b  SRR1542422_2.fastq.gz
+0a233f66263cc383b80b9996888c61c5  SRR1542423_1.fastq.gz
+e2cd3dbea1c290da1234a2a7e52e652e  SRR1542423_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
 ```
+
 
 * Rsync to hpcc
 
@@ -114,6 +145,88 @@ rsync -avP \
     wangq@202.119.37.251:data/dna-seq/cpDNA/Medicago
 
 # rsync -avP wangq@202.119.37.251:data/dna-seq/cpDNA/ ~/data/dna-seq/cpDNA
+
+```
+
+# A17
+
+*Medicago truncatula* A17
+
+## A17: download
+
+* Illumina
+    * [SRX673852](https://www.ncbi.nlm.nih.gov/sra/?term=SRX673852)
+    * 26.9 Gb
+    * ~69.0x
+
+```bash
+mkdir -p ~/data/dna-seq/cpDNA/A17/1_genome
+cd ~/data/dna-seq/cpDNA/A17/1_genome
+
+ln -fs ../../Medicago/genome.fa genome.fa
+#ln -fs ../../Medicago/ref.fa ref.fa
+
+mkdir -p ~/data/dna-seq/cpDNA/A17/2_illumina
+cd ~/data/dna-seq/cpDNA/A17/2_illumina
+
+ln -fs ../../Medicago/SRR1542422_1.fastq.gz R1.fq.gz
+ln -fs ../../Medicago/SRR1542422_2.fastq.gz R2.fq.gz
+
+ln -fs ../../Medicago/SRR1542423_1.fastq.gz S1.fq.gz
+ln -fs ../../Medicago/SRR1542423_2.fastq.gz S2.fq.gz
+
+```
+
+
+## A17: template
+
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/cpDNA
+BASE_NAME=A17
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+rm -f *.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --queue mpi \
+    --genome 1_000_000 \
+    --fastqc \
+    --kmergenie \
+    --insertsize \
+    --sgapreqc \
+    --trim2 "--dedupe --cutoff 270 --cutk 31" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 80 120 160 240 320" \
+    --tadpole \
+    --splitp 100 \
+    --statp 2 \
+    --fillanchor \
+    --xmx 110g \
+    --parallel 24
+
+```
+
+## A17: run
+
+```bash
+WORKING_DIR=${HOME}/data/dna-seq/cpDNA
+BASE_NAME=A17
+
+cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
+
+bash 0_bsub.sh
+#bkill -J "${BASE_NAME}-*"
+
+#bash 0_master.sh
+#bash 0_cleanup.sh
 
 ```
 
