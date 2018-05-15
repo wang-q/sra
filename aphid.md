@@ -61,12 +61,18 @@ perl ~/Scripts/sra/sra_prep.pl sra_info.yml
 
 * SRP106773/PRJNA385905
 
-| Host                  | 中文名 | Individuals | SRX        | SRR        | Bases (Gb) |
-|:----------------------|:------|:------------|:-----------|:-----------|:-----------|
-| Vicia cracca          |       | 29          | SRX4038418 | SRR7110604 | 36.9       |
-| Onobrychis viciifolia |       | 37          | SRX4038417 | SRR7110605 | 41.4       |
-| Securigea varia       |       | 26          | SRX4038416 | SRR7110606 | 39         |
-| Ononis spinosa        |       | 27          | SRX4038415 | SRR7110607 | 43.3       |
+| Host                  | 中文名    | Individuals | SRX        | SRR        | Bases (Gb) |
+|:----------------------|:---------|:------------|:-----------|:-----------|:-----------|
+| Vicia cracca          | 广布野豌豆 | 29          | SRX4038418 | SRR7110604 | 36.9       |
+| Onobrychis viciifolia | 驴食草    | 37          | SRX4038417 | SRR7110605 | 41.4       |
+| Securigea varia       |          | 26          | SRX4038416 | SRR7110606 | 39         |
+| Ononis spinosa        | 芒柄花属   | 27          | SRX4038415 | SRR7110607 | 43.3       |
+| Medicago lupulina     | 天蓝苜蓿   | 27          | SRX4038414 | SRR7110608 | 41.8       |
+| Medicago officinalis  |          | 34          | SRX4038413 | SRR7110609 | 38.5       |
+| Lotus corniculatus    | 百脉根    | 30          | SRX4038412 | SRR7110610 | 45.2       |
+| Genista tinctoria     | 染料木    | 30          | SRX4038411 | SRR7110611 | 42.7       |
+| Genista sagitallis    |          | 34          | SRX4038410 | SRR7110612 | 47.4       |
+
 
 * Illumina
 
