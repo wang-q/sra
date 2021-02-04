@@ -412,7 +412,7 @@ SRX2058916,UFRJ50816,Spar
 SRX2058917,UWOPS91-917,Spar
 EOF
 
-perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
+perl ~/Scripts/sra/sra_info.pl source.csv -v --fq -s erp \
     > sra_info.yml
 
 # check before running these
@@ -437,27 +437,6 @@ SRX246890,Mabs,Mycobacterium abscessus 6G-0125-R SRR768269
 SRX247310,Vcho,Vibrio cholerae CP1032(5) SRR769320
 #ERX518562,Sfle,Shigella_flexneri_NCTC0001 ERR559526
 #SRX2165170,Vpar,Vibrio parahaemolyticus ATCC BAA-239
-#SRX2179279,Lpne,Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
-#SRX2179294,Ngon,Neisseria gonorrhoeae FDAARGOS_207
-#SRX2179304,Nmen,Neisseria meningitidis FDAARGOS_209
-#SRX1385806,Bbro,Bordetella bronchiseptica FDAARGOS_176; ATCC BAA-588D-5; RB50; SAMN03996258
-#SRX1385807,Bbro,
-#SRX2179101,Bper,Bordetella pertussis FDAARGOS_195; ATCC BAA-589D-5; Tohama 1; SAMN04875532
-#SRX2179104,Bper,
-#SRX2179108,Cdip,Corynebacterium diphtheriae FDAARGOS_197; ATCC 700971D-5; NCTC 13129; SAMN04875534
-#SRX2105481,Ftul,Francisella tularensis FDAARGOS_247; SHU-S4; SAMN04875573
-#SRX2104758,Hinf,Haemophilus influenzae FDAARGOS_199
-#SRX2104759,Hinf-pacbio,
-#SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
-#SRX2717966,Lmon-pacbio,
-#SRX2107163,Cdif,Clostridioides difficile 630
-#SRX2107164,Cdif-pacbio,
-#SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
-#SRX2107011,Cjej-pacbio,
-#SRX2365802,lambda,Escherichia virus Lambda (viruses)
-#SRX2717967,Lmon,Listeria monocytogenes FDAARGOS_351
-#SRX2107163,Cdif,Clostridioides difficile 630
-#SRX2107012,Cjej,Campylobacter jejuni subsp. jejuni ATCC 700819
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
@@ -517,29 +496,6 @@ cat << EOF > source.csv
 #SRS1404680,Col-0-P4C2
 #SRX1639981,ZS97,Zhenshan 97 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
 #SRX1639978,MH63,Minghui 63 small-insert (~300 bp) pair-end WGS (2x100 bp read length)
-#SRX1879506,showa2,
-#SRX1879507,showa3,
-#SRX1879508,showa3,
-#SRX1879509,showa3,
-#SRX1879510,showa3,
-#SRX1879511,showa3,
-#SRX1879512,showa3,
-#SRX1879513,showa3,
-#SRX1879514,showa3,
-#SRX2043337,showa3,
-#SRX2043338,showa3,
-#SRX2043339,showa3,
-#SRX2043340,showa3,
-#SRX2043341,showa3,
-#SRX2043342,showa3,
-#SRX2043343,showa3,
-#SRX2043344,showa3,
-#SRX2043345,showa3,
-#SRX2043346,showa3,
-#SRX2043347,showa3,
-#SRX2043348,showa3,
-#SRX2043349,showa3,
-#SRX2043350,showa3,
 EOF
 
 perl ~/Scripts/sra/sra_info.pl source.csv -v --fq \
